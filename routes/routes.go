@@ -3,6 +3,7 @@ package routes
 import (
 	forumManagementControllers "forum/modules/forumManagement/controllers"
 	userManagementControllers "forum/modules/userManagement/controllers"
+	userManagementModels "forum/modules/userManagement/models"
 	"net/http"
 )
 
@@ -18,6 +19,7 @@ func SetupRoutes() {
 
 	//FOR CHAT
 	http.HandleFunc("/ws", forumManagementControllers.WsHandler)
+	http.HandleFunc("/api/online-users", userManagementModels.GetOnlineUsersHandler)
 
 	// http.HandleFunc("/home/", forumManagementControllers.HomePageHandler)
 	http.HandleFunc("/auth/", userManagementControllers.AuthHandler)

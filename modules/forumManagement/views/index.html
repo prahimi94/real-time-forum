@@ -199,6 +199,12 @@
                                 <a href="/logout/"><i class="fas fa-power-off me-2" style="color: #c44343;"></i> Log Out</a>
                             </div>
                         </div>
+                        
+                        <!-- ONLINE USERS -->
+                        <div id="online-users" class="online-users-container">
+                            <h2>Online Users</h2>
+                            <ul id="online-users-list"></ul>
+                        </div>
                         <!-- CHATBOX -->
                         <div class="chatbox">
                             <h1>CHATBOX</h1>
@@ -246,7 +252,15 @@
 
             ws.onmessage = function (event) {
                 let messageDisplay = document.getElementById("messages");
-                messageDisplay.innerHTML += `<p>${event.data}</p>`;
+                let message = event.data;
+
+                // Append the message to the chatbox
+                let messageElement = document.createElement("p");
+                messageElement.textContent = message;
+                messageDisplay.appendChild(messageElement);
+
+                // Scroll to the bottom of the chatbox
+                messageDisplay.scrollTop = messageDisplay.scrollHeight;
             };
 
             ws.onclose = function () {

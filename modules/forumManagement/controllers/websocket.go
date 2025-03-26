@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -30,6 +31,21 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 	clients[conn] = true
 	mutex.Unlock()
 
+	// Retrieve username from session (assuming session token is stored in a cookie)
+	/* 	sessionToken, err := r.Cookie("session_token")
+	   	if err != nil {
+	   		fmt.Println("Error retrieving session token:", err)
+	   		return
+	   	}
+
+	   	// Fetch the username from the database using the session token
+	   	user, _, err := userManagementModels.SelectSession(sessionToken.Value)
+	   	if err != nil {
+	   		fmt.Println("Error retrieving session:", err)
+	   		return
+	   	}
+	   	username := user*/
+
 	for {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
@@ -38,7 +54,12 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 			mutex.Unlock()
 			break
 		}
-		broadcast <- message
+
+		// Add timestamp and username to the message
+		timestamp := time.Now().Format("2006-01-02 15:04:05")
+		formattedMessage := fmt.Sprintf("[%s] %s: %s", timestamp /* username.Name */, "user", string(message))
+
+		broadcast <- []byte(formattedMessage)
 	}
 }
 
