@@ -16,6 +16,20 @@ import (
 
 const publicUrl = "modules/forumManagement/views/"
 
+func IndexHandler(w http.ResponseWriter, r *http.Request) {
+	// Parse template
+	tmpl, err := template.ParseFiles(publicUrl + "index.html")
+	if err != nil {
+		http.Error(w, "Error loading template", http.StatusInternalServerError)
+		return
+	}
+
+	err = tmpl.Execute(w, nil)
+	if err != nil {
+		http.Error(w, "Error rendering template", http.StatusInternalServerError)
+	}
+}
+
 func MainPageHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
@@ -63,16 +77,25 @@ func MainPageHandler(w http.ResponseWriter, r *http.Request) {
 		data_obj_sender.LoginUser = loginUser
 	}
 
+	// jsonData, err := json.Marshal(data_obj_sender)
+	// if err != nil {
+	// 	http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
+	// 	return
+	// }
+
+	// w.Header().Set("Content-Type", "application/json")
+	// w.Write(jsonData) // Manually writing JSON to response
+
+	// w.Header().Set("Content-Type", "application/json")
+	// if err := json.NewEncoder(w).Encode(data_obj_sender); err != nil {
+	// 	http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
+	// }
+
 	// Create a template with a function map
 	tmpl, err := template.New("index.html").Funcs(template.FuncMap{
 		"formatDate": utils.FormatDate, // Register function globally
 	}).ParseFiles(
-		publicUrl+"index.html",
-		publicUrl+"templates/header.html",
-		publicUrl+"templates/navbar.html",
-		publicUrl+"templates/hero.html",
-		publicUrl+"templates/posts.html",
-		publicUrl+"templates/footer.html",
+		publicUrl + "index.html",
 	)
 	if err != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)

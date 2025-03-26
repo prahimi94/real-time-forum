@@ -139,12 +139,12 @@ func main() {
 	// }
 
 	// Setup routes using gorilla mux
-	router := routes.SetupRoutes()
+	routes.SetupRoutes()
 
 	//start the server on port 8080
 	log.Println("Starting server on: http://localhost:8080")
 	log.Println("Status ok: ", http.StatusOK)
-	if err := http.ListenAndServe(":8080", router); err != nil {
+	if err := http.ListenAndServe(":8080", nil); err != nil {
 		log.Fatal(err)
 		os.Exit(1)
 	}
