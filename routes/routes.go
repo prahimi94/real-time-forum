@@ -16,6 +16,9 @@ func SetupRoutes() {
 	http.HandleFunc("/", forumManagementControllers.MainPageHandler)
 	// http.HandleFunc("/", forumManagementControllers.IndexHandler)
 
+	//FOR CHAT
+	http.HandleFunc("/ws", forumManagementControllers.WsHandler)
+
 	// http.HandleFunc("/home/", forumManagementControllers.HomePageHandler)
 	http.HandleFunc("/auth/", userManagementControllers.AuthHandler)
 	http.HandleFunc("/logout/", userManagementControllers.Logout)
