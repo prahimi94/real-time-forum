@@ -1,0 +1,122 @@
+{{define "navbar"}}
+<header>
+<nav class="navbar navbar-expand-lg navbar-light py-10" aria-label="Thirteenth navbar example">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">
+            <img src="/img/logo.png" alt="Forum" class="me-2" style="height: 60px;">
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasNavbar" aria-labelledby="offcanvasNavbarLabel">
+            <div class="offcanvas-header">
+                <h5 class="offcanvas-title" id="offcanvasNavbarLabel"><img src="/img/logo.png" alt="Forum" class="me-2" style="height: 50px;"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+              </div>
+              <div class="offcanvas-body">
+                <ul class="navbar-nav justify-content-end flex-grow-1 pe-3">
+                    {{if .ID}}
+                    <li class="nav-item">
+                        <div class="me-3 text-center">
+                            {{if .ProfilePhoto}}
+                            <img src="/uploads/{{.ProfilePhoto}}" alt="user image" class="rounded w-50 shadow">
+                            {{else}}
+                            <i class="fa-solid fa-user rounded shadow" style="font-size: 4rem;padding: 1rem;"></i>
+                            {{end}}
+                        </div>
+                    </li>
+                    <li class="nav-item text-center pt-3">
+                        <span class="me-3">Welcome, {{.Name}}</span>
+                    </li>
+                    <li class="nav-item text-center pb-2 pt-2">
+                        <span class="me-3">{{.Email}}</span>
+                    </li>
+                    <li class="nav-item text-center pb-3">
+                        <a class="btn btn-outline-secondary" href="/profile"><i class="fa-regular fa-address-card"></i></a>
+                        <a class="btn btn-danger" href="/logout/"><i class="fas fa-power-off"></i></a>
+                    </li>
+                    <li><div class="divaider mb-2"></div></li>
+                    <li class="nav-item">
+                        <form class="d-flex mt-3" role="search" method="get" action="/filterPosts">
+                            <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search" name="post_info">
+                            <button class="btn btn-outline-success" type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
+                        </form>
+                    </li>
+                    <li><div class="divaider mb-2 mt-2"></div></li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/newPost/">Create Post</a>
+                        <!-- <a class="nav-link" href="/newPost/"><i class="fa-solid fa-plus pe-2"></i> Create Post</a> -->
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        My posts
+                        </a>
+                        <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/myCreatedPosts/">My created posts</a></li>
+                        <li><a class="dropdown-item" href="/myLikedPosts/">My liked posts</a></li>
+                        </ul>
+                    </li>
+                    {{else}}
+                    <li class="nav-item">
+                        <a class="btn btn-success singIn-btn" href="/auth/"><i class="fa-solid fa-user pe-2"></i> Sign in</a>
+                    </li>
+                    {{end}}
+                </ul>
+                
+            </div>
+        </div>
+
+      <div class="collapse navbar-collapse" id="navbarsExample11">
+        <div class="navbar-nav col-sm-12 col-lg-10 justify-content-lg-center">
+            <div class="input-p-main">
+                <form class="d-flex" role="search" method="get" action="/filterPosts">
+                    <input class="form-control me-2 input-p" type="search" placeholder="Search" aria-label="Search" name="post_info">
+                    <button class="btn btn-outline-success" type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
+                </form>
+            </div>
+        </div>
+        <div class="d-lg-flex col-sm-12 col-lg-2 justify-content-lg-end">
+            {{if .ID}}
+            <div class="navbar-brand d-flex align-items-center navbar-logined" style="display: grid;grid-auto-flow: column;grid-column-gap: 10px">
+                <a class="nav-link link-un me-3" href="/">Home</a>
+
+                <div class="btn-group">
+                    <button type="button" class="btn btn-secondary dropdown-toggle btn-dropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        My posts
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="/myCreatedPosts/">My created posts</a></li>
+                        <li><a class="dropdown-item" href="/myLikedPosts/">My liked posts</a></li>
+                    </ul>
+                </div>
+    
+                <a class="btn btn-success createPost-btn" href="/newPost/"><i class="fa-solid fa-plus pe-2"></i> Create Post</a>
+
+                <div class="btn-group">
+                    <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-user rounded-circle" style="width: 43px; height: 43px;padding: 0;overflow: hidden;" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="rounded-circle">
+                            {{if .ProfilePhoto}}
+                            <img src="/uploads/{{.ProfilePhoto}}" alt="user image" style="width: 43px; height: 43px; cursor: pointer;" >
+                            {{else}}
+                            <i class="fa-solid fa-user"></i>
+                            {{end}}
+                        </div>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="/profile"><i class="fa-regular fa-address-card me-2"></i> Profile</a></li>
+                        <li><a class="dropdown-item" href="/logout/"><i class="fas fa-power-off me-2"></i> Log Out</a></li>
+                    </ul>
+                </div>
+            </div>
+            {{else}}
+            <a class="btn btn-success singIn-btn" href="/auth/"><i class="fa-solid fa-user pe-2"></i> Sign in</a>
+            {{end}}
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+{{end}}

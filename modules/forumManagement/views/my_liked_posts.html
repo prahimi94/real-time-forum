@@ -1,0 +1,56 @@
+{{template "header"}}
+<body>
+    
+    {{template "navbar" .LoginUser}}
+    
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="col-left-userLogin">
+                    <ul class="left-menu">
+                        <li><a class="left-item" href="/"><i class="fa-solid fa-house"></i> Home</a></li>
+                        <li><a class="left-item" href="/myCreatedPosts/"><i class="fa-solid fa-bullhorn"></i> My created posts</a></li>
+                        <li><a class="left-item" href="/myLikedPosts/"><i class="fa-solid fa-heart"></i> My liked posts</a></li>
+                    </ul>
+
+                    <p class="section-title-list">Categories</p>
+                    <ul class="left-menu">
+                        {{range .Categories}}
+                            <li>
+                                <a class="left-item" href="/posts/{{.Name}}">
+                                    <i class="fa-solid fa-caret-right" style="padding: 0.75rem 1rem; color: #0BC4D5;"></i>{{.Name}}
+                                </a>
+                            </li>
+                        {{end}}
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h3 class="mb-5 text-center">My Liked Posts</h3>
+                {{template "posts" .}}
+            </div>
+            <div class="col-md-3">
+                <div class="col-right-userLogin">
+                    <div class="text-center w-100 py-4">
+                        {{if .LoginUser.ProfilePhoto}}
+                        <img src="/uploads/{{.LoginUser.ProfilePhoto}}" alt="user image" class="rounded w-50 shadow">
+                        {{else}}
+                        <i class="fa-solid fa-user rounded shadow" style="font-size: 4rem;padding: 1rem;"></i>
+                        {{end}}
+                    </div>
+                    <div class="text-center title-username">{{.LoginUser.Name}}</div>
+                    <div class="info-box-username">
+                        <p>{{.LoginUser.Email}}</p>
+                        <div class="info-box-logout">
+                            <p style="margin-bottom: 1rem;"><a href="/profile"><i class="fa-regular fa-address-card me-2"></i> Profile</a></p>
+                            <a href="/logout/"><i class="fas fa-power-off me-2" style="color: #c44343;"></i> Log Out</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {{template "footer"}}
+</body>
+</html>

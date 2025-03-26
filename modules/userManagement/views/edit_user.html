@@ -1,0 +1,39 @@
+{{template "header"}}
+<body>
+    
+    {{template "navbar" .LoginUser}}
+    
+
+    <div class="container-form">
+
+        <div class="mb-3" style="text-align: center;">
+            <div class="rounded-circle">
+                {{if .LoginUser.ProfilePhoto}}
+                <img src="/uploads/{{.LoginUser.ProfilePhoto}}" alt="user image" class="rounded-circle center" style="width: 150px; height: 150px; cursor: pointer;" >
+                {{else}}
+                <i class="fa-solid fa-user" style="font-size: 3rem;"></i>
+                {{end}}
+            </div>
+        </div>
+
+        <h4 class="text-center mb-4">Edit Profile</h4>
+        
+        <form enctype="multipart/form-data" action="/updateUser" method="post">
+            
+            <div class="mb-3">
+                <label for="name">Name:</label>
+                <input type="text" class="form-control" placeholder="Name" name="name" value="{{.LoginUser.Name}}">
+            </div>
+            <label for="profile_photo">Profile photo:</label>
+            <div class="mb-3 text-center border p-3 rounded">
+                <p class="text-muted">Attach an image (optional)</p>
+                <input type="file" class="form-control" name="profile_photo">
+            </div>
+            <button type="submit" class="btn btn-success w-100">Edit user</button>
+        </form>
+    </div>
+
+    {{template "footer"}}
+
+</body>
+</html>

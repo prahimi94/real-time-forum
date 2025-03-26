@@ -1,0 +1,63 @@
+{{template "header"}}
+<body>
+    
+    {{if .LoginUser.ID }}
+
+    {{template "navbar" .LoginUser}}
+    
+    {{else}}
+
+    {{template "navbar"}}
+
+    {{end}}
+
+    {{ $selectedCategoryName := .SelectedCategoryName }}
+    
+    <div class="container mt-5">
+
+        <div class="row pb-5">
+            <div class="col-md-12">
+                <ul class="breadcrumb">
+                    <li>
+                        <a class="nav-link text-secondary" href="/"><i class="fa-solid fa-arrow-left"></i> <span>Back to posts</span></a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <h3 class="search-title">Posts with category: {{$selectedCategoryName}}</h3>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="search-box-content">
+                    <form class="d-flex mt-3 mt-lg-0" method="get" action="/filterPosts">
+                        <input type="text" name="post_info" class="form-control me-2" placeholder="Search">
+                        <button type="submit" class="btn btn-outline-success">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="categories mb-3">
+                    {{range .Categories}}
+                        {{if eq $selectedCategoryName .Name}}
+                            <a class="btn btn-warning ctg-active" href="/posts/{{.Name}}">{{.Name}}</a>
+                        {{else}}
+                            <a class="btn btn-outline-secondary" href="/posts/{{.Name}}">{{.Name}}</a>
+                        {{end}}
+                    {{end}}
+                </div>
+            </div>
+        </div>
+
+        <div class="divaider mb-4"></div>
+        
+        {{template "posts" .}}
+    </div>
+    
+    {{template "footer"}}
+</body>
+</html>
