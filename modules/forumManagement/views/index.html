@@ -87,14 +87,16 @@
                                 </li>
                                 <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                        My posts
-                                    </a>
-                                    <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" href="/myCreatedPosts/">My created posts</a></li>
-                                        <li><a class="dropdown-item" href="/myLikedPosts/">My liked posts</a></li>
-                                    </ul>
-                                </li>
-                                <!-- { else}}
+
+                                My posts
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="javascript:fetchMyCreatedPosts()">My created posts</a></li>
+                                    <li><a class="dropdown-item" href="javascript:fetchMyLikedPosts()">My liked posts</a></li>
+                                </ul>
+                            </li>
+                            <!-- { else}}
+
                             <li class="nav-item">
                                 <a class="btn btn-success singIn-btn" href="/auth/"><i class="fa-solid fa-user pe-2"></i> Sign in</a>
                             </li>
@@ -121,14 +123,15 @@
 
                                 <div class="btn-group">
                             <button type="button" class="btn btn-secondary dropdown-toggle btn-dropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                        My posts
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end">
-                                        <li><a class="dropdown-item" href="/myCreatedPosts/">My created posts</a></li>
-                                        <li><a class="dropdown-item" href="/myLikedPosts/">My liked posts</a></li>
-                                    </ul>
-                                </div>
 
+                                My posts
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="javascript:fetchMyCreatedPosts()">My created posts</a></li>
+                                <li><a class="dropdown-item" href="javascript:fetchMyLikedPosts()">My liked posts</a></li>
+                            </ul>
+                        </div>
+            
                         <a class="btn btn-success createPost-btn" href="/newPost/"><i class="fa-solid fa-plus pe-2"></i> Create Post</a>
 
                                 <div class="btn-group">
@@ -157,31 +160,60 @@
             </nav>
         </header>
 
-        <div class="container">
-            <div class="row">
-                <div class="col-md-3">
-                    <div class="col-left-userLogin">
-                        <ul class="left-menu">
-                            <li><a class="left-item" href="/"><i class="fa-solid fa-house"></i> Home</a></li>
-                        <li><a class="left-item" href="/myCreatedPosts/"><i class="fa-solid fa-bullhorn"></i> My created posts</a></li>
-                        <li><a class="left-item" href="/myLikedPosts/"><i class="fa-solid fa-heart"></i> My liked posts</a></li>
-                        </ul>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="col-left-userLogin">
+                    <ul class="left-menu">
+                        <li><a class="left-item" href="/"><i class="fa-solid fa-house"></i> Home</a></li>
+                        <li><a class="left-item" href="javascript:fetchMyCreatedPosts()"><i class="fa-solid fa-bullhorn"></i> My created posts</a></li>
+                        <li><a class="left-item" href="javascript:fetchMyLikedPosts()"><i class="fa-solid fa-heart"></i> My liked posts</a></li>
+                    </ul>
 
                         <p class="section-title-list">Categories</p>
                         <!-- this part is filled in script.js by fetchCategories -->
                         <ul class="left-menu" id="categoriesContainer"></ul>
                     </div>
-                </div>
-                <div class="col-md-6">
-                    <!-- {template "posts" .}} -->
-                    <!-- this part is filled in script.js by fetchPosts -->
-                    <div class="row" id="postsContainer"></div>
-                </div>
-                <div class="col-md-3">
-                    <div class="col-right-userLogin">
-                        <div class="text-center w-100 py-4">
-                            <!-- todo bring profilePhoto -->
-                            <!-- { if .LoginUser.ProfilePhoto}}
+               
+            </div>
+            <div class="col-md-6">
+                <!-- {template "posts" .}} -->
+                <!-- this part is filled in script.js by fetchPosts -->
+                <div class="row" id="newPostContainer">
+                    <div class="col-sm-12 col-md-12 mb-3">
+                        <div class="post-card">
+                            <h4 class="text-center mb-4">New Post</h4>
+                            <form enctype="multipart/form-data" action="/submitPost" method="post">
+                                <div class="mb-3">                
+                                    <div class="mt-3">
+                                        <select id="categories" name="categories" required class="form-control multiSelect" multiple="multiple" data-placeholder="Select categories">
+                                            ${categoryOptions}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <input type="text" class="form-control" placeholder="Title" required name="title">
+                                </div>
+                                <div class="mb-3">
+                                    <textarea class="form-control" placeholder="Description" required rows="4" name="description"></textarea>
+                                </div>
+                                <div class="mb-3 text-center border p-3 rounded">
+                                    <p class="text-muted">Attach an image or video (optional)</p>
+                                    <input type="file" class="form-control" name="postFiles" multiple>
+                                </div>
+                                <button type="submit" class="btn btn-success w-100">Post</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>                
+                <div class="row" id="postsContainer"></div>                
+            </div>
+            <div class="col-md-3">
+                <div class="col-right-userLogin">
+                    <div class="text-center w-100 py-4">
+                        <!-- todo bring profilePhoto -->
+                        <!-- { if .LoginUser.ProfilePhoto}}
                         <img src="/uploads/ { .LoginUser.ProfilePhoto}}" alt="user image" class="rounded w-50 shadow">
                         { else}} -->
                             <i class="fa-solid fa-user rounded shadow" style="font-size: 4rem;padding: 1rem;"></i>
