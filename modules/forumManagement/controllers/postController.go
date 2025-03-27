@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"fmt"
 	"forum/middlewares"
 	errorManagementControllers "forum/modules/errorManagement/controllers"
 	"forum/modules/forumManagement/models"
@@ -133,26 +134,31 @@ func ReadPostsByCategory(w http.ResponseWriter, r *http.Request) {
 		data_obj_sender.LoginUser = loginUser
 	}
 
-	// Create a template with a function map
-	tmpl, err := template.New("category_posts.html").Funcs(template.FuncMap{
-		"formatDate": utils.FormatDate, // Register function globally
-	}).ParseFiles(
-		publicUrl+"category_posts.html",
-		publicUrl+"templates/header.html",
-		publicUrl+"templates/navbar.html",
-		publicUrl+"templates/hero.html",
-		publicUrl+"templates/posts.html",
-		publicUrl+"templates/footer.html",
-	)
-	if err != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
+	// // Create a template with a function map
+	// tmpl, err := template.New("category_posts.html").Funcs(template.FuncMap{
+	// 	"formatDate": utils.FormatDate, // Register function globally
+	// }).ParseFiles(
+	// 	publicUrl+"category_posts.html",
+	// 	publicUrl+"templates/header.html",
+	// 	publicUrl+"templates/navbar.html",
+	// 	publicUrl+"templates/hero.html",
+	// 	publicUrl+"templates/posts.html",
+	// 	publicUrl+"templates/footer.html",
+	// )
+	// if err != nil {
+	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+	// 	return
+	// }
 
-	err = tmpl.Execute(w, data_obj_sender)
-	if err != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
+	// err = tmpl.Execute(w, data_obj_sender)
+	// if err != nil {
+	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+	// 	return
+	// }
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(data_obj_sender); err != nil {
+		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
 	}
 }
 
@@ -225,14 +231,25 @@ func ReadMyCreatedPosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.URL.Path != "/myCreatedPosts/" {
-		// If the URL is not exactly "/myCreatedPosts/", respond with 404
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.NotFoundError)
+	// if r.URL.Path != "/myCreatedPosts/" {
+	// 	// If the URL is not exactly "/myCreatedPosts/", respond with 404
+	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.NotFoundError)
+	// 	return
+	// }
+
+	// loginUser, ok := r.Context().Value(middlewares.UserContextKey).(userManagementModels.User)
+	// if !ok {
+	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
+	// 	return
+	// }
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
+	if checkLoginError != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
-
-	loginUser, ok := r.Context().Value(middlewares.UserContextKey).(userManagementModels.User)
-	if !ok {
+	if loginStatus {
+		fmt.Println("logged in userid is: ", loginUser.ID)
+	} else {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
 		return
 	}
@@ -259,26 +276,31 @@ func ReadMyCreatedPosts(w http.ResponseWriter, r *http.Request) {
 		Categories: categories,
 	}
 
-	// Create a template with a function map
-	tmpl, err := template.New("my_created_posts.html").Funcs(template.FuncMap{
-		"formatDate": utils.FormatDate, // Register function globally
-	}).ParseFiles(
-		publicUrl+"my_created_posts.html",
-		publicUrl+"templates/header.html",
-		publicUrl+"templates/navbar.html",
-		publicUrl+"templates/hero.html",
-		publicUrl+"templates/posts.html",
-		publicUrl+"templates/footer.html",
-	)
-	if err != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
+	// // Create a template with a function map
+	// tmpl, err := template.New("my_created_posts.html").Funcs(template.FuncMap{
+	// 	"formatDate": utils.FormatDate, // Register function globally
+	// }).ParseFiles(
+	// 	publicUrl+"my_created_posts.html",
+	// 	publicUrl+"templates/header.html",
+	// 	publicUrl+"templates/navbar.html",
+	// 	publicUrl+"templates/hero.html",
+	// 	publicUrl+"templates/posts.html",
+	// 	publicUrl+"templates/footer.html",
+	// )
+	// if err != nil {
+	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+	// 	return
+	// }
 
-	err = tmpl.Execute(w, data_obj_sender)
-	if err != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
+	// err = tmpl.Execute(w, data_obj_sender)
+	// if err != nil {
+	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+	// 	return
+	// }
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(data_obj_sender); err != nil {
+		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
 	}
 }
 
@@ -288,11 +310,11 @@ func ReadMyLikedPosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.URL.Path != "/myLikedPosts/" {
-		// If the URL is not exactly "/myLikedPosts/", respond with 404
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.NotFoundError)
-		return
-	}
+	// if r.URL.Path != "/myLikedPosts/" {
+	// 	// If the URL is not exactly "/myLikedPosts/", respond with 404
+	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.NotFoundError)
+	// 	return
+	// }
 
 	loginUser, ok := r.Context().Value(middlewares.UserContextKey).(userManagementModels.User)
 	if !ok {
@@ -322,26 +344,31 @@ func ReadMyLikedPosts(w http.ResponseWriter, r *http.Request) {
 		Categories: categories,
 	}
 
-	// Create a template with a function map
-	tmpl, err := template.New("my_liked_posts.html").Funcs(template.FuncMap{
-		"formatDate": utils.FormatDate, // Register function globally
-	}).ParseFiles(
-		publicUrl+"my_liked_posts.html",
-		publicUrl+"templates/header.html",
-		publicUrl+"templates/navbar.html",
-		publicUrl+"templates/hero.html",
-		publicUrl+"templates/posts.html",
-		publicUrl+"templates/footer.html",
-	)
-	if err != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
+	// // Create a template with a function map
+	// tmpl, err := template.New("my_liked_posts.html").Funcs(template.FuncMap{
+	// 	"formatDate": utils.FormatDate, // Register function globally
+	// }).ParseFiles(
+	// 	publicUrl+"my_liked_posts.html",
+	// 	publicUrl+"templates/header.html",
+	// 	publicUrl+"templates/navbar.html",
+	// 	publicUrl+"templates/hero.html",
+	// 	publicUrl+"templates/posts.html",
+	// 	publicUrl+"templates/footer.html",
+	// )
+	// if err != nil {
+	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+	// 	return
+	// }
 
-	err = tmpl.Execute(w, data_obj_sender)
-	if err != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
+	// err = tmpl.Execute(w, data_obj_sender)
+	// if err != nil {
+	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+	// 	return
+	// }
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(data_obj_sender); err != nil {
+		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
 	}
 }
 
