@@ -3,9 +3,11 @@ package models
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"forum/db"
 	"forum/utils"
 	"log"
+	"net/http"
 	"time"
 )
 
@@ -136,4 +138,24 @@ func IsSessionActive(sessionToken string) (bool, error) {
 	}
 
 	return false, nil // Session is expired
+}
+
+func GetUserIDFromCookie(r *http.Request) (int, string, error) {
+	// Retrieve user data (e.g., from session or database)
+	sessionToken, err := r.Cookie("session_token")
+	if err != nil {
+		// Return an error if the session token is not found
+		return 0, "", fmt.Errorf("error retrieving session token: %v", err)
+	}
+
+	// Fetch the user from the database using the session token
+	user, _, err := SelectSession(sessionToken.Value)
+	if err != nil {
+		return 0, "", fmt.Errorf("error retrieving session: %v", err)
+	}
+
+	myUserID := user.ID         // Get the ID field from the User struct
+	myUsername := user.Username // Use the Username field from the User struct
+
+	return myUserID, myUsername, nil
 }

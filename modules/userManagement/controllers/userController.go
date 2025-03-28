@@ -1,9 +1,11 @@
 package controller
 
 import (
+	"encoding/json"
 	"fmt"
 	errorManagementControllers "forum/modules/errorManagement/controllers"
 	"forum/modules/userManagement/models"
+	userManagementModels "forum/modules/userManagement/models"
 	"forum/utils"
 	"net/http"
 	"strings"
@@ -380,4 +382,15 @@ func SetCookie(w http.ResponseWriter, sessionToken string, expiresAt time.Time) 
 		HttpOnly: true,
 		Secure:   false,
 	})
+}
+
+func GetOnlineUsers(w http.ResponseWriter, r *http.Request) {
+	usernames, err := userManagementModels.GetActiveSessionUsernames(r)
+	if err != nil {
+		http.Error(w, "Failed to fetch online users", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(usernames)
 }

@@ -21,7 +21,9 @@ func SetupRoutes() {
 
 	//FOR SESSIONS
 	http.HandleFunc("/api/check-session", userManagementControllers.CheckSessionHandler)
-	//http.HandleFunc("/api/online-users", userManagementModels.GetOnlineUsersHandler)
+
+	//TO GET ONLINE USERS
+	http.HandleFunc("/api/online-users", userManagementControllers.GetOnlineUsers)
 
 	// http.HandleFunc("/home/", forumManagementControllers.HomePageHandler)
 	http.HandleFunc("/auth/", userManagementControllers.AuthHandler)

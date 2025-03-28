@@ -1,84 +1,89 @@
 package models
 
 import (
-	"database/sql"
-	"encoding/json"
+	"fmt"
 	"forum/db"
-	errorManagementControllers "forum/modules/errorManagement/controllers"
 	"net/http"
+	"strings"
 )
 
-func GetOnlineUsers() ([]User, error) {
+func GetActiveSessionUserIDs(r *http.Request) ([]int, error) {
 	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
-	query := `
-        SELECT 
-            u.id, 
-            u.name, 
-            u.username, 
-            u.email, 
-            IFNULL(u.profile_photo, '') as profile_photo,
-            MAX(m.created_at) as last_message_time
-        FROM sessions s
-        INNER JOIN users u ON s.user_id = u.id
-        LEFT JOIN messages m ON u.id = m.user_id
-        WHERE s.expires_at > CURRENT_TIMESTAMP
-        GROUP BY u.id
-        ORDER BY 
-            CASE 
-                WHEN MAX(m.created_at) IS NOT NULL THEN 1 
-                ELSE 2 
-            END, 
-            MAX(m.created_at) DESC, 
-            u.username ASC
-    `
-
-	rows, err := db.Query(query)
+	// Query to get unique user_ids with active sessions
+	rows, err := db.Query(`SELECT DISTINCT user_id FROM sessions WHERE expires_at > CURRENT_TIMESTAMP`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var onlineUsers []User
+	// Get myUserID from session token
+	myUserID, _, err := GetUserIDFromCookie(r)
+	if err != nil {
+		return nil, err
+	}
+
+	var userIds []int
 	for rows.Next() {
-		var user User
-		var lastMessageTime sql.NullTime // To handle NULL values for users without messages
-		err := rows.Scan(&user.ID, &user.Name, &user.Username, &user.Email, &user.ProfilePhoto, &lastMessageTime)
-		if err != nil {
+		var userId int
+		if err := rows.Scan(&userId); err != nil {
 			return nil, err
 		}
-		onlineUsers = append(onlineUsers, user)
+		// Do not include myUserID
+		if userId == myUserID {
+			continue
+		}
+		userIds = append(userIds, userId)
 	}
 
-	return onlineUsers, nil
+	if len(userIds) == 0 {
+		// No active sessions found
+		return []int{}, nil
+	}
+
+	return userIds, nil
 }
 
-func GetOnlineUsersHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
-		return
-	}
+func GetActiveSessionUsernames(r *http.Request) ([]string, error) {
+	db := db.OpenDBConnection()
+	defer db.Close() // Close the connection after the function finishes
 
-	onlineUsers, err := GetOnlineUsers()
+	userIds, err := GetActiveSessionUserIDs(r)
 	if err != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
+		return nil, err
 	}
 
-	// Check if no users are online
-	if len(onlineUsers) == 0 {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{
-			"message": "No users are online now.",
-		})
-		return
+	if len(userIds) == 0 {
+		// No active user IDs found
+		return []string{}, nil
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(onlineUsers)
+	// Dynamically construct the query with the correct number of placeholders
+	placeholders := strings.Repeat("?,", len(userIds))
+	placeholders = strings.TrimSuffix(placeholders, ",") // Remove the trailing comma
+	query := fmt.Sprintf(`SELECT username FROM users WHERE id IN (%s)`, placeholders)
+
+	// Convert userIds to a slice of interface{} for the query arguments
+	args := make([]interface{}, len(userIds))
+	for i, id := range userIds {
+		args[i] = id
+	}
+
+	userRows, err := db.Query(query, args...)
 	if err != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
+		return nil, err
 	}
+	defer userRows.Close()
+
+	var usernames []string
+	for userRows.Next() {
+		var username string
+		if err := userRows.Scan(&username); err != nil {
+			return nil, err
+		}
+		usernames = append(usernames, username)
+	}
+
+	return usernames, nil
 }

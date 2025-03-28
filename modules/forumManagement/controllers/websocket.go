@@ -32,21 +32,8 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 	clients[conn] = true
 	mutex.Unlock()
 
-	// Retrieve user data (e.g., from session or database)
-	sessionToken, err := r.Cookie("session_token")
-	if err != nil {
-		fmt.Println("Error retrieving session token:", err)
-		return
-	}
-
-	// Fetch the user from the database using the session token
-	user, _, err := userManagementModels.SelectSession(sessionToken.Value)
-	if err != nil {
-		fmt.Println("Error retrieving session:", err)
-		return
-	}
-
-	username := user.Username // Use the Username field from the User struct
+	// Get myUsername from userid related to session token
+	_, myUsername, err := userManagementModels.GetUserIDFromCookie(r)
 
 	for {
 		_, message, err := conn.ReadMessage()
@@ -59,7 +46,7 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 
 		// Add timestamp and username to the message
 		timestamp := time.Now().Format("2006-01-02 15:04:05")
-		formattedMessage := fmt.Sprintf("[%s] %s: %s", timestamp, username, string(message))
+		formattedMessage := fmt.Sprintf("[%s] %s: %s", timestamp, myUsername, string(message))
 
 		broadcast <- []byte(formattedMessage)
 	}

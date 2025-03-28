@@ -388,6 +388,36 @@
             // Call the function to check session status
             checkSessionActive();
         });
+
+        /* FETCH ONLINE USERS when the page loads - should be moved */
+
+        async function fetchOnlineUsers() {
+            try {
+                const response = await fetch('/api/online-users'); // Adjust the endpoint path if necessary
+                if (!response.ok) {
+                    console.error("Failed to fetch online users");
+                    return;
+                }
+
+                const usernames = await response.json();
+                const onlineUsersList = document.getElementById("online-users-list");
+
+                // Clear the current list
+                onlineUsersList.textContent = "";
+
+                // Populate the list with usernames
+                usernames.forEach(username => {
+                    const li = document.createElement("li");
+                    li.textContent = username;
+                    onlineUsersList.appendChild(li);
+                });
+            } catch (error) {
+                console.error("Error fetching online users:", error);
+            }
+        }
+
+        // Fetch online users when the page loads
+        document.addEventListener("DOMContentLoaded", fetchOnlineUsers);
     </script>
 
 </body>
