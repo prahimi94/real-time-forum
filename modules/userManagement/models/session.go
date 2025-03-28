@@ -111,3 +111,29 @@ func DeleteSession(sessionToken string) error {
 	return nil
 
 }
+
+// IsSessionActive checks if a session is active based on the session token
+func IsSessionActive(sessionToken string) (bool, error) {
+	db := db.OpenDBConnection()
+	defer db.Close() // Close the connection after the function finishes
+
+	var expiresAt time.Time
+
+	// Query the database for the session's expiration time
+	err := db.QueryRow(`SELECT expires_at FROM sessions WHERE session_token = ?`, sessionToken).Scan(&expiresAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// No session found for the given token
+			return false, errors.New("session not found")
+		}
+		// Handle other database errors
+		return false, err
+	}
+
+	// Check if the session is still active
+	if expiresAt.After(time.Now()) {
+		return true, nil // Session is active
+	}
+
+	return false, nil // Session is expired
+}
