@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	userManagementModels "forum/modules/userManagement/models"
 	"net/http"
 	"sync"
 	"time"
@@ -30,29 +31,22 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 	mutex.Lock()
 	clients[conn] = true
 	mutex.Unlock()
-	/*
-		// Retrieve session token from cookie
-		sessionToken, err := r.Cookie("session_token")
-		if err != nil {
-			fmt.Println("Error retrieving session token:", err)
-			return
-		}
 
-		// Fetch the user_id from the session table using the session token
-		user, _, err := userManagementModels.SelectSession(sessionToken.Value)
-		if err != nil {
-			fmt.Println("Error retrieving session:", err)
-			return
-		}
+	// Retrieve user data (e.g., from session or database)
+	sessionToken, err := r.Cookie("session_token")
+	if err != nil {
+		fmt.Println("Error retrieving session token:", err)
+		return
+	}
 
-		// Fetch the username from the users table using the user_id
-		userID, err := userManagementModels.ReadUserByID(user.ID)
-		if err != nil {
-			fmt.Println("Error retrieving user:", err)
-			return
-		}
+	// Fetch the user from the database using the session token
+	user, _, err := userManagementModels.SelectSession(sessionToken.Value)
+	if err != nil {
+		fmt.Println("Error retrieving session:", err)
+		return
+	}
 
-		username := userID.Username */
+	username := user.Username // Use the Username field from the User struct
 
 	for {
 		_, message, err := conn.ReadMessage()
@@ -65,7 +59,7 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 
 		// Add timestamp and username to the message
 		timestamp := time.Now().Format("2006-01-02 15:04:05")
-		formattedMessage := fmt.Sprintf("[%s] %s: %s", timestamp /* username */, "user", string(message))
+		formattedMessage := fmt.Sprintf("[%s] %s: %s", timestamp, username, string(message))
 
 		broadcast <- []byte(formattedMessage)
 	}
