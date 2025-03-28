@@ -37,16 +37,16 @@ async function fetchCategories() {
 async function fetchPosts() {
     const response = await fetch('/api/posts/');
     posts = await response.json();
+    console.log(posts);
 
     fillPostsInHtml(posts);
 }
 
 async function fetchMyCreatedPosts() {
-    console.log('fetchMyCreatedPosts');
     const response = await fetch('/api/myCreatedPosts/');
     posts = await response.json();
 
-    fillPostsInHtml(posts);
+    fillPostsInHtml(posts.Posts);
 }
 
 async function fetchMyLikedPosts() {
@@ -54,7 +54,8 @@ async function fetchMyLikedPosts() {
     const response = await fetch('/api/myLikedPosts/');
     posts = await response.json();
 
-    fillPostsInHtml(posts);
+    console.log(posts);
+    fillPostsInHtml(posts.Posts);
 }
 
 function fillPostsInHtml(posts) {
@@ -62,6 +63,10 @@ function fillPostsInHtml(posts) {
     const postsContainer = document.getElementById('postsContainer');
     postsContainer.innerHTML = "";
     
+    if (posts === null || posts.length === 0) {
+        postsContainer.innerHTML = '<div class="col-md-12 text-center">No posts found!</div>';
+        return;
+    }
     posts.forEach(post => {
         const postImage = post.user.profile_photo 
             ? `<img class="bd-placeholder-img flex-shrink-0 me-2 rounded" role="img" src="/uploads/${post.user.profile_photo}" width="45" height="45"/>`
