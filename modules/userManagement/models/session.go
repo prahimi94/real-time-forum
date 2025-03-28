@@ -31,8 +31,8 @@ func InsertSession(session *Session) (*Session, error) {
 		session.SessionToken = uuidSessionTokenid
 	}
 
-	// Set session expiration time
-	session.ExpiresAt = time.Now().Add(12 * time.Hour)
+	// Set session expiration time to 1 hour
+	session.ExpiresAt = time.Now().Add(1 * time.Hour)
 
 	// Start a transaction for atomicity
 	tx, err := db.Begin()
