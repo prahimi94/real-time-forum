@@ -184,8 +184,6 @@ function showAuthenticatedContainer() {
                         </div>
                         <div class="offcanvas-body">
                             <ul class="navbar-nav justify-content-end flex-grow-1 pe-3">
-                                <!-- todo check logging in -->
-                                <!-- {if .ID}} -->
                                 <li class="nav-item">
                                     <div class="me-3 text-center">
                                         <!-- todo bring profilePhoto -->
@@ -210,14 +208,14 @@ function showAuthenticatedContainer() {
                                 <a class="btn btn-outline-secondary" href="/profile"><i class="fa-regular fa-address-card"></i></a>
                                     <a class="btn btn-danger" href="/logout/"><i class="fas fa-power-off"></i></a>
                                 </li>
-                            <li><div class="divaider mb-2"></div></li>
-                                <li class="nav-item">
-                                    <form class="d-flex mt-3" role="search" method="get" action="/filterPosts">
-                                    <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search" name="post_info">
-                                    <button class="btn btn-outline-success" type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
-                                    </form>
-                                </li>
-                            <li><div class="divaider mb-2 mt-2"></div></li>
+                                <li><div class="divaider mb-2"></div></li>
+                                    <li class="nav-item">
+                                        <form class="d-flex mt-3" role="search" method="get" action="/filterPosts">
+                                        <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search" name="post_info">
+                                        <button class="btn btn-outline-success" type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
+                                        </form>
+                                    </li>
+                                <li><div class="divaider mb-2 mt-2"></div></li>
                                 <li class="nav-item">
                                     <a class="nav-link" href="/">Home</a>
                                 </li>
@@ -235,12 +233,6 @@ function showAuthenticatedContainer() {
                                     <li><a class="dropdown-item" href="javascript:fetchMyLikedPosts()">My liked posts</a></li>
                                 </ul>
                             </li>
-                            <!-- { else}}
-
-                            <li class="nav-item">
-                                <a class="btn btn-success singIn-btn" href="/auth/"><i class="fa-solid fa-user pe-2"></i> Sign in</a>
-                            </li>
-                            { end}} -->
                             </ul>
 
                         </div>
@@ -257,43 +249,38 @@ function showAuthenticatedContainer() {
                         </div>
                         <div class="d-lg-flex col-sm-12 col-lg-2 justify-content-lg-end">
                             <!-- todo check signIn -->
-                            <!-- { if .ID}} -->
-                    <div class="navbar-brand d-flex align-items-center navbar-logined" style="display: grid;grid-auto-flow: column;grid-column-gap: 10px">
+                            <div class="navbar-brand d-flex align-items-center navbar-logined" style="display: grid;grid-auto-flow: column;grid-column-gap: 10px">
                                 <a class="nav-link link-un me-3" href="/">Home</a>
 
                                 <div class="btn-group">
-                            <button type="button" class="btn btn-secondary dropdown-toggle btn-dropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <button type="button" class="btn btn-secondary dropdown-toggle btn-dropdown" data-bs-toggle="dropdown" aria-expanded="false">
 
-                                My posts
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="javascript:fetchMyCreatedPosts()">My created posts</a></li>
-                                <li><a class="dropdown-item" href="javascript:fetchMyLikedPosts()">My liked posts</a></li>
-                            </ul>
-                        </div>
-            
-                        <a class="btn btn-success createPost-btn" href="/newPost/"><i class="fa-solid fa-plus pe-2"></i> Create Post</a>
+                                        My posts
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li><a class="dropdown-item" href="javascript:fetchMyCreatedPosts()">My created posts</a></li>
+                                        <li><a class="dropdown-item" href="javascript:fetchMyLikedPosts()">My liked posts</a></li>
+                                    </ul>
+                                </div>
+                                <a class="btn btn-success createPost-btn" href="/newPost/"><i class="fa-solid fa-plus pe-2"></i> Create Post</a>
 
                                 <div class="btn-group">
-                            <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-user rounded-circle" style="width: 43px; height: 43px;padding: 0;overflow: hidden;" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-user rounded-circle" style="width: 43px; height: 43px;padding: 0;overflow: hidden;" data-bs-toggle="dropdown" aria-expanded="false">
                                         <div class="rounded-circle">
                                             <!-- todo bring .ProfilePhoto -->
                                             <!-- { if .ProfilePhoto}}
-                                    <img src="/uploads/{ .ProfilePhoto}}" alt="user image" style="width: 43px; height: 43px; cursor: pointer;" >
-                                    { else}} -->
+                                             <img src="/uploads/{ .ProfilePhoto}}" alt="user image" style="width: 43px; height: 43px; cursor: pointer;" >
+                                            { else}} -->
                                             <i class="fa-solid fa-user"></i>
                                             <!-- { end}} -->
                                         </div>
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="/profile"><i class="fa-regular fa-address-card me-2"></i> Profile</a></li>
-                                <li><a class="dropdown-item" href="/logout/"><i class="fas fa-power-off me-2"></i> Log Out</a></li>
+                                        <li><a class="dropdown-item" href="/profile"><i class="fa-regular fa-address-card me-2"></i> Profile</a></li>
+                                        <li><a class="dropdown-item" href="/logout/"><i class="fas fa-power-off me-2"></i> Log Out</a></li>
                                     </ul>
                                 </div>
                             </div>
-                            <!-- { else}}
-                    <a class="btn btn-success singIn-btn" href="/auth/"><i class="fa-solid fa-user pe-2"></i> Sign in</a>
-                    { end}} -->
                         </div>
                     </div>
                 </div>
@@ -357,9 +344,9 @@ function showAuthenticatedContainer() {
                 <div class="col-md-3">
                     <div class="col-right-userLogin">
                         <div class="text-center w-100 py-4">
-                            <!-- todo bring profilePhoto -->
-                            <!-- { if .LoginUser.ProfilePhoto}}
-                        <img src="/uploads/ { .LoginUser.ProfilePhoto}}" alt="user image" class="rounded w-50 shadow">
+                        <!-- todo bring profilePhoto -->
+                        <!-- { if .LoginUser.ProfilePhoto}}
+                            <img src="/uploads/ { .LoginUser.ProfilePhoto}}" alt="user image" class="rounded w-50 shadow">
                         { else}} -->
                             <i class="fa-solid fa-user rounded shadow" style="font-size: 4rem;padding: 1rem;"></i>
                             <!-- { end}} -->
