@@ -316,8 +316,19 @@ func ReadMyLikedPosts(w http.ResponseWriter, r *http.Request) {
 	// 	return
 	// }
 
-	loginUser, ok := r.Context().Value(middlewares.UserContextKey).(userManagementModels.User)
-	if !ok {
+	// loginUser, ok := r.Context().Value(middlewares.UserContextKey).(userManagementModels.User)
+	// if !ok {
+	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
+	// 	return
+	// }
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
+	if checkLoginError != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+	if loginStatus {
+		fmt.Println("logged in userid is: ", loginUser.ID)
+	} else {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
 		return
 	}
