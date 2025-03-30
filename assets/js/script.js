@@ -415,7 +415,7 @@ async function fetchCategories() {
 
     // laod categories in select for new post
     const selectCategoriesContainer = document.getElementById('categories');
-    const categoryOptions = categories.map(category => 
+    const categoryOptions = categories.map(category =>
         `<option value="${category.id}">${category.name}</option>`
     ).join('');
     selectCategoriesContainer.innerHTML = categoryOptions;
@@ -446,21 +446,21 @@ function fillPostsInHtml(posts) {
     // load posts for home page
     const postsContainer = document.getElementById('postsContainer');
     postsContainer.innerHTML = "";
-    
+
     if (posts === null || posts.length === 0) {
         postsContainer.innerHTML = '<div class="col-md-12 text-center">No posts found!</div>';
         return;
     }
     posts.forEach(post => {
-        const postImage = post.user.profile_photo 
+        const postImage = post.user.profile_photo
             ? `<img class="bd-placeholder-img flex-shrink-0 me-2 rounded" role="img" src="/uploads/${post.user.profile_photo}" width="45" height="45"/>`
             : `<div style="padding: 7px;"><i class="fa-solid fa-user" style="font-size: 2rem;"></i></div>`;
 
-        const postCategories = post.categories.map(category => 
+        const postCategories = post.categories.map(category =>
             `<span class="badge-p text-dark"><a href="/posts/${category.name}">${category.name}</a></span>`
         ).join('');
 
-        const postFiles = post.post_files.map(post_file => 
+        const postFiles = post.post_files.map(post_file =>
             `<div class="col-md-12">
                 <img src="/uploads/${post_file.file_uploaded_name}" alt="post image" class="rounded mb-1" style="width: 100%; max-height: 400px;">
             </div>`
@@ -496,16 +496,91 @@ function fillPostsInHtml(posts) {
     });
 }
 
-addEventListener("DOMContentLoaded", function () {
+async function fetchOnlineUsers() {
+    try {
+        const response = await fetch('/api/online-users');
+        if (!response.ok) {
+            console.error("Failed to fetch online users");
+            return;
+        }
+
+        const usernames = await response.json();
+        const onlineUsersList = document.getElementById("online-users-list");
+
+        // Clear the current list
+        onlineUsersList.textContent = "";
+
+        if (usernames.length === 0) {
+            onlineUsersList.textContent = 'No other users online';
+            return;
+        }
+
+        // Populate the list with usernames
+        usernames.forEach(username => {
+            const li = document.createElement("li");
+            li.textContent = username;
+            onlineUsersList.appendChild(li);
+        });
+    } catch (error) {
+        console.error("Error fetching online users:", error);
+    }
+}
+
+/* WEBSOCKET FOR CHAT */
+let ws;
+
+function connect() {
+    ws = new WebSocket("ws://localhost:8080/ws");
+
+    ws.onopen = function () {
+        console.log("Connected to WebSocket server");
+    };
+
+    ws.onmessage = function (event) {
+        let messageDisplay = document.getElementById("messages");
+        let message = event.data;
+
+        // Append the message to the chatbox
+        let messageElement = document.createElement("p");
+        messageElement.textContent = message;
+        messageDisplay.appendChild(messageElement);
+
+        // Scroll to the bottom of the chatbox
+        messageDisplay.scrollTop = messageDisplay.scrollHeight;
+    };
+
+    ws.onclose = function () {
+        console.log("WebSocket connection closed, retrying...");
+        setTimeout(connect, 1000); // Reconnect after 1 second
+    };
+
+    ws.onerror = function (error) {
+        console.error("WebSocket error:", error);
+    };
+}
+
+function sendMessage() {
+    let input = document.getElementById("messageInput");
+    let message = input.value;
+    ws.send(message);
+    input.value = "";
+}
+/* END OF WEBSOCKET FOR CHAT */
+
+addEventListener("DOMContentLoaded", async function () {
     console.log('DOMContentLoaded');
-    
+
     // Call the function to check session status
-    const sessionActive = checkSessionActive();
+    const sessionActive = await checkSessionActive();
     if (sessionActive) {
+        console.log('Session is active');
         fetchCategories();
         fetchPosts();
+        connect();
+        fetchOnlineUsers();
         showAuthenticatedContainer();
     } else {
+        console.log('Session is NOT active');
         showNotAuthenticatedContainer();
     }
 });
