@@ -580,7 +580,7 @@ addEventListener("DOMContentLoaded", async function () {
         fetchOnlineUsers();
         showAuthenticatedContainer();
     } else {
-        console.log('Session is NOT active');
+        console.log('Session is NOT active'); 
         showNotAuthenticatedContainer();
     }
 });
