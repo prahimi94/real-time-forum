@@ -6,9 +6,13 @@ DROP TABLE IF EXISTS "comments";
 DROP TABLE IF EXISTS "post_categories";
 DROP TABLE IF EXISTS "posts";
 DROP TABLE IF EXISTS "categories";
-DROP TABLE IF EXISTS  "sessions";
+DROP TABLE IF EXISTS "sessions";
 DROP TABLE IF EXISTS "friends";
 DROP TABLE IF EXISTS "users";
+DROP TABLE IF EXISTS "chats";
+DROP TABLE IF EXISTS "chat_members";
+DROP TABLE IF EXISTS "messages";
+DROP TABLE IF EXISTS "message_files";
 
 CREATE TABLE "categories" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -23,6 +27,7 @@ CREATE TABLE "categories" (
   FOREIGN KEY (created_by) REFERENCES "users" ("id"),
   FOREIGN KEY (updated_by) REFERENCES "users" ("id")
 );
+
 CREATE TABLE "users" (
   "id" INTEGER PRIMARY KEY,
   "uuid" TEXT NOT NULL UNIQUE,
@@ -38,6 +43,7 @@ CREATE TABLE "users" (
   "updated_by" INTEGER,
   FOREIGN KEY (updated_by) REFERENCES "users" ("id")
 );
+
 CREATE TABLE "friends" (
   "id" INTEGER PRIMARY KEY,
   "first_user_id" INTEGER NOT NULL,
@@ -52,6 +58,7 @@ CREATE TABLE "friends" (
   FOREIGN KEY (created_by) REFERENCES "users" ("id"),
   FOREIGN KEY (updated_by) REFERENCES "users" ("id")
 );
+
 CREATE TABLE "posts" (
   "id" INTEGER PRIMARY KEY,
   "uuid" TEXT NOT NULL UNIQUE,
@@ -144,6 +151,47 @@ CREATE TABLE "sessions" (
   "expires_at" DATETIME NOT NULL,
   "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES "users" ("id")
+);
+
+CREATE TABLE "chats" (
+  "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+  "uuid" TEXT NOT NULL UNIQUE,
+  "type" TEXT NOT NULL CHECK ("type" IN ('private', 'group')) DEFAULT 'private',
+  "status" TEXT NOT NULL CHECK ("status" IN ('enable', 'disable', 'delete')) DEFAULT 'enable',
+  "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (created_by) REFERENCES "users" ("id")
+);
+
+CREATE TABLE "chat_members" (
+  "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+  "status" TEXT NOT NULL CHECK ("status" IN ('enable', 'disable', 'delete')) DEFAULT 'enable',
+  "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (chat_id) REFERENCES "chats" ("id") ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES "users" ("id")
+);
+
+CREATE TABLE "messages" (
+  "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+  "content" TEXT NOT NULL,
+  "status" TEXT NOT NULL CHECK ("status" IN ('enable', 'disable', 'delete')) DEFAULT 'enable',
+  "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" DATETIME,
+  FOREIGN KEY (created_by) REFERENCES "users" ("id"),
+  FOREIGN KEY (updated_by) REFERENCES "users" ("id"),
+  FOREIGN KEY (chat_id) REFERENCES "chats" ("id") ON DELETE CASCADE
+);
+
+CREATE TABLE "message_files" (
+  "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+  "file_uploaded_name" TEXT NOT NULL,
+  "file_real_name" TEXT NOT NULL,
+  "status" TEXT NOT NULL CHECK ("status" IN ('enable', 'delete')) DEFAULT 'enable',
+  "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" DATETIME,
+  FOREIGN KEY (chat_id) REFERENCES "chats" ("id") ON DELETE CASCADE,
+  FOREIGN KEY (message_id) REFERENCES "messages" ("id") ON DELETE CASCADE,
+  FOREIGN KEY (created_by) REFERENCES "users" ("id"),
+  FOREIGN KEY (updated_by) REFERENCES "users" ("id")
 );
 
 INSERT INTO users(uuid, type,name,username,password, email)

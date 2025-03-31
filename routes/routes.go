@@ -18,6 +18,11 @@ func SetupRoutes() {
 
 	//FOR CHAT
 	http.HandleFunc("/ws", forumManagementControllers.WsHandler)
+	http.HandleFunc("/api/chat/", forumManagementControllers.GetChatMessagesHandler)            // GET: Retrieve messages for a user
+	http.HandleFunc("/api/chats/create", forumManagementControllers.CreateChatHandler)          // POST: Create a new chat
+	http.HandleFunc("/api/messages", forumManagementControllers.GetMessagesHandler)             // GET: Retrieve messages for a chat
+	http.HandleFunc("/api/messages/add", forumManagementControllers.AddMessageHandler)          // POST: Add a new message
+	http.HandleFunc("/api/message-files/add", forumManagementControllers.AddMessageFileHandler) // POST: Add a file to a message
 
 	//FOR SESSIONS
 	http.HandleFunc("/api/check-session", userManagementControllers.CheckSessionHandler)

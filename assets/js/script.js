@@ -14,26 +14,14 @@ async function checkSessionActive() {
             const data = await response.json();
             if (data.active) {
                 return true; // Session is active
-                // If session is active, show the elements
-                // document.getElementById("online-users").style.display = "block";
-                // document.querySelector(".chatbox").style.display = "block";
             } else {
                 return false; // Session is not active
-                // If session is NOT active, hide the elements
-                // document.getElementById("online-users").style.display = "none";
-                // document.querySelector(".chatbox").style.display = "none";
             }
         } else {
             return false; // Session is not active
-            // If session is NOT active, hide the elements
-            // document.getElementById("online-users").style.display = "none";
-            // document.querySelector(".chatbox").style.display = "none";
         }
     } catch (error) {
         return false; // Session is not active
-        // If session is NOT active, hide the elements
-        // document.getElementById("online-users").style.display = "none";
-        // document.querySelector(".chatbox").style.display = "none";
     }
 }
 
@@ -372,7 +360,7 @@ function showAuthenticatedContainer() {
                             <ul id="online-users-list"></ul>
                         </div>
                         <!-- CHATBOX -->
-                        <div class="chatbox">
+                        <div class="chatbox" style="display: none;">
                             <h1>CHATBOX</h1>
                             <div id="messages"></div>
                             <div>
@@ -518,7 +506,11 @@ async function fetchOnlineUsers() {
         // Populate the list with usernames
         usernames.forEach(username => {
             const li = document.createElement("li");
-            li.textContent = username;
+            const link = document.createElement("a");
+            link.href = "javascript:void(0);"; // Prevent default navigation
+            link.textContent = username;
+            link.addEventListener("click", () => openChatWithUser(username)); // Add click event
+            li.appendChild(link);
             onlineUsersList.appendChild(li);
         });
     } catch (error) {
@@ -528,6 +520,7 @@ async function fetchOnlineUsers() {
 
 /* WEBSOCKET FOR CHAT */
 let ws;
+let activeChatUser = null; // Track the currently active chat user
 
 function connect() {
     ws = new WebSocket("ws://localhost:8080/ws");
@@ -538,15 +531,18 @@ function connect() {
 
     ws.onmessage = function (event) {
         let messageDisplay = document.getElementById("messages");
-        let message = event.data;
+        let message = JSON.parse(event.data);
 
+        // Check if the message is for the active chat user
+        if (message.sender === activeChatUser || message.receiver === activeChatUser) {
         // Append the message to the chatbox
         let messageElement = document.createElement("p");
-        messageElement.textContent = message;
+        messageElement.textContent = `${message.sender}: ${message.text}`;
         messageDisplay.appendChild(messageElement);
 
         // Scroll to the bottom of the chatbox
         messageDisplay.scrollTop = messageDisplay.scrollHeight;
+        }
     };
 
     ws.onclose = function () {
@@ -560,10 +556,66 @@ function connect() {
 }
 
 function sendMessage() {
-    let input = document.getElementById("messageInput");
-    let message = input.value;
-    ws.send(message);
+    const input = document.getElementById("messageInput");
+    const message = input.value;
+
+    if (!activeChatUser) {
+        alert("Please select a user to chat with.");
+        return;
+    }
+
+    // Send the message as a JSON object
+    const messagePayload = {
+        receiver: activeChatUser,
+        text: message,
+    };
+
+    ws.send(JSON.stringify(messagePayload));
     input.value = "";
+
+    // Optionally, display the sent message in the chatbox
+    const messageDisplay = document.getElementById("messages");
+    const messageElement = document.createElement("p");
+    messageElement.textContent = `You: ${message}`;
+    messageDisplay.appendChild(messageElement);
+
+    // Scroll to the bottom of the chatbox
+    messageDisplay.scrollTop = messageDisplay.scrollHeight;
+}
+function openChatWithUser(username) {
+    activeChatUser = username; // Set the active chat user
+    const chatbox = document.querySelector(".chatbox");
+    const messages = document.getElementById("messages");
+
+    // Show the chatbox
+    chatbox.style.display = "block";
+
+    // Clear previous messages and set a header for the chat
+    messages.innerHTML = `<h3>Chat with ${username}</h3>`;
+
+    // Load previous messages with this user from the server
+    fetch(`/api/chat/${username}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Failed to fetch chat messages: ${response.status} ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(chatMessages => {
+            if (!chatMessages || chatMessages.length === 0) {
+                messages.innerHTML = `<p>Type a message to start chatting with ${username}!</p>`;
+                return;
+            }
+            chatMessages.forEach(message => {
+                const messageElement = document.createElement("p");
+                messageElement.textContent = `${message.sender}: ${message.text}`;
+                messages.appendChild(messageElement);
+            });
+
+            // Scroll to the bottom of the chatbox
+            messages.scrollTop = messages.scrollHeight;
+        })
+        .catch(error => console.error("Error fetching chat messages:", error));
 }
 /* END OF WEBSOCKET FOR CHAT */
 
