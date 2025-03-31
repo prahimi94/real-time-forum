@@ -1,5 +1,6 @@
 let categories = [];
 let posts = [];
+let toast;
 
 // Function to check if the session is active
 async function checkSessionActive() {
@@ -262,7 +263,6 @@ function showAuthenticatedContainer() {
                                         <li><a class="dropdown-item" href="javascript:fetchMyLikedPosts()">My liked posts</a></li>
                                     </ul>
                                 </div>
-                                <a class="btn btn-success createPost-btn" href="/newPost/"><i class="fa-solid fa-plus pe-2"></i> Create Post</a>
 
                                 <div class="btn-group">
                                     <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-user rounded-circle" style="width: 43px; height: 43px;padding: 0;overflow: hidden;" data-bs-toggle="dropdown" aria-expanded="false">
@@ -313,7 +313,7 @@ function showAuthenticatedContainer() {
                         <div class="col-sm-12 col-md-12 mb-3">
                             <div class="post-card">
                                 <h4 class="text-center mb-4">New Post</h4>
-                                <form enctype="multipart/form-data" action="/submitPost" method="post">
+                                <form id="newPostForm" enctype="multipart/form-data">
                                     <div class="mb-3">
                                         <div class="mt-3">
                                             <select id="categories" name="categories" required
@@ -334,7 +334,7 @@ function showAuthenticatedContainer() {
                                         <p class="text-muted">Attach an image or video (optional)</p>
                                         <input type="file" class="form-control" name="postFiles" multiple>
                                     </div>
-                                    <button type="submit" class="btn btn-success w-100">Post</button>
+                                    <button onclick="submitPost()" class="btn btn-success w-100">Post</button>
                                 </form>
                             </div>
                         </div>
@@ -386,11 +386,15 @@ function showAuthenticatedContainer() {
             </div>
         </div>
     `;
+
+
+    $('.multiSelect').select2();
 }
 
 async function fetchCategories() {
     const response = await fetch('/api/categories/');
-    categories = await response.json();
+    res = await response.json();
+    categories = res.data
 
     // load categories in sidebar
     const categoriesContainer = document.getElementById('categoriesContainer');
@@ -423,21 +427,26 @@ async function fetchCategories() {
 
 async function fetchPosts() {
     const response = await fetch('/api/posts/');
-    posts = await response.json();
+    res = await response.json();
+    posts = res.data
 
     fillPostsInHtml(posts);
 }
 
 async function fetchMyCreatedPosts() {
     const response = await fetch('/api/myCreatedPosts/');
-    posts = await response.json();
+    res = await response.json();
+    showToast(res);
+    posts = res.data
 
     fillPostsInHtml(posts.Posts);
 }
 
 async function fetchMyLikedPosts() {
     const response = await fetch('/api/myLikedPosts/');
-    posts = await response.json();
+    res = await response.json();
+    showToast(res);
+    posts = res.data
 
     fillPostsInHtml(posts.Posts);
 }
@@ -526,6 +535,24 @@ async function fetchOnlineUsers() {
     }
 }
 
+async function submitPost() {
+    const form = document.getElementById('newPostForm');
+    form.addEventListener('submit', (event) => {
+        event.preventDefault();
+    });
+    
+    const response = await fetch('/api/submitPost', {
+        method: 'POST',
+        body: new FormData(form),
+    });
+    res = await response.json();
+    showToast(res);
+
+    form.reset();
+    $('.multiSelect').val(null).trigger('change');
+    fetchPosts();
+}
+
 /* WEBSOCKET FOR CHAT */
 let ws;
 
@@ -567,8 +594,26 @@ function sendMessage() {
 }
 /* END OF WEBSOCKET FOR CHAT */
 
+function showToast(res) {
+    const toastLiveExample = document.getElementById('liveToast')
+
+    var toastBody = toastLiveExample.querySelector('.toast-body')
+    if(res.success) {
+        toastLiveExample.classList.remove('bg-danger')
+        toastLiveExample.classList.add('bg-success')
+    } else {
+        toastLiveExample.classList.remove('bg-success')
+        toastLiveExample.classList.add('bg-danger')
+    }
+    toastBody.innerHTML = res.message
+    toast.show()
+}
+
 addEventListener("DOMContentLoaded", async function () {
     console.log('DOMContentLoaded');
+
+    const toastLiveExample = document.getElementById('liveToast')
+    toast = new bootstrap.Toast(toastLiveExample)
 
     // Call the function to check session status
     const sessionActive = await checkSessionActive();
