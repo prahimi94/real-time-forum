@@ -3,9 +3,11 @@ package models
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"forum/db"
 	"forum/utils"
 	"log"
+	"net/http"
 	"time"
 )
 
@@ -31,8 +33,8 @@ func InsertSession(session *Session) (*Session, error) {
 		session.SessionToken = uuidSessionTokenid
 	}
 
-	// Set session expiration time
-	session.ExpiresAt = time.Now().Add(12 * time.Hour)
+	// Set session expiration time to 1 hour
+	session.ExpiresAt = time.Now().Add(1 * time.Hour)
 
 	// Start a transaction for atomicity
 	tx, err := db.Begin()
@@ -110,4 +112,50 @@ func DeleteSession(sessionToken string) error {
 
 	return nil
 
+}
+
+// IsSessionActive checks if a session is active based on the session token
+func IsSessionActive(sessionToken string) (bool, error) {
+	db := db.OpenDBConnection()
+	defer db.Close() // Close the connection after the function finishes
+
+	var expiresAt time.Time
+
+	// Query the database for the session's expiration time
+	err := db.QueryRow(`SELECT expires_at FROM sessions WHERE session_token = ?`, sessionToken).Scan(&expiresAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// No session found for the given token
+			return false, errors.New("session not found")
+		}
+		// Handle other database errors
+		return false, err
+	}
+
+	// Check if the session is still active
+	if expiresAt.After(time.Now()) {
+		return true, nil // Session is active
+	}
+
+	return false, nil // Session is expired
+}
+
+func GetUserIDFromCookie(r *http.Request) (int, string, error) {
+	// Retrieve user data (e.g., from session or database)
+	sessionToken, err := r.Cookie("session_token")
+	if err != nil {
+		// Return an error if the session token is not found
+		return 0, "", fmt.Errorf("error retrieving session token: %v", err)
+	}
+
+	// Fetch the user from the database using the session token
+	user, _, err := SelectSession(sessionToken.Value)
+	if err != nil {
+		return 0, "", fmt.Errorf("error retrieving session: %v", err)
+	}
+
+	myUserID := user.ID         // Get the ID field from the User struct
+	myUsername := user.Username // Use the Username field from the User struct
+
+	return myUserID, myUsername, nil
 }

@@ -16,6 +16,15 @@ func SetupRoutes() {
 	http.HandleFunc("/", forumManagementControllers.MainPageHandler)
 	// http.HandleFunc("/", forumManagementControllers.IndexHandler)
 
+	//FOR CHAT
+	http.HandleFunc("/ws", forumManagementControllers.WsHandler)
+
+	//FOR SESSIONS
+	http.HandleFunc("/api/check-session", userManagementControllers.CheckSessionHandler)
+
+	//TO GET ONLINE USERS
+	http.HandleFunc("/api/online-users", userManagementControllers.GetOnlineUsers)
+
 	// http.HandleFunc("/home/", forumManagementControllers.HomePageHandler)
 	http.HandleFunc("/auth/", userManagementControllers.AuthHandler)
 	http.HandleFunc("/logout/", userManagementControllers.Logout)
@@ -24,11 +33,11 @@ func SetupRoutes() {
 
 	http.HandleFunc("/api/categories/", forumManagementControllers.ReadAllCategories)
 	http.HandleFunc("/api/posts/", forumManagementControllers.ReadAllPosts)
+	// http.HandleFunc("/newPost/", forumManagementControllers.CreatePost)
+	http.HandleFunc("/api/submitPost", forumManagementControllers.SubmitPost) /*post method*/
+	http.HandleFunc("/api/myCreatedPosts/", forumManagementControllers.ReadMyCreatedPosts)
+	http.HandleFunc("/api/myLikedPosts/", forumManagementControllers.ReadMyLikedPosts)
 
-	http.HandleFunc("/newPost/", forumManagementControllers.CreatePost)
-	http.HandleFunc("/submitPost", forumManagementControllers.SubmitPost) /*post method*/
-	http.HandleFunc("/myCreatedPosts/", forumManagementControllers.ReadMyCreatedPosts)
-	http.HandleFunc("/myLikedPosts/", forumManagementControllers.ReadMyLikedPosts)
 	// router.HandleFunc("/post/{id}", forumManagementControllers.ReadPost).Methods("GET")
 	http.HandleFunc("/post/", forumManagementControllers.ReadPost)
 	// router.HandleFunc("/posts/{categoryName}", forumManagementControllers.ReadPostsByCategory).Methods("GET")

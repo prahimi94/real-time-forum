@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
+
+	forumManagementControllers "forum/modules/forumManagement/controllers"
 )
 
 var IsTest = false
@@ -140,6 +142,9 @@ func main() {
 
 	// Setup routes using gorilla mux
 	routes.SetupRoutes()
+
+	//FOR CHAT
+	go forumManagementControllers.HandleMessages()
 
 	//start the server on port 8080
 	log.Println("Starting server on: http://localhost:8080")
