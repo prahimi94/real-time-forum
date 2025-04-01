@@ -32,11 +32,15 @@ CREATE TABLE "users" (
   "id" INTEGER PRIMARY KEY,
   "uuid" TEXT NOT NULL UNIQUE,
   "type" TEXT NOT NULL CHECK ("type" IN ('admin', 'normal_user', 'test_user')) DEFAULT 'normal_user',
-  "name" TEXT,
+  "first_name" TEXT NOT NULL,
+  "last_name" TEXT NOT NULL,
+  "nickname" TEXT NOT NULL,
   "username" TEXT UNIQUE,
-  "email" TEXT UNIQUE,
+  "age" INTEGER NOT NULL,
+  "gender" TEXT NOT NULL CHECK ("gender" IN ('male', 'female', 'unspecified')) DEFAULT 'unspecified',
+  "email" TEXT UNIQUE NOT NULL,
   "profile_photo" TEXT NULL,
-  "password" TEXT,
+  "password" TEXT NOT NULL,
   "status" TEXT NOT NULL CHECK ("status" IN ('enable', 'disable', 'delete')) DEFAULT 'enable',
   "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "updated_at" DATETIME,
@@ -159,11 +163,14 @@ CREATE TABLE "chats" (
   "type" TEXT NOT NULL CHECK ("type" IN ('private', 'group')) DEFAULT 'private',
   "status" TEXT NOT NULL CHECK ("status" IN ('enable', 'disable', 'delete')) DEFAULT 'enable',
   "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "created_by" INTEGER NOT NULL,
   FOREIGN KEY (created_by) REFERENCES "users" ("id")
 );
 
 CREATE TABLE "chat_members" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+  "chat_id" INTEGER NOT NULL,
+  "user_id" INTEGER NOT NULL,
   "status" TEXT NOT NULL CHECK ("status" IN ('enable', 'disable', 'delete')) DEFAULT 'enable',
   "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (chat_id) REFERENCES "chats" ("id") ON DELETE CASCADE,
@@ -172,10 +179,13 @@ CREATE TABLE "chat_members" (
 
 CREATE TABLE "messages" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+  "chat_id" INTEGER NOT NULL,
   "content" TEXT NOT NULL,
   "status" TEXT NOT NULL CHECK ("status" IN ('enable', 'disable', 'delete')) DEFAULT 'enable',
   "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "created_by" INTEGER NOT NULL,
   "updated_at" DATETIME,
+  "updated_by" INTEGER,
   FOREIGN KEY (created_by) REFERENCES "users" ("id"),
   FOREIGN KEY (updated_by) REFERENCES "users" ("id"),
   FOREIGN KEY (chat_id) REFERENCES "chats" ("id") ON DELETE CASCADE
@@ -183,19 +193,23 @@ CREATE TABLE "messages" (
 
 CREATE TABLE "message_files" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+  "chat_id" INTEGER NOT NULL,
+  "message_id" INTEGER NOT NULL,
   "file_uploaded_name" TEXT NOT NULL,
   "file_real_name" TEXT NOT NULL,
   "status" TEXT NOT NULL CHECK ("status" IN ('enable', 'delete')) DEFAULT 'enable',
   "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "created_by" INTEGER NOT NULL,
   "updated_at" DATETIME,
+  "updated_by" INTEGER,
   FOREIGN KEY (chat_id) REFERENCES "chats" ("id") ON DELETE CASCADE,
   FOREIGN KEY (message_id) REFERENCES "messages" ("id") ON DELETE CASCADE,
   FOREIGN KEY (created_by) REFERENCES "users" ("id"),
   FOREIGN KEY (updated_by) REFERENCES "users" ("id")
 );
 
-INSERT INTO users(uuid, type,name,username,password, email)
-VALUES ('67921bdd-8458-800e-b9d4-065a43242cd3', 'admin', 'admin', 'admin', '$2a$10$DN.v/NkfQjmPaTTz15x0E.u8l2R9.HnB12DpDVMdRPeQZDfMwovSa', 'admin@admin');
+INSERT INTO users(uuid, type, first_name, last_name, nickname, username, age, password, email)
+VALUES ('67921bdd-8458-800e-b9d4-065a43242cd3', 'admin', 'admin', 'admin', 'admin', 'admin', 0, '$2a$10$DN.v/NkfQjmPaTTz15x0E.u8l2R9.HnB12DpDVMdRPeQZDfMwovSa', 'admin@admin');
 
 INSERT INTO categories (name, color, icon, created_by)
 VALUES ('Art', '#5340C8', '<i class="fa-solid fa-palette"></i>', 1), ('Science', '#7F59FE', '<i class="fa-solid fa-atom"></i>', 1),
