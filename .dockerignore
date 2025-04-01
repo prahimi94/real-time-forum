@@ -1,7 +1,0 @@
-# Ignore the Go binary that will be built
-forum
-
-# Ignore temporary files or directories
-.DS_Store
-.git
-.gitignore
