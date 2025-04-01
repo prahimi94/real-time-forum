@@ -1,6 +1,7 @@
 let categories = [];
 let posts = [];
 let toast;
+let loggedInUser;
 
 // Function to check if the session is active
 async function checkSessionActive() {
@@ -12,8 +13,11 @@ async function checkSessionActive() {
         });
 
         if (response.ok) {
-            const data = await response.json();
-            if (data.active) {
+            const res = await response.json();
+            const data = res.data;
+            if (data.Active) {
+                loggedInUser = data.LoginUser;
+                console.log(loggedInUser);
                 return true; // Session is active
                 // If session is active, show the elements
                 // document.getElementById("online-users").style.display = "block";
@@ -168,6 +172,15 @@ function showAuthContainer() {
 
 function showAuthenticatedContainer() {
     const forumContainer = document.getElementsByTagName('main')[0];
+    const loggedInUserProfilePhoto = loggedInUser.profile_photo
+        ? `<img src="/uploads/${loggedInUser.profile_photo}" alt="user image" class="rounded w-50 shadow">`
+        : `<i class="fa-solid fa-user rounded shadow" style="font-size: 4rem;padding: 1rem;"></i>`;
+
+    const loggedInUserProfilePhoto2 = loggedInUser.profile_photo
+        ? `<img src="/uploads/${loggedInUser.profile_photo}" alt="user image" style="width: 43px; height: 43px; cursor: pointer;" >`
+        : `<i class="fa-solid fa-user"></i>`;
+
+
     forumContainer.innerHTML = `
     <header>
             <nav class="navbar navbar-expand-lg navbar-light py-10" aria-label="Thirteenth navbar example">
@@ -187,23 +200,17 @@ function showAuthenticatedContainer() {
                             <ul class="navbar-nav justify-content-end flex-grow-1 pe-3">
                                 <li class="nav-item">
                                     <div class="me-3 text-center">
-                                        <!-- todo bring profilePhoto -->
-                                        <!-- { if .ProfilePhoto}}
-                                    <img src="/uploads/{ .ProfilePhoto}}" alt="user image" class="rounded w-50 shadow">
-                                    { else}} -->
-                                    <i class="fa-solid fa-user rounded shadow" style="font-size: 4rem;padding: 1rem;"></i>
-                                        <!-- { end}} -->
+                                        ${loggedInUserProfilePhoto}
                                     </div>
                                 </li>
                                 <li class="nav-item text-center pt-3">
+                                    
                                     <!-- todo bring name -->
-                                    <!-- <span class="me-3">Welcome, { .Name }}</span> -->
-                                    <span class="me-3">Welcome</span>
+                                    <span class="me-3">Welcome, ${loggedInUser.name}</span>
                                 </li>
                                 <li class="nav-item text-center pb-2 pt-2">
                                     <!-- todo bring email -->
-                                    <!-- <span class="me-3">{ .Email }}</span> -->
-                                    <span class="me-3">Email</span>
+                                    span class="me-3">${loggedInUser.email}</span>
                                 </li>
                                 <li class="nav-item text-center pb-3">
                                 <a class="btn btn-outline-secondary" href="/profile"><i class="fa-regular fa-address-card"></i></a>
@@ -249,7 +256,6 @@ function showAuthenticatedContainer() {
                             </div>
                         </div>
                         <div class="d-lg-flex col-sm-12 col-lg-2 justify-content-lg-end">
-                            <!-- todo check signIn -->
                             <div class="navbar-brand d-flex align-items-center navbar-logined" style="display: grid;grid-auto-flow: column;grid-column-gap: 10px">
                                 <a class="nav-link link-un me-3" href="/">Home</a>
 
@@ -267,12 +273,7 @@ function showAuthenticatedContainer() {
                                 <div class="btn-group">
                                     <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-user rounded-circle" style="width: 43px; height: 43px;padding: 0;overflow: hidden;" data-bs-toggle="dropdown" aria-expanded="false">
                                         <div class="rounded-circle">
-                                            <!-- todo bring .ProfilePhoto -->
-                                            <!-- { if .ProfilePhoto}}
-                                             <img src="/uploads/{ .ProfilePhoto}}" alt="user image" style="width: 43px; height: 43px; cursor: pointer;" >
-                                            { else}} -->
-                                            <i class="fa-solid fa-user"></i>
-                                            <!-- { end}} -->
+                                            ${loggedInUserProfilePhoto2}
                                         </div>
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-end">
@@ -344,20 +345,11 @@ function showAuthenticatedContainer() {
                 <div class="col-md-3">
                     <div class="col-right-userLogin">
                         <div class="text-center w-100 py-4">
-                        <!-- todo bring profilePhoto -->
-                        <!-- { if .LoginUser.ProfilePhoto}}
-                            <img src="/uploads/ { .LoginUser.ProfilePhoto}}" alt="user image" class="rounded w-50 shadow">
-                        { else}} -->
-                            <i class="fa-solid fa-user rounded shadow" style="font-size: 4rem;padding: 1rem;"></i>
-                            <!-- { end}} -->
+                        ${loggedInUserProfilePhoto}
                         </div>
-                        <!-- todo bring LoginUser.Name -->
-                        <!-- <div class="text-center title-username"> { .LoginUser.Name}}</div> -->
-                        <div class="text-center title-username">.LoginUser.Name</div>
+                        <div class="text-center title-username">${loggedInUser.name}</div>
                         <div class="info-box-username">
-                            <!-- todo bring .LoginUser.Email -->
-                            <!-- <p> { .LoginUser.Email}}</p> -->
-                            <p>.LoginUser.Email</p>
+                            <p> ${loggedInUser.email}</p>
                             <div class="info-box-logout">
                                 <p style="margin-bottom: 1rem;"><a href="/profile"><i
                                             class="fa-regular fa-address-card me-2"></i> Profile</a></p>
