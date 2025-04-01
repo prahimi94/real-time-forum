@@ -1,3 +1,4 @@
+-- copy of forum.db previous version
 PRAGMA foreign_keys=OFF;
 BEGIN TRANSACTION;
 CREATE TABLE IF NOT EXISTS "categories" (

@@ -157,6 +157,7 @@ CREATE TABLE "sessions" (
   FOREIGN KEY (user_id) REFERENCES "users" ("id")
 );
 
+-- new tables for chat
 CREATE TABLE "chats" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
   "uuid" TEXT NOT NULL UNIQUE,
