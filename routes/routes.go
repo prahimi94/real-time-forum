@@ -43,7 +43,7 @@ func SetupRoutes() {
 	// router.HandleFunc("/posts/{categoryName}", forumManagementControllers.ReadPostsByCategory).Methods("GET")
 	http.HandleFunc("/posts/", forumManagementControllers.ReadPostsByCategory)
 	http.HandleFunc("/filterPosts/", forumManagementControllers.FilterPosts)
-	http.HandleFunc("/likePost", forumManagementControllers.LikePost)
+	http.HandleFunc("/api/likePost", forumManagementControllers.LikePost)
 	// protectedRoutes.HandleFunc("/editPost/{id}", forumManagementControllers.EditPost).Methods("GET")
 	http.HandleFunc("/editPost/", forumManagementControllers.EditPost)
 	http.HandleFunc("/updatePost", forumManagementControllers.UpdatePost) /*post method*/

@@ -203,13 +203,10 @@ function showAuthenticatedContainer() {
                                         ${loggedInUserProfilePhoto}
                                     </div>
                                 </li>
-                                <li class="nav-item text-center pt-3">
-                                    
-                                    <!-- todo bring name -->
+                                <li class="nav-item text-center pt-3">                                    
                                     <span class="me-3">Welcome, ${loggedInUser.name}</span>
                                 </li>
                                 <li class="nav-item text-center pb-2 pt-2">
-                                    <!-- todo bring email -->
                                     span class="me-3">${loggedInUser.email}</span>
                                 </li>
                                 <li class="nav-item text-center pb-3">
@@ -453,6 +450,7 @@ function fillPostsInHtml(posts) {
         return;
     }
     posts.forEach(post => {
+        console.log(post);
         const postImage = post.user.profile_photo
             ? `<img class="bd-placeholder-img flex-shrink-0 me-2 rounded" role="img" src="/uploads/${post.user.profile_photo}" width="45" height="45"/>`
             : `<div style="padding: 7px;"><i class="fa-solid fa-user" style="font-size: 2rem;"></i></div>`;
@@ -468,6 +466,57 @@ function fillPostsInHtml(posts) {
         ).join('');
 
         const formattedDateTime = post.created_at.replace('T', ' ').replace('Z', '');
+
+        const postButtons = 
+        post.user_id === loggedInUser.id
+                        ?`
+                        <div style="float: right;margin-top: -16px;">
+                            <div class="row py-3 ms-2">
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fa-solid fa-ellipsis"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end" style="border: 1px solid #c2c2c270;">
+                                        <li>
+                                            <a id="editPost" class="dropdown-item" href="/editPost/${post.uuid}"><i class="fas fa-edit me-2"></i>Edit Post</a>
+                                        </li>
+                                        <li>
+                                            <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#deletPostModal"><i class="fa-solid fa-trash me-2"></i>Delete Post</button> 
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal fade" id="deletPostModal" tabindex="-1" aria-labelledby="deletPostModalLabel" aria-hidden="true">
+                            <form action="/deletePost" method="post">
+                                <input type="hidden" name="id" value="${post.id}">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-danger text-white">
+                                            <h5 class="modal-title" id="deletPostModalLabel">Confirm Deletion</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p class="mb-0">Are you sure you want to delete this item? This action cannot be undone.</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-danger" id="confirmDelete">Delete</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        `
+                        : ``;
+
+        const postLikeElement = post.liked
+            ? `<button onclick="likePost(${post.id},'like')" value="like" name="like_post" class="btn btn-success"><i class="fa-solid fa-thumbs-up"></i></button>`
+            : `<button onclick="likePost(${post.id},'like')" value="like" name="like_post" class="btn btn-outline-success"><i class="fa-regular fa-thumbs-up"></i></button>`;
+
+        const postDislikeElement = post.disliked
+            ? `<button onclick="likePost(${post.id},'dislike')" value="dislike" name="dislike_post" value="dislike" class="btn btn-danger"><i class="fa-solid fa-thumbs-down"></i></button>`
+            : `<button onclick="likePost(${post.id},'dislike')" value="dislike" name="dislike_post" value="dislike" class="btn btn-outline-danger"><i class="fa-regular fa-thumbs-down"></i></button>`;
 
         const postHTML = `
             <div class="col-sm-12 col-md-12 mb-3">
@@ -489,6 +538,28 @@ function fillPostsInHtml(posts) {
                     </div>
                     <p class="post-description">${post.description}</p>
                     ${postFiles}
+                    
+
+                    <div class="mt-4">
+                        <span class="like-inpost"><i class="fa-solid fa-thumbs-up"></i> ${post.number_of_likes}</span>
+                        <span class="dislike-inpost"><i class="fa-solid fa-thumbs-down"></i> ${post.number_of_dislikes}</span>
+                        
+                        ${postButtons}
+
+                        <div style="float: right;margin-top: -16px;">
+                            <div class="row py-3">
+                                <form id="likePostForm-${post.id}">
+                                    <input type="hidden" id="post_id" name="post_id" value="${post.iD}">
+
+                                    ${postLikeElement}
+                                
+
+                                    ${postDislikeElement}
+                                </form>
+                            </div>
+                        </div>
+
+                    </div>
                 </div>
             </div>
         `;
@@ -542,6 +613,27 @@ async function submitPost() {
 
     form.reset();
     $('.multiSelect').val(null).trigger('change');
+    fetchPosts();
+}
+
+async function likePost(id, actionType) {
+    const form = document.getElementById('likePostForm-' + id);
+    form.addEventListener('submit', (event) => {
+        event.preventDefault();
+    });
+    
+    const formData = new FormData();
+    formData.append('post_id', id);
+    formData.append('actionType', actionType);
+
+    const response = await fetch('/api/likePost', {
+        method: 'POST',
+        body: formData,
+    });
+    res = await response.json();
+    showToast(res);
+
+    form.reset();
     fetchPosts();
 }
 

@@ -176,16 +176,26 @@ func UpdateStatusPost(post_id int, status string, user_id int) error {
 	return nil
 }
 
-func ReadAllPosts() ([]Post, error) {
+func ReadAllPosts(checkLikeForUser int) ([]Post, error) {
 	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	// Query the records
 	rows, selectError := db.Query(`
         SELECT p.id as post_id, p.uuid as post_uuid, p.title as post_title, p.description as post_description, p.status as post_status, p.created_at as post_created_at, p.updated_at as post_updated_at, p.updated_by as post_updated_by,
+			(SELECT COUNT(DISTINCT id) from post_likes WHERE post_id = p.id AND status != 'delete' AND type = 'like') AS number_of_likes,
+			(SELECT COUNT(DISTINCT id) from post_likes WHERE post_id = p.id AND status != 'delete' AND type = 'dislike') AS number_of_dislikes,
 			u.id as user_id, u.name as user_name, u.username as user_username, u.email as user_email, IFNULL(u.profile_photo, '') as user_profile_photo,
 			c.id as category_id, c.name as category_name, c.color as category_color, c.icon as category_icon,
-			IFNULL(pf.id, 0) as post_file_id, pf.file_uploaded_name, pf.file_real_name
+			IFNULL(pf.id, 0) as post_file_id, pf.file_uploaded_name, pf.file_real_name,
+			CASE 
+                WHEN EXISTS (SELECT 1 FROM post_likes WHERE post_id = p.id AND status != 'delete' AND type = 'like' AND user_id = ?) THEN 1
+                ELSE 0
+            END AS is_liked_by_user,
+            CASE 
+                WHEN EXISTS (SELECT 1 FROM post_likes WHERE post_id = p.id AND status != 'delete' AND type = 'dislike' AND user_id = ?) THEN 1
+                ELSE 0
+            END AS is_disliked_by_user
 		FROM posts p
 			INNER JOIN users u
 				ON p.user_id = u.id
@@ -201,7 +211,7 @@ func ReadAllPosts() ([]Post, error) {
 		WHERE p.status != 'delete'
 			AND u.status != 'delete'
 		ORDER BY p.id desc;
-    `)
+    `, checkLikeForUser, checkLikeForUser)
 	if selectError != nil {
 		return nil, selectError
 	}
@@ -220,10 +230,12 @@ func ReadAllPosts() ([]Post, error) {
 		// Scan the post and user data
 		err := rows.Scan(
 			&post.ID, &post.UUID, &post.Title, &post.Description, &post.Status,
-			&post.CreatedAt, &post.UpdatedAt, &post.UpdatedBy, &post.UserId,
-			&user.Name, &user.Username, &user.Email, &user.ProfilePhoto,
+			&post.CreatedAt, &post.UpdatedAt, &post.UpdatedBy,
+			&post.NumberOfLikes, &post.NumberOfDislikes,
+			&post.UserId, &user.Name, &user.Username, &user.Email, &user.ProfilePhoto,
 			&category.ID, &category.Name, &category.Color, &category.Icon,
 			&postFile.ID, &postFile.FileUploadedName, &postFile.FileRealName,
+			&post.IsLikedByUser, &post.IsDislikedByUser,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("error scanning row: %v", err)
@@ -505,9 +517,19 @@ func ReadPostsByUserId(userId int) ([]Post, error) {
 	// Query the records
 	rows, selectError := db.Query(`
         SELECT p.id as post_id, p.uuid as post_uuid, p.title as post_title, p.description as post_description, p.status as post_status, p.created_at as post_created_at, p.updated_at as post_updated_at, p.updated_by as post_updated_by,
+			(SELECT COUNT(DISTINCT id) from post_likes WHERE post_id = p.id AND status != 'delete' AND type = 'like') AS number_of_likes,
+			(SELECT COUNT(DISTINCT id) from post_likes WHERE post_id = p.id AND status != 'delete' AND type = 'dislike') AS number_of_dislikes,
 			u.id as user_id, u.name as user_name, u.username as user_username, u.email as user_email, IFNULL(u.profile_photo, '') as user_profile_photo,
 			c.id as category_id, c.name as category_name, c.color as category_color, c.icon as category_icon,
-			IFNULL(pf.id, 0) as post_file_id, pf.file_uploaded_name, pf.file_real_name
+			IFNULL(pf.id, 0) as post_file_id, pf.file_uploaded_name, pf.file_real_name,
+			CASE 
+                WHEN EXISTS (SELECT 1 FROM post_likes WHERE post_id = p.id AND status != 'delete' AND type = 'like' AND user_id = ?) THEN 1
+                ELSE 0
+            END AS is_liked_by_user,
+            CASE 
+                WHEN EXISTS (SELECT 1 FROM post_likes WHERE post_id = p.id AND status != 'delete' AND type = 'dislike' AND user_id = ?) THEN 1
+                ELSE 0
+            END AS is_disliked_by_user
 		FROM posts p
 			INNER JOIN users u
 				ON p.user_id = u.id
@@ -524,7 +546,7 @@ func ReadPostsByUserId(userId int) ([]Post, error) {
 		WHERE p.status != 'delete'
 			AND u.status != 'delete'
 		ORDER BY p.id desc;
-    `, userId)
+    `, userId, userId, userId)
 	if selectError != nil {
 		return nil, selectError
 	}
@@ -543,10 +565,12 @@ func ReadPostsByUserId(userId int) ([]Post, error) {
 		// Scan the post and user data
 		err := rows.Scan(
 			&post.ID, &post.UUID, &post.Title, &post.Description, &post.Status,
-			&post.CreatedAt, &post.UpdatedAt, &post.UpdatedBy, &post.UserId,
-			&user.Name, &user.Username, &user.Email, &user.ProfilePhoto,
+			&post.CreatedAt, &post.UpdatedAt, &post.UpdatedBy,
+			&post.NumberOfLikes, &post.NumberOfDislikes,
+			&post.UserId, &user.Name, &user.Username, &user.Email, &user.ProfilePhoto,
 			&category.ID, &category.Name, &category.Color, &category.Icon,
 			&postFile.ID, &postFile.FileUploadedName, &postFile.FileRealName,
+			&post.IsLikedByUser, &post.IsDislikedByUser,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("error scanning row: %v", err)
@@ -611,9 +635,19 @@ func ReadPostsLikedByUserId(userId int) ([]Post, error) {
 	// Query the records
 	rows, selectError := db.Query(`
         SELECT p.id as post_id, p.uuid as post_uuid, p.title as post_title, p.description as post_description, p.status as post_status, p.created_at as post_created_at, p.updated_at as post_updated_at, p.updated_by as post_updated_by,
+			(SELECT COUNT(DISTINCT id) from post_likes WHERE post_id = p.id AND status != 'delete' AND type = 'like') AS number_of_likes,
+			(SELECT COUNT(DISTINCT id) from post_likes WHERE post_id = p.id AND status != 'delete' AND type = 'dislike') AS number_of_dislikes,
 			u.id as user_id, u.name as user_name, u.username as user_username, u.email as user_email, IFNULL(u.profile_photo, '') as user_profile_photo,
 			c.id as category_id, c.name as category_name, c.color as category_color, c.icon as category_icon,
-			IFNULL(pf.id, 0) as post_file_id, pf.file_uploaded_name, pf.file_real_name
+			IFNULL(pf.id, 0) as post_file_id, pf.file_uploaded_name, pf.file_real_name,
+			CASE 
+                WHEN EXISTS (SELECT 1 FROM post_likes WHERE post_id = p.id AND status != 'delete' AND type = 'like' AND user_id = ?) THEN 1
+                ELSE 0
+            END AS is_liked_by_user,
+            CASE 
+                WHEN EXISTS (SELECT 1 FROM post_likes WHERE post_id = p.id AND status != 'delete' AND type = 'dislike' AND user_id = ?) THEN 1
+                ELSE 0
+            END AS is_disliked_by_user
 		FROM posts p
 			INNER JOIN post_likes pl
 				ON pl.post_id = p.id
@@ -635,7 +669,7 @@ func ReadPostsLikedByUserId(userId int) ([]Post, error) {
 		WHERE p.status != 'delete'
 			AND u.status != 'delete'
 		ORDER BY p.id desc;
-    `, userId)
+    `, userId, userId, userId)
 	if selectError != nil {
 		return nil, selectError
 	}
@@ -654,10 +688,12 @@ func ReadPostsLikedByUserId(userId int) ([]Post, error) {
 		// Scan the post and user data
 		err := rows.Scan(
 			&post.ID, &post.UUID, &post.Title, &post.Description, &post.Status,
-			&post.CreatedAt, &post.UpdatedAt, &post.UpdatedBy, &post.UserId,
-			&user.Name, &user.Username, &user.Email, &user.ProfilePhoto,
+			&post.CreatedAt, &post.UpdatedAt, &post.UpdatedBy,
+			&post.NumberOfLikes, &post.NumberOfDislikes,
+			&post.UserId, &user.Name, &user.Username, &user.Email, &user.ProfilePhoto,
 			&category.ID, &category.Name, &category.Color, &category.Icon,
 			&postFile.ID, &postFile.FileUploadedName, &postFile.FileRealName,
+			&post.IsLikedByUser, &post.IsDislikedByUser,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("error scanning row: %v", err)

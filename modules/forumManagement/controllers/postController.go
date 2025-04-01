@@ -23,7 +23,17 @@ func ReadAllPosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	posts, err := models.ReadAllPosts()
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
+	if checkLoginError != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+	if !loginStatus {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
+		return
+	}
+
+	posts, err := models.ReadAllPosts(loginUser.ID)
 	if err != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
@@ -43,7 +53,17 @@ func AdminReadAllPosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	posts, err := models.ReadAllPosts()
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
+	if checkLoginError != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+	if !loginStatus {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
+		return
+	}
+
+	posts, err := models.ReadAllPosts(loginUser.ID)
 	if err != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
@@ -57,11 +77,6 @@ func AdminReadAllPosts(w http.ResponseWriter, r *http.Request) {
 		Posts:     posts,
 	}
 
-	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
-	if checkLoginError != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
 	if loginStatus {
 		data_obj_sender.LoginUser = loginUser
 	}
@@ -836,31 +851,51 @@ func LikePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginUser, ok := r.Context().Value(middlewares.UserContextKey).(userManagementModels.User)
-	if !ok {
+	// loginUser, ok := r.Context().Value(middlewares.UserContextKey).(userManagementModels.User)
+	// if !ok {
+	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
+	// 	return
+	// }
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
+	if checkLoginError != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+	if loginStatus {
+		fmt.Println("logged in userid is: ", loginUser.ID)
+	} else {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
 		return
 	}
 
-	err := r.ParseForm()
+	// err := r.ParseForm()
+	err := r.ParseMultipartForm(10 << 20) // 10 MB limit
 	if err != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 		return
 	}
 	postID := r.FormValue("post_id")
 	postIDInt, _ := strconv.Atoi(postID)
-	var Type string
-	like := r.FormValue("like_post")
-	dislike := r.FormValue("dislike_post")
-	if like == "like" {
-		Type = like
-	} else if dislike == "dislike" {
-		Type = dislike
-	}
+	// var Type string
+	// like := r.FormValue("like_post")
+	// dislike := r.FormValue("dislike_post")
+	// if like == "like" {
+	// 	Type = like
+	// } else if dislike == "dislike" {
+	// 	Type = dislike
+	// }
+	Type := r.FormValue("actionType")
 
 	existingLikeId, existingLikeType := models.PostHasLiked(loginUser.ID, postIDInt)
 
+	var resMessage string
 	if existingLikeId == -1 {
+		if Type == "like" {
+			resMessage = "You liked successfully"
+		} else {
+			resMessage = "You disliked successfully"
+		}
+
 		post := &models.PostLike{
 			Type:   Type,
 			PostId: postIDInt,
@@ -871,8 +906,21 @@ func LikePost(w http.ResponseWriter, r *http.Request) {
 			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 			return
 		}
-		userManagementControllers.RedirectToPrevPage(w, r)
+
+		res := utils.Result{
+			Success: true,
+			Message: resMessage,
+			Data:    nil,
+		}
+		utils.ReturnJson(w, res)
+		return
 	} else {
+		if Type == "like" {
+			resMessage = "You removed like successfully"
+		} else {
+			resMessage = "You removed dislike successfully"
+		}
+
 		updateError := models.UpdateStatusPostLike(existingLikeId, "delete", loginUser.ID)
 		if updateError != nil {
 			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
@@ -891,7 +939,12 @@ func LikePost(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
-		userManagementControllers.RedirectToPrevPage(w, r)
+		res := utils.Result{
+			Success: true,
+			Message: resMessage,
+			Data:    nil,
+		}
+		utils.ReturnJson(w, res)
 		return
 	}
 }
