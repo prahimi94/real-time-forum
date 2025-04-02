@@ -30,16 +30,22 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 
 	mutex.Lock()
 	clients[conn] = true
+	fmt.Println(clients, "connected")
 	mutex.Unlock()
 
 	// Get myUsername from userid related to session token
 	_, myUsername, err := userManagementModels.GetUserIDFromCookie(r)
+	if err != nil {
+		fmt.Println("Error getting username:", err)
+		return
+	}
 
 	for {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
 			mutex.Lock()
 			delete(clients, conn)
+			fmt.Println(clients, "disconnected")
 			mutex.Unlock()
 			break
 		}
@@ -59,6 +65,7 @@ func HandleMessages() {
 
 		// Send the message to all connected clients
 		mutex.Lock()
+		fmt.Println("Broadcasting message:", string(message), " | clients:", clients)
 		for client := range clients {
 			err := client.WriteMessage(websocket.TextMessage, message)
 			if err != nil {
