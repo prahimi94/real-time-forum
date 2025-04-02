@@ -18,8 +18,8 @@ var upgrader = websocket.Upgrader{
 }
 
 var OnlineUsers = make(map[*websocket.Conn]string) // Map of online users (connected to WS) to usernames
-var Broadcast = make(chan []byte)                     // Broadcast channel
-var Mutex = &sync.Mutex{}                             // Protect OnlineUsers map
+var Broadcast = make(chan []byte)                  // Broadcast channel
+var Mutex = &sync.Mutex{}                          // Protect OnlineUsers map
 
 func WsHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -53,6 +53,11 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 			UpdateOnlineUsers()
 			Mutex.Unlock()
 			break
+		}
+		
+		// Ignore empty messages
+		if len(message) == 0 {
+			continue
 		}
 
 		// Add timestamp and username to the message

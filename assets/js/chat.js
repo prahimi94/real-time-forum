@@ -1,5 +1,52 @@
-/* WEBSOCKET FOR CHAT */
 let ws;
+let onlineUsers;
+let usernames = [];
+
+async function fetchOnlineUsers() {
+  try {
+    const response = await fetch("/api/online-users");
+    if (!response.ok) {
+      console.error("Failed to fetch online users");
+      return;
+    }
+
+    usernames = await response.json();
+    updateOnlineUsersList(usernames);
+  } catch (error) {
+    console.error("Error fetching online users:", error);
+  }
+}
+
+// Function to update the online users list in the frontend
+function updateOnlineUsersList(usernames) {
+  const onlineUsersList = document.getElementById("online-users-list");
+  onlineUsersList.textContent = "";  // Clear the current list
+
+  if (usernames.length === 0 || (usernames.length === 1 && usernames[0] === loggedInUser.name)) {
+    onlineUsersList.textContent = "It's just you here.";
+    return;
+  }
+
+  // Populate the list with usernames
+  usernames.forEach((username) => {
+    if (username === loggedInUser.name) return;
+
+    const li = document.createElement("li");
+    li.textContent = username;
+    li.style.cursor = "pointer";
+    li.onclick = () => openPrivateChat(username);
+    onlineUsersList.appendChild(li);
+  });
+}
+
+function openPrivateChat(username) {
+  privateRecipient = username;
+  document.getElementById("messages").style.display = "block";
+  const chatHeader = document.getElementById("chat-header");
+  chatHeader.textContent = `Chat with ${username}`;
+  document.getElementById("messageInput").placeholder = `Type a message to ${username}`;
+}
+
 
 function connect() {
   ws = new WebSocket("ws://localhost:8080/ws");
@@ -15,7 +62,7 @@ function connect() {
 
     try {
       // Check if the message is a JSON array (online users list)
-      const onlineUsers = JSON.parse(message);
+      onlineUsers = JSON.parse(message);
       if (Array.isArray(onlineUsers)) {
         updateOnlineUsersList(onlineUsers);
         return;
@@ -46,43 +93,11 @@ function connect() {
 
 function sendMessage() {
   let input = document.getElementById("messageInput");
-  let message = input.value;
-  ws.send(message);
+  let message = input.value.trim(); // Remove leading/trailing whitespace
+  if (message.length === 0) return; // Do not accept empty messages
+
+  if (privateRecipient) {
+    ws.send(message);
+  }
   input.value = "";
-}
-/* END OF WEBSOCKET FOR CHAT */
-
-async function fetchOnlineUsers() {
-  try {
-    const response = await fetch("/api/online-users");
-    if (!response.ok) {
-      console.error("Failed to fetch online users");
-      return;
-    }
-
-    const usernames = await response.json();
-    updateOnlineUsersList(usernames);
-  } catch (error) {
-    console.error("Error fetching online users:", error);
-  }
-}
-
-// Function to update the online users list in the frontend
-function updateOnlineUsersList(usernames) {
-  const onlineUsersList = document.getElementById("online-users-list");
-
-  // Clear the current list
-  onlineUsersList.textContent = "";
-
-  if (usernames.length === 0 || (usernames.length === 1 && usernames[0] === "OnlineUsername")) { //TODO: "OnlineUsername" to be changed with correct var
-    onlineUsersList.textContent = "It's just you here.";
-    return;
-  }
-
-  // Populate the list with usernames
-  usernames.forEach((username) => {
-    const li = document.createElement("li");
-    li.textContent = username;
-    onlineUsersList.appendChild(li);
-  });
 }
