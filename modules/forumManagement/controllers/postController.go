@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"encoding/json"
 	"fmt"
 	"forum/middlewares"
 	errorManagementControllers "forum/modules/errorManagement/controllers"
@@ -23,16 +22,28 @@ func ReadAllPosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	posts, err := models.ReadAllPosts()
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
+	if checkLoginError != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+	if !loginStatus {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
+		return
+	}
+
+	posts, err := models.ReadAllPosts(loginUser.ID)
 	if err != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(posts); err != nil {
-		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
+	res := utils.Result{
+		Success: true,
+		Message: "Posts fetched successfully",
+		Data:    posts,
 	}
+	utils.ReturnJson(w, res)
 }
 
 func AdminReadAllPosts(w http.ResponseWriter, r *http.Request) {
@@ -41,7 +52,17 @@ func AdminReadAllPosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	posts, err := models.ReadAllPosts()
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
+	if checkLoginError != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+	if !loginStatus {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
+		return
+	}
+
+	posts, err := models.ReadAllPosts(loginUser.ID)
 	if err != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
@@ -55,11 +76,6 @@ func AdminReadAllPosts(w http.ResponseWriter, r *http.Request) {
 		Posts:     posts,
 	}
 
-	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
-	if checkLoginError != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
 	if loginStatus {
 		data_obj_sender.LoginUser = loginUser
 	}
@@ -89,13 +105,23 @@ func ReadPostsByCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
+	if checkLoginError != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+	if !loginStatus {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
+		return
+	}
+
 	categories, err := models.ReadAllCategories()
 	if err != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 
-	categoryName, errUrl := utils.ExtractFromUrl(r.URL.Path, "posts")
+	categoryName, errUrl := utils.ExtractFromUrl(r.URL.Path, "api/posts")
 	if errUrl == "not found" {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.NotFoundError)
 		return
@@ -125,41 +151,16 @@ func ReadPostsByCategory(w http.ResponseWriter, r *http.Request) {
 		SelectedCategoryName: categoryName,
 	}
 
-	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
-	if checkLoginError != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
 	if loginStatus {
 		data_obj_sender.LoginUser = loginUser
 	}
 
-	// // Create a template with a function map
-	// tmpl, err := template.New("category_posts.html").Funcs(template.FuncMap{
-	// 	"formatDate": utils.FormatDate, // Register function globally
-	// }).ParseFiles(
-	// 	publicUrl+"category_posts.html",
-	// 	publicUrl+"templates/header.html",
-	// 	publicUrl+"templates/navbar.html",
-	// 	publicUrl+"templates/hero.html",
-	// 	publicUrl+"templates/posts.html",
-	// 	publicUrl+"templates/footer.html",
-	// )
-	// if err != nil {
-	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-	// 	return
-	// }
-
-	// err = tmpl.Execute(w, data_obj_sender)
-	// if err != nil {
-	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-	// 	return
-	// }
-
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(data_obj_sender); err != nil {
-		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
+	res := utils.Result{
+		Success: true,
+		Message: "Posts fetched successfully",
+		Data:    data_obj_sender,
 	}
+	utils.ReturnJson(w, res)
 }
 
 func FilterPosts(w http.ResponseWriter, r *http.Request) {
@@ -167,7 +168,22 @@ func FilterPosts(w http.ResponseWriter, r *http.Request) {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
 		return
 	}
-	searchTerm := r.URL.Query().Get("post_info")
+
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
+	if checkLoginError != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+	if !loginStatus {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
+		return
+	}
+
+	searchTerm, errUrl := utils.ExtractFromUrl(r.URL.Path, "api/filterPosts")
+	if errUrl == "not found" {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.NotFoundError)
+		return
+	}
 
 	categories, err := models.ReadAllCategories()
 	if err != nil {
@@ -193,36 +209,16 @@ func FilterPosts(w http.ResponseWriter, r *http.Request) {
 		SearchTerm: searchTerm,
 	}
 
-	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
-	if checkLoginError != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
 	if loginStatus {
 		data_obj_sender.LoginUser = loginUser
 	}
 
-	// Create a template with a function map
-	tmpl, err := template.New("search_posts.html").Funcs(template.FuncMap{
-		"formatDate": utils.FormatDate, // Register function globally
-	}).ParseFiles(
-		publicUrl+"search_posts.html",
-		publicUrl+"templates/header.html",
-		publicUrl+"templates/navbar.html",
-		publicUrl+"templates/hero.html",
-		publicUrl+"templates/posts.html",
-		publicUrl+"templates/footer.html",
-	)
-	if err != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
+	res := utils.Result{
+		Success: true,
+		Message: "Posts fetched successfully",
+		Data:    data_obj_sender,
 	}
-
-	err = tmpl.Execute(w, data_obj_sender)
-	if err != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
+	utils.ReturnJson(w, res)
 }
 
 func ReadMyCreatedPosts(w http.ResponseWriter, r *http.Request) {
@@ -231,25 +227,12 @@ func ReadMyCreatedPosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// if r.URL.Path != "/myCreatedPosts/" {
-	// 	// If the URL is not exactly "/myCreatedPosts/", respond with 404
-	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.NotFoundError)
-	// 	return
-	// }
-
-	// loginUser, ok := r.Context().Value(middlewares.UserContextKey).(userManagementModels.User)
-	// if !ok {
-	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
-	// 	return
-	// }
 	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
-	if loginStatus {
-		fmt.Println("logged in userid is: ", loginUser.ID)
-	} else {
+	if !loginStatus {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
 		return
 	}
@@ -276,32 +259,12 @@ func ReadMyCreatedPosts(w http.ResponseWriter, r *http.Request) {
 		Categories: categories,
 	}
 
-	// // Create a template with a function map
-	// tmpl, err := template.New("my_created_posts.html").Funcs(template.FuncMap{
-	// 	"formatDate": utils.FormatDate, // Register function globally
-	// }).ParseFiles(
-	// 	publicUrl+"my_created_posts.html",
-	// 	publicUrl+"templates/header.html",
-	// 	publicUrl+"templates/navbar.html",
-	// 	publicUrl+"templates/hero.html",
-	// 	publicUrl+"templates/posts.html",
-	// 	publicUrl+"templates/footer.html",
-	// )
-	// if err != nil {
-	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-	// 	return
-	// }
-
-	// err = tmpl.Execute(w, data_obj_sender)
-	// if err != nil {
-	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-	// 	return
-	// }
-
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(data_obj_sender); err != nil {
-		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
+	res := utils.Result{
+		Success: true,
+		Message: "Posts fetched successfully",
+		Data:    data_obj_sender,
 	}
+	utils.ReturnJson(w, res)
 }
 
 func ReadMyLikedPosts(w http.ResponseWriter, r *http.Request) {
@@ -310,25 +273,12 @@ func ReadMyLikedPosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// if r.URL.Path != "/myLikedPosts/" {
-	// 	// If the URL is not exactly "/myLikedPosts/", respond with 404
-	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.NotFoundError)
-	// 	return
-	// }
-
-	// loginUser, ok := r.Context().Value(middlewares.UserContextKey).(userManagementModels.User)
-	// if !ok {
-	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
-	// 	return
-	// }
 	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
-	if loginStatus {
-		fmt.Println("logged in userid is: ", loginUser.ID)
-	} else {
+	if !loginStatus {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
 		return
 	}
@@ -355,32 +305,12 @@ func ReadMyLikedPosts(w http.ResponseWriter, r *http.Request) {
 		Categories: categories,
 	}
 
-	// // Create a template with a function map
-	// tmpl, err := template.New("my_liked_posts.html").Funcs(template.FuncMap{
-	// 	"formatDate": utils.FormatDate, // Register function globally
-	// }).ParseFiles(
-	// 	publicUrl+"my_liked_posts.html",
-	// 	publicUrl+"templates/header.html",
-	// 	publicUrl+"templates/navbar.html",
-	// 	publicUrl+"templates/hero.html",
-	// 	publicUrl+"templates/posts.html",
-	// 	publicUrl+"templates/footer.html",
-	// )
-	// if err != nil {
-	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-	// 	return
-	// }
-
-	// err = tmpl.Execute(w, data_obj_sender)
-	// if err != nil {
-	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-	// 	return
-	// }
-
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(data_obj_sender); err != nil {
-		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
+	res := utils.Result{
+		Success: true,
+		Message: "Posts fetched successfully",
+		Data:    data_obj_sender,
 	}
+	utils.ReturnJson(w, res)
 }
 
 func ReadPost(w http.ResponseWriter, r *http.Request) {
@@ -395,7 +325,7 @@ func ReadPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	uuid, errUrl := utils.ExtractUUIDFromUrl(r.URL.Path, "post")
+	uuid, errUrl := utils.ExtractUUIDFromUrl(r.URL.Path, "api/post")
 	if errUrl == "not found" {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.NotFoundError)
 		return
@@ -420,6 +350,7 @@ func ReadPost(w http.ResponseWriter, r *http.Request) {
 	if loginStatus {
 		comments, err := models.ReadAllCommentsForPostByUserID(post.ID, loginUser.ID)
 		if err != nil {
+			fmt.Println(2)
 			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 			return
 		}
@@ -435,80 +366,92 @@ func ReadPost(w http.ResponseWriter, r *http.Request) {
 		data_obj_sender.Comments = comments
 	}
 
-	// Create a template with a function map
-	tmpl, err := template.New("post_details.html").Funcs(template.FuncMap{
-		"formatDate": utils.FormatDate, // Register function globally
-	}).ParseFiles(
-		publicUrl+"post_details.html",
-		publicUrl+"templates/header.html",
-		publicUrl+"templates/navbar.html",
-		publicUrl+"templates/footer.html",
-	)
-	if err != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
+	// // Create a template with a function map
+	// tmpl, err := template.New("post_details.html").Funcs(template.FuncMap{
+	// 	"formatDate": utils.FormatDate, // Register function globally
+	// }).ParseFiles(
+	// 	publicUrl+"post_details.html",
+	// 	publicUrl+"templates/header.html",
+	// 	publicUrl+"templates/navbar.html",
+	// 	publicUrl+"templates/footer.html",
+	// )
+	// if err != nil {
+	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+	// 	return
+	// }
 
-	// Execute template with data
-	err = tmpl.Execute(w, data_obj_sender)
-	if err != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+	// // Execute template with data
+	// err = tmpl.Execute(w, data_obj_sender)
+	// if err != nil {
+	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+	// }
+
+	res := utils.Result{
+		Success: true,
+		Message: "Post submitted successfully",
+		Data:    data_obj_sender,
 	}
+	utils.ReturnJson(w, res)
 }
 
-func CreatePost(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
-		return
-	}
+// func CreatePost(w http.ResponseWriter, r *http.Request) {
+// 	if r.Method != http.MethodGet {
+// 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
+// 		return
+// 	}
 
-	// Get loginUser from context
-	loginUser, ok := r.Context().Value(middlewares.UserContextKey).(userManagementModels.User)
-	if !ok {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
-		return
-	}
+// 	// Get loginUser from context
+// 	loginUser, ok := r.Context().Value(middlewares.UserContextKey).(userManagementModels.User)
+// 	if !ok {
+// 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
+// 		return
+// 	}
 
-	categories, err := models.ReadAllCategories()
-	if err != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
+// 	categories, err := models.ReadAllCategories()
+// 	if err != nil {
+// 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+// 		return
+// 	}
 
-	data_obj_sender := struct {
-		LoginUser  userManagementModels.User
-		Categories []models.Category
-	}{
-		LoginUser:  loginUser,
-		Categories: categories,
-	}
+// 	data_obj_sender := struct {
+// 		LoginUser  userManagementModels.User
+// 		Categories []models.Category
+// 	}{
+// 		LoginUser:  loginUser,
+// 		Categories: categories,
+// 	}
 
-	tmpl, err := template.ParseFiles(
-		publicUrl+"new_post.html",
-		publicUrl+"templates/header.html",
-		publicUrl+"templates/navbar.html",
-		publicUrl+"templates/footer.html",
-	)
-	if err != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
+// 	tmpl, err := template.ParseFiles(
+// 		publicUrl+"new_post.html",
+// 		publicUrl+"templates/header.html",
+// 		publicUrl+"templates/navbar.html",
+// 		publicUrl+"templates/footer.html",
+// 	)
+// 	if err != nil {
+// 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+// 		return
+// 	}
 
-	err = tmpl.Execute(w, data_obj_sender)
-	if err != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
-}
+// 	err = tmpl.Execute(w, data_obj_sender)
+// 	if err != nil {
+// 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+// 		return
+// 	}
+// }
 
 func SubmitPost(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(r.Method)
 	if r.Method != http.MethodPost {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
 		return
 	}
 
-	loginUser, ok := r.Context().Value(middlewares.UserContextKey).(userManagementModels.User)
-	if !ok {
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
+	if checkLoginError != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+	if !loginStatus {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
 		return
 	}
@@ -576,7 +519,12 @@ func SubmitPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/", http.StatusFound)
+	res := utils.Result{
+		Success: true,
+		Message: "Post submitted successfully",
+		Data:    nil,
+	}
+	utils.ReturnJson(w, res)
 }
 
 func EditPost(w http.ResponseWriter, r *http.Request) {
@@ -813,29 +761,47 @@ func LikePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginUser, ok := r.Context().Value(middlewares.UserContextKey).(userManagementModels.User)
-	if !ok {
+	// loginUser, ok := r.Context().Value(middlewares.UserContextKey).(userManagementModels.User)
+	// if !ok {
+	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
+	// 	return
+	// }
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
+	if checkLoginError != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+	if !loginStatus {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
 		return
 	}
 
-	err := r.ParseForm()
+	// err := r.ParseForm()
+	err := r.ParseMultipartForm(10 << 20) // 10 MB limit
 	if err != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 		return
 	}
 	postID := r.FormValue("post_id")
 	postIDInt, _ := strconv.Atoi(postID)
-	var Type string
-	like := r.FormValue("like_post")
-	dislike := r.FormValue("dislike_post")
-	if like == "like" {
-		Type = like
-	} else if dislike == "dislike" {
-		Type = dislike
-	}
+	// var Type string
+	// like := r.FormValue("like_post")
+	// dislike := r.FormValue("dislike_post")
+	// if like == "like" {
+	// 	Type = like
+	// } else if dislike == "dislike" {
+	// 	Type = dislike
+	// }
+	Type := r.FormValue("actionType")
 
 	existingLikeId, existingLikeType := models.PostHasLiked(loginUser.ID, postIDInt)
+
+	var resMessage string
+	if Type == "like" {
+		resMessage = "You liked successfully"
+	} else {
+		resMessage = "You disliked successfully"
+	}
 
 	if existingLikeId == -1 {
 		post := &models.PostLike{
@@ -848,7 +814,14 @@ func LikePost(w http.ResponseWriter, r *http.Request) {
 			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 			return
 		}
-		userManagementControllers.RedirectToPrevPage(w, r)
+
+		res := utils.Result{
+			Success: true,
+			Message: resMessage,
+			Data:    nil,
+		}
+		utils.ReturnJson(w, res)
+		return
 	} else {
 		updateError := models.UpdateStatusPostLike(existingLikeId, "delete", loginUser.ID)
 		if updateError != nil {
@@ -867,8 +840,19 @@ func LikePost(w http.ResponseWriter, r *http.Request) {
 				errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 				return
 			}
+		} else {
+			if Type == "like" {
+				resMessage = "You removed like successfully"
+			} else {
+				resMessage = "You removed dislike successfully"
+			}
 		}
-		userManagementControllers.RedirectToPrevPage(w, r)
+		res := utils.Result{
+			Success: true,
+			Message: resMessage,
+			Data:    nil,
+		}
+		utils.ReturnJson(w, res)
 		return
 	}
 }

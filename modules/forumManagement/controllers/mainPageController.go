@@ -42,71 +42,88 @@ func MainPageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	categories, err := models.ReadAllCategories()
-	if err != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
-
-	posts, err := models.ReadAllPosts()
-	if err != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
-
-	data_obj_sender := struct {
-		LoginUser  userManagementModels.User
-		Posts      []models.Post
-		Categories []models.Category
-	}{
-		LoginUser:  userManagementModels.User{},
-		Posts:      posts,
-		Categories: categories,
-	}
-
 	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 	if loginStatus {
-		if loginUser.Type == "admin" {
-			userManagementControllers.RedirectToAdminIndex(w, r)
+		categories, err := models.ReadAllCategories()
+		if err != nil {
+			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 			return
 		}
-		data_obj_sender.LoginUser = loginUser
+
+		posts, err := models.ReadAllPosts(loginUser.ID)
+		if err != nil {
+			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+			return
+		}
+
+		data_obj_sender := struct {
+			LoginUser  userManagementModels.User
+			Posts      []models.Post
+			Categories []models.Category
+		}{
+			LoginUser:  userManagementModels.User{},
+			Posts:      posts,
+			Categories: categories,
+		}
+
+		if loginStatus {
+			if loginUser.Type == "admin" {
+				userManagementControllers.RedirectToAdminIndex(w, r)
+				return
+			}
+			data_obj_sender.LoginUser = loginUser
+		}
+
+		// jsonData, err := json.Marshal(data_obj_sender)
+		// if err != nil {
+		// 	http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
+		// 	return
+		// }
+
+		// w.Header().Set("Content-Type", "application/json")
+		// w.Write(jsonData) // Manually writing JSON to response
+
+		// w.Header().Set("Content-Type", "application/json")
+		// if err := json.NewEncoder(w).Encode(data_obj_sender); err != nil {
+		// 	http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
+		// }
+
+		// Create a template with a function map
+		tmpl, err := template.New("index.html").Funcs(template.FuncMap{
+			"formatDate": utils.FormatDate, // Register function globally
+		}).ParseFiles(
+			publicUrl + "index.html",
+		)
+		if err != nil {
+			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+			return
+		}
+
+		err = tmpl.Execute(w, data_obj_sender)
+		if err != nil {
+			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+			return
+		}
+	} else {
+		tmpl, err := template.New("index.html").ParseFiles(
+			publicUrl + "index.html",
+		)
+		if err != nil {
+			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+			return
+		}
+
+		err = tmpl.Execute(w, nil)
+		if err != nil {
+			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+			return
+		}
 	}
 
-	// jsonData, err := json.Marshal(data_obj_sender)
-	// if err != nil {
-	// 	http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
-	// 	return
-	// }
-
-	// w.Header().Set("Content-Type", "application/json")
-	// w.Write(jsonData) // Manually writing JSON to response
-
-	// w.Header().Set("Content-Type", "application/json")
-	// if err := json.NewEncoder(w).Encode(data_obj_sender); err != nil {
-	// 	http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
-	// }
-
-	// Create a template with a function map
-	tmpl, err := template.New("index.html").Funcs(template.FuncMap{
-		"formatDate": utils.FormatDate, // Register function globally
-	}).ParseFiles(
-		publicUrl + "index.html",
-	)
-	if err != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
-
-	err = tmpl.Execute(w, data_obj_sender)
-	if err != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
 }
 
 func AdminMainPageHandler(w http.ResponseWriter, r *http.Request) {
@@ -121,13 +138,23 @@ func AdminMainPageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
+	if checkLoginError != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+	if !loginStatus {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
+		return
+	}
+
 	categories, err := models.AdminReadAllCategories()
 	if err != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 
-	posts, err := models.ReadAllPosts()
+	posts, err := models.ReadAllPosts(loginUser.ID)
 	if err != nil {
 		fmt.Println(1)
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
@@ -171,11 +198,6 @@ func AdminMainPageHandler(w http.ResponseWriter, r *http.Request) {
 		Categories: categories,
 	}
 
-	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
-	if checkLoginError != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
 	if loginStatus {
 		data_obj_sender.LoginUser = loginUser
 	}

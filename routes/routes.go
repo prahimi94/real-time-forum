@@ -32,18 +32,18 @@ func SetupRoutes() {
 	http.HandleFunc("/login", userManagementControllers.LoginHandler)       /*post method*/
 
 	http.HandleFunc("/api/categories/", forumManagementControllers.ReadAllCategories)
-	http.HandleFunc("/api/posts/", forumManagementControllers.ReadAllPosts)
+	http.HandleFunc("/api/allPosts/", forumManagementControllers.ReadAllPosts)
 	// http.HandleFunc("/newPost/", forumManagementControllers.CreatePost)
 	http.HandleFunc("/api/submitPost", forumManagementControllers.SubmitPost) /*post method*/
 	http.HandleFunc("/api/myCreatedPosts/", forumManagementControllers.ReadMyCreatedPosts)
 	http.HandleFunc("/api/myLikedPosts/", forumManagementControllers.ReadMyLikedPosts)
 
 	// router.HandleFunc("/post/{id}", forumManagementControllers.ReadPost).Methods("GET")
-	http.HandleFunc("/post/", forumManagementControllers.ReadPost)
+	http.HandleFunc("/api/post/", forumManagementControllers.ReadPost)
 	// router.HandleFunc("/posts/{categoryName}", forumManagementControllers.ReadPostsByCategory).Methods("GET")
-	http.HandleFunc("/posts/", forumManagementControllers.ReadPostsByCategory)
-	http.HandleFunc("/filterPosts/", forumManagementControllers.FilterPosts)
-	http.HandleFunc("/likePost", forumManagementControllers.LikePost)
+	http.HandleFunc("/api/posts/", forumManagementControllers.ReadPostsByCategory)
+	http.HandleFunc("/api/filterPosts/", forumManagementControllers.FilterPosts)
+	http.HandleFunc("/api/likePost", forumManagementControllers.LikePost)
 	// protectedRoutes.HandleFunc("/editPost/{id}", forumManagementControllers.EditPost).Methods("GET")
 	http.HandleFunc("/editPost/", forumManagementControllers.EditPost)
 	http.HandleFunc("/updatePost", forumManagementControllers.UpdatePost) /*post method*/
