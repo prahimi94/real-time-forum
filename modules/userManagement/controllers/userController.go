@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	errorManagementControllers "forum/modules/errorManagement/controllers"
-	"forum/modules/userManagement/models"
 	userManagementModels "forum/modules/userManagement/models"
 	"forum/utils"
 	"net/http"
@@ -12,7 +11,6 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/gofrs/uuid/v5"
 	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -20,7 +18,7 @@ import (
 const publicUrl = "modules/userManagement/views/"
 const forumPublicUrl = "modules/forumManagement/views/"
 
-var u1 = uuid.Must(uuid.NewV4())
+//var u1 = uuid.Must(uuid.NewV4())
 
 type AuthPageErrorData struct {
 	ErrorMessage string
@@ -94,14 +92,14 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newUser := &models.User{
+	newUser := &userManagementModels.User{
 		Username: username,
 		Email:    email,
 		Password: string(hashedPassword),
 	}
 
 	// Insert a record while checking duplicates
-	userId, insertError := models.InsertUser(newUser)
+	userId, insertError := userManagementModels.InsertUser(newUser)
 	if insertError != nil {
 		if insertError.Error() == "duplicateEmail" {
 			renderAuthPage(w, "User with this email already exists!")
@@ -152,7 +150,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Insert a record while checking duplicates
-	authStatus, userId, authError := models.AuthenticateUser(username, password)
+	authStatus, userId, authError := userManagementModels.AuthenticateUser(username, password)
 	if authError != nil {
 		// errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		renderAuthPage(w, authError.Error())
@@ -172,10 +170,10 @@ func renderAuthPage(w http.ResponseWriter, errorMsg string) {
 }
 
 func sessionGenerator(w http.ResponseWriter, r *http.Request, userId int) {
-	session := &models.Session{
+	session := &userManagementModels.Session{
 		UserId: userId,
 	}
-	session, insertError := models.InsertSession(session)
+	session, insertError := userManagementModels.InsertSession(session)
 	if insertError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
@@ -186,27 +184,27 @@ func sessionGenerator(w http.ResponseWriter, r *http.Request, userId int) {
 }
 
 // Middleware to check for valid user session in cookie
-func CheckLogin(w http.ResponseWriter, r *http.Request) (bool, models.User, string, error) {
+func CheckLogin(w http.ResponseWriter, r *http.Request) (bool, userManagementModels.User, string, error) {
 	cookie, err := r.Cookie("session_token")
 	if err != nil {
-		return false, models.User{}, "", nil
+		return false, userManagementModels.User{}, "", nil
 	}
 
 	sessionToken := cookie.Value
-	user, expirationTime, selectError := models.SelectSession(sessionToken)
+	user, expirationTime, selectError := userManagementModels.SelectSession(sessionToken)
 	if selectError != nil {
 		if selectError.Error() == "sql: no rows in result set" {
 			deleteCookie(w, "session_token")
-			return false, models.User{}, "", nil
+			return false, userManagementModels.User{}, "", nil
 		} else {
-			return false, models.User{}, "", selectError
+			return false, userManagementModels.User{}, "", selectError
 		}
 	}
 
 	// Check if the cookie has expired
 	if time.Now().After(expirationTime) {
 		// Cookie expired, redirect to login
-		return false, models.User{}, "", nil
+		return false, userManagementModels.User{}, "", nil
 	}
 
 	return true, user, sessionToken, nil
@@ -224,7 +222,7 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := models.DeleteSession(sessionToken)
+	err := userManagementModels.DeleteSession(sessionToken)
 	if err != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
@@ -254,7 +252,7 @@ func EditUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data_obj_sender := struct {
-		LoginUser models.User
+		LoginUser userManagementModels.User
 	}{
 		LoginUser: loginUser,
 	}
@@ -330,14 +328,14 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user := &models.User{
+	user := &userManagementModels.User{
 		ID:           loginUser.ID,
 		Name:         name,
 		ProfilePhoto: profile_photo,
 	}
 
 	// Update a record while checking duplicates
-	updateError := models.UpdateUser(user)
+	updateError := userManagementModels.UpdateUser(user)
 	if updateError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
@@ -384,10 +382,10 @@ func SetCookie(w http.ResponseWriter, sessionToken string, expiresAt time.Time) 
 	})
 }
 
-func GetOnlineUsers(w http.ResponseWriter, r *http.Request) {
+func LoggedInUsersHandler(w http.ResponseWriter, r *http.Request) {
 	usernames, err := userManagementModels.GetActiveSessionUsernames(r)
 	if err != nil {
-		http.Error(w, "Failed to fetch online users", http.StatusInternalServerError)
+		http.Error(w, "Failed to fetch logged-in users", http.StatusInternalServerError)
 		return
 	}
 

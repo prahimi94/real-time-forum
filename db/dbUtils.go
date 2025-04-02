@@ -9,7 +9,7 @@ import (
 )
 
 func OpenDBConnection() *sql.DB {
-	db, err := sql.Open("sqlite3", "./db/forum.db")
+	db, err := sql.Open("sqlite3", "./db/real-time-forum.db")
 	if err != nil {
 		log.Fatal(err)
 	}
