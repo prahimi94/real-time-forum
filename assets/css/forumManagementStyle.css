@@ -272,6 +272,9 @@ body {
     box-shadow: 0 3px 10px rgba(90, 90, 90, 0.1);
     margin-bottom: 2rem;
 }
+.bg-border-box{
+    background: border-box;
+}
 .post-card .post-title{
     font-weight: bold;
     font-family: "Open Sans", serif;

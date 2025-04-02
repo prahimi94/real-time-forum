@@ -1,9 +1,9 @@
 package controller
 
 import (
-	"encoding/json"
 	errorManagementControllers "forum/modules/errorManagement/controllers"
 	"forum/modules/forumManagement/models"
+	"forum/utils"
 	"net/http"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -21,8 +21,10 @@ func ReadAllCategories(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(categories); err != nil {
-		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
+	res := utils.Result{
+		Success: true,
+		Message: "Post submitted successfully",
+		Data:    categories,
 	}
+	utils.ReturnJson(w, res)
 }

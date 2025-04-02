@@ -1,7 +1,10 @@
 package controller
 
 import (
-	"encoding/json"
+	"fmt"
+	errorManagementControllers "forum/modules/errorManagement/controllers"
+	"forum/utils"
+
 	userManagementModels "forum/modules/userManagement/models"
 	"net/http"
 )
@@ -22,8 +25,31 @@ func CheckSessionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	loginStatus, loginUser, _, checkLoginError := CheckLogin(w, r)
+	if checkLoginError != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+	if loginStatus {
+		fmt.Println("logged in userid is: ", loginUser.ID)
+	} else {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
+		return
+	}
+
+	data_obj_sender := struct {
+		LoginUser userManagementModels.User
+		Active    bool
+	}{
+		LoginUser: loginUser,
+		Active:    isActive,
+	}
+
 	// Respond with the session status
-	response := map[string]bool{"active": isActive}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	res := utils.Result{
+		Success: true,
+		Message: "",
+		Data:    data_obj_sender,
+	}
+	utils.ReturnJson(w, res)
 }

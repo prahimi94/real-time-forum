@@ -23,10 +23,23 @@
 </head>
 
 <body>
-    <!-- this part is loaded by script.js -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <img src="/img/favicon.png" class="rounded me-2" alt="Future Lab" width="20" height="20">
+                <strong class="me-auto">Future Lab</strong>
+                <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                Hello, world! This is a toast message.
+            </div>
+        </div>
+    </div>
+
     <main>
 
     </main>
+
     <!-- { template "footer"}} -->
     <div class="container">
         <footer class="py-3 my-2">
@@ -39,12 +52,6 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
     <script src="/js/chat.js"></script>
     <script src="/js/script.js"></script>
-
-    <script>
-        $(document).ready(function () {
-            $('.multiSelect').select2();
-        });
-    </script>
 
 </body>
 

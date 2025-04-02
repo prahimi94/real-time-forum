@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"html/template"
+	"forum/utils"
 	"net/http"
 	"strconv"
 )
@@ -79,17 +79,25 @@ var (
 )
 
 func HandleErrorPage(w http.ResponseWriter, r *http.Request, errorPageData ErrorPageData) {
-	tmpl, err := template.ParseFiles(
-		publicUrl + "errors.html",
-		// publicUrl+"templates/header.html",
-		// publicUrl+"templates/menu.html",
-		// publicUrl+"templates/footer.html",
-	)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	// tmpl, err := template.ParseFiles(
+	// 	publicUrl + "errors.html",
+	// 	// publicUrl+"templates/header.html",
+	// 	// publicUrl+"templates/menu.html",
+	// 	// publicUrl+"templates/footer.html",
+	// )
+	// if err != nil {
+	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
+	// 	return
+	// }
 
-	w.WriteHeader(errorPageData.CodeNumber)
-	tmpl.Execute(w, errorPageData)
+	// w.WriteHeader(errorPageData.CodeNumber)
+	// tmpl.Execute(w, errorPageData)
+
+	res := utils.Result{
+		Success:    false,
+		Message:    errorPageData.Info,
+		Data:       nil,
+		HttpStatus: errorPageData.CodeNumber,
+	}
+	utils.ReturnJson(w, res)
 }
