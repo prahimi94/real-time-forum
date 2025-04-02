@@ -898,6 +898,8 @@ func ReadPostByUUID(postUUID string, checkLikeForUser int) (Post, error) {
 	defer rows.Close()
 
 	var post Post
+	post.Categories = []Category{}
+	post.PostFiles = []PostFile{}
 	var user userManagementModels.User
 
 	// Scan the records

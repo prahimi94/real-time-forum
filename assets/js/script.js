@@ -215,10 +215,10 @@ function showAuthenticatedContainer() {
                                 </li>
                                 <li><div class="divaider mb-2"></div></li>
                                     <li class="nav-item">
-                                        <form class="d-flex mt-3" role="search" method="get" action="/filterPosts">
+                                        <!--<form id="searchForm" class="d-flex mt-3" role="search">
                                         <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search" name="post_info">
-                                        <button class="btn btn-outline-success" type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
-                                        </form>
+                                        <button onclick="filterPosts()" class="btn btn-outline-success"><i class="fa-solid fa-magnifying-glass"></i></button>
+                                        </form> -->
                                     </li>
                                 <li><div class="divaider mb-2 mt-2"></div></li>
                                 <li class="nav-item">
@@ -246,9 +246,9 @@ function showAuthenticatedContainer() {
                     <div class="collapse navbar-collapse" id="navbarsExample11">
                         <div class="navbar-nav col-sm-12 col-lg-10 justify-content-lg-center">
                             <div class="input-p-main">
-                                <form class="d-flex" role="search" method="get" action="/filterPosts">
-                            <input class="form-control me-2 input-p" type="search" placeholder="Search" aria-label="Search" name="post_info">
-                            <button class="btn btn-outline-success" type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
+                                <form id="searchForm" class="d-flex" role="search">
+                                    <input class="form-control me-2 input-p" type="search" placeholder="Search" aria-label="Search" name="post_info">
+                                    <button onclick="filterPosts()" class="btn btn-outline-success"><i class="fa-solid fa-magnifying-glass"></i></button>
                                 </form>
                             </div>
                         </div>
@@ -383,6 +383,10 @@ function showAuthenticatedContainer() {
 async function fetchCategories() {
     const response = await fetch('/api/categories/');
     res = await response.json();
+    if (!res.success) {
+        showToast(res.message);
+        return;
+    }
     categories = res.data
 
     // load categories in sidebar
@@ -396,7 +400,7 @@ async function fetchCategories() {
 
         const categoryATag = document.createElement('a');
         categoryATag.setAttribute('class', 'left-item');
-        categoryATag.href = `/posts/${category.name}`;
+        categoryATag.href = `javascript:fetchCategoryPosts('${category.name}')`;
         categoryATag.appendChild(categoryITag);
         categoryATag.innerHTML += category.name;
 
@@ -414,12 +418,46 @@ async function fetchCategories() {
     selectCategoriesContainer.innerHTML = categoryOptions;
 }
 
-async function fetchPosts() {
-    const response = await fetch('/api/posts/');
+async function fetchPost(postId, postUuid) {
+    const response = await fetch('/api/post/' + postUuid);
     res = await response.json();
+    if (!res.success) {
+        showToast(res.message);
+        return;
+    }
+
+    const post = res.data.Post;
+    updatePostHtml(post, postId);
+}
+
+async function fetchPosts() {
+    const response = await fetch('/api/allPosts/');
+    res = await response.json();
+    if (!res.success) {
+        showToast(res.message);
+        return;
+    }
     posts = res.data
 
     fillPostsInHtml(posts);
+}
+
+async function filterPosts() {
+    const form = document.getElementById('searchForm');
+    form.addEventListener('submit', (event) => {
+        event.preventDefault();
+    });
+
+    const searchTerm = document.querySelector('input[name="post_info"]').value;
+    const response = await fetch('/api/filterPosts/' + searchTerm);
+    res = await response.json();
+    if (!res.success) {
+        showToast(res.message);
+        return;
+    }
+    posts = res.data
+
+    fillPostsInHtml(posts.Posts, 'Search results for: ' + searchTerm);
 }
 
 async function fetchMyCreatedPosts() {
@@ -428,7 +466,7 @@ async function fetchMyCreatedPosts() {
     showToast(res);
     posts = res.data
 
-    fillPostsInHtml(posts.Posts);
+    fillPostsInHtml(posts.Posts, 'My created post');
 }
 
 async function fetchMyLikedPosts() {
@@ -437,16 +475,29 @@ async function fetchMyLikedPosts() {
     showToast(res);
     posts = res.data
 
-    fillPostsInHtml(posts.Posts);
+    fillPostsInHtml(posts.Posts, 'My liked post');
 }
 
-function fillPostsInHtml(posts) {
+async function fetchCategoryPosts(category) {
+    const response = await fetch('/api/posts/' + category);
+    res = await response.json();
+    showToast(res);
+    posts = res.data
+
+    fillPostsInHtml(posts.Posts, category + ' posts');
+}
+
+function fillPostsInHtml(posts, actionSubject = '') {
     // load posts for home page
     const postsContainer = document.getElementById('postsContainer');
-    postsContainer.innerHTML = "";
+
+    postsContainer.innerHTML = `
+    <div class='col-md-12 text-center'>
+        <h4 class='text-muted'>${actionSubject}</h4>
+    </div>`;
 
     if (posts === null || posts.length === 0) {
-        postsContainer.innerHTML = '<div class="col-md-12 text-center">No posts found!</div>';
+        postsContainer.innerHTML += '<div class="col-md-12 text-center">No posts found!</div>';
         return;
     }
     posts.forEach(post => {
@@ -511,16 +562,16 @@ function fillPostsInHtml(posts) {
                         : ``;
 
         const postLikeElement = post.liked
-            ? `<button onclick="likePost(${post.id},'like')" value="like" name="like_post" class="btn btn-success"><i class="fa-solid fa-thumbs-up"></i></button>`
-            : `<button onclick="likePost(${post.id},'like')" value="like" name="like_post" class="btn btn-outline-success"><i class="fa-regular fa-thumbs-up"></i></button>`;
+            ? `<button onclick="likePost(${post.id}, '${post.uuid}', 'like')" value="like" name="like_post" class="btn btn-success"><i class="fa-solid fa-thumbs-up"></i></button>`
+            : `<button onclick="likePost(${post.id}, '${post.uuid}', 'like')" value="like" name="like_post" class="btn btn-outline-success"><i class="fa-regular fa-thumbs-up"></i></button>`;
 
         const postDislikeElement = post.disliked
-            ? `<button onclick="likePost(${post.id},'dislike')" value="dislike" name="dislike_post" value="dislike" class="btn btn-danger"><i class="fa-solid fa-thumbs-down"></i></button>`
-            : `<button onclick="likePost(${post.id},'dislike')" value="dislike" name="dislike_post" value="dislike" class="btn btn-outline-danger"><i class="fa-regular fa-thumbs-down"></i></button>`;
+            ? `<button onclick="likePost(${post.id}, '${post.uuid}', 'dislike')" value="dislike" name="dislike_post" value="dislike" class="btn btn-danger"><i class="fa-solid fa-thumbs-down"></i></button>`
+            : `<button onclick="likePost(${post.id}, '${post.uuid}', 'dislike')" value="dislike" name="dislike_post" value="dislike" class="btn btn-outline-danger"><i class="fa-regular fa-thumbs-down"></i></button>`;
 
         const postHTML = `
             <div class="col-sm-12 col-md-12 mb-3">
-                <div class="post-card">
+                <div class="post-card" id="post-${post.id}">
                     <h5 class="mt-2 post-title">
                         <a href="/post/${post.uuid}" class="nav-link">${post.title}</a>
                     </h5>
@@ -566,6 +617,121 @@ function fillPostsInHtml(posts) {
 
         postsContainer.insertAdjacentHTML('beforeend', postHTML);
     });
+}
+
+function updatePostHtml(post, postId) {
+    const postImage = post.user.profile_photo
+            ? `<img class="bd-placeholder-img flex-shrink-0 me-2 rounded" role="img" src="/uploads/${post.user.profile_photo}" width="45" height="45"/>`
+            : `<div style="padding: 7px;"><i class="fa-solid fa-user" style="font-size: 2rem;"></i></div>`;
+
+    const postCategories = post.categories.map(category =>
+        `<span class="badge-p text-dark"><a href="/posts/${category.name}">${category.name}</a></span>`
+    ).join('');
+
+    const postFiles = post.post_files.map(post_file =>
+        `<div class="col-md-12">
+            <img src="/uploads/${post_file.file_uploaded_name}" alt="post image" class="rounded mb-1" style="width: 100%; max-height: 400px;">
+        </div>`
+    ).join('');
+
+    const formattedDateTime = post.created_at.replace('T', ' ').replace('Z', '');
+
+    const postButtons = 
+    post.user_id === loggedInUser.id
+                    ?`
+                    <div style="float: right;margin-top: -16px;">
+                        <div class="row py-3 ms-2">
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fa-solid fa-ellipsis"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end" style="border: 1px solid #c2c2c270;">
+                                    <li>
+                                        <a id="editPost" class="dropdown-item" href="/editPost/${post.uuid}"><i class="fas fa-edit me-2"></i>Edit Post</a>
+                                    </li>
+                                    <li>
+                                        <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#deletPostModal"><i class="fa-solid fa-trash me-2"></i>Delete Post</button> 
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal fade" id="deletPostModal" tabindex="-1" aria-labelledby="deletPostModalLabel" aria-hidden="true">
+                        <form action="/deletePost" method="post">
+                            <input type="hidden" name="id" value="${post.id}">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <div class="modal-header bg-danger text-white">
+                                        <h5 class="modal-title" id="deletPostModalLabel">Confirm Deletion</h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p class="mb-0">Are you sure you want to delete this item? This action cannot be undone.</p>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <button type="submit" class="btn btn-danger" id="confirmDelete">Delete</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    `
+                    : ``;
+
+    const postLikeElement = post.liked
+        ? `<button onclick="likePost(${post.id}, '${post.uuid}','like')" value="like" name="like_post" class="btn btn-success"><i class="fa-solid fa-thumbs-up"></i></button>`
+        : `<button onclick="likePost(${post.id}, '${post.uuid}','like')" value="like" name="like_post" class="btn btn-outline-success"><i class="fa-regular fa-thumbs-up"></i></button>`;
+
+    const postDislikeElement = post.disliked
+        ? `<button onclick="likePost(${post.id}, '${post.uuid}','dislike')" value="dislike" name="dislike_post" value="dislike" class="btn btn-danger"><i class="fa-solid fa-thumbs-down"></i></button>`
+        : `<button onclick="likePost(${post.id}, '${post.uuid}','dislike')" value="dislike" name="dislike_post" value="dislike" class="btn btn-outline-danger"><i class="fa-regular fa-thumbs-down"></i></button>`;
+
+
+    const postElement = document.getElementById('post-' + postId);
+    if (postElement) {
+        postElement.innerHTML = `
+            <h5 class="mt-2 post-title">
+                <a href="/post/${post.uuid}" class="nav-link">${post.title}</a>
+            </h5>
+            <div>
+                <div class="d-flex text-body-secondary pt-3 m-posts">
+                    ${postImage}
+                    <div class="pb-3 mb-0 small lh-sm w-100 mb-3 ms-2 mt-1">
+                        <div class="d-flex justify-content-between mb-1 m-posts-userInfo">
+                            <span class="post-user">${post.user.username}</span>
+                            <span class="text-right m-posts-ctg">${postCategories}</span>
+                        </div>
+                        <span class="d-block post-dateTime">${formattedDateTime}</span>
+                    </div>
+                </div>
+            </div>
+            <p class="post-description">${post.description}</p>
+            ${postFiles}
+            
+
+            <div class="mt-4">
+                <span class="like-inpost"><i class="fa-solid fa-thumbs-up"></i> ${post.number_of_likes}</span>
+                <span class="dislike-inpost"><i class="fa-solid fa-thumbs-down"></i> ${post.number_of_dislikes}</span>
+                
+                ${postButtons}
+
+                <div style="float: right;margin-top: -16px;">
+                    <div class="row py-3">
+                        <form id="likePostForm-${post.id}">
+                            <input type="hidden" id="post_id" name="post_id" value="${post.iD}">
+
+                            ${postLikeElement}
+                        
+
+                            ${postDislikeElement}
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        `;
+    }
 }
 
 async function fetchOnlineUsers() {
@@ -616,7 +782,7 @@ async function submitPost() {
     fetchPosts();
 }
 
-async function likePost(id, actionType) {
+async function likePost(id, uuid, actionType) {
     const form = document.getElementById('likePostForm-' + id);
     form.addEventListener('submit', (event) => {
         event.preventDefault();
@@ -634,7 +800,7 @@ async function likePost(id, actionType) {
     showToast(res);
 
     form.reset();
-    fetchPosts();
+    fetchPost(id, uuid);
 }
 
 /* WEBSOCKET FOR CHAT */
