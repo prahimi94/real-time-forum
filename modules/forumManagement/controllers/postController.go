@@ -797,13 +797,13 @@ func LikePost(w http.ResponseWriter, r *http.Request) {
 	existingLikeId, existingLikeType := models.PostHasLiked(loginUser.ID, postIDInt)
 
 	var resMessage string
-	if existingLikeId == -1 {
-		if Type == "like" {
-			resMessage = "You liked successfully"
-		} else {
-			resMessage = "You disliked successfully"
-		}
+	if Type == "like" {
+		resMessage = "You liked successfully"
+	} else {
+		resMessage = "You disliked successfully"
+	}
 
+	if existingLikeId == -1 {
 		post := &models.PostLike{
 			Type:   Type,
 			PostId: postIDInt,
@@ -823,12 +823,6 @@ func LikePost(w http.ResponseWriter, r *http.Request) {
 		utils.ReturnJson(w, res)
 		return
 	} else {
-		if Type == "like" {
-			resMessage = "You removed like successfully"
-		} else {
-			resMessage = "You removed dislike successfully"
-		}
-
 		updateError := models.UpdateStatusPostLike(existingLikeId, "delete", loginUser.ID)
 		if updateError != nil {
 			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
@@ -845,6 +839,12 @@ func LikePost(w http.ResponseWriter, r *http.Request) {
 			if insertError != nil {
 				errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 				return
+			}
+		} else {
+			if Type == "like" {
+				resMessage = "You removed like successfully"
+			} else {
+				resMessage = "You removed dislike successfully"
 			}
 		}
 		res := utils.Result{
