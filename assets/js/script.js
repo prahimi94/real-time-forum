@@ -515,6 +515,84 @@ async function likePost(id, uuid, actionType) {
     fetchPost(id, uuid);
 }
 
+async function createComment(id, uuid) {
+    const form = document.getElementById('commentForm-' + id);
+    form.addEventListener('submit', (event) => {
+        event.preventDefault();
+    });
+    
+    const response = await fetch('/api/submitComment', {
+        method: 'POST',
+        body: new FormData(form),
+    });
+    res = await response.json();
+    showToast(res);
+
+    form.reset();
+    fetchPost(id, uuid);
+}
+
+async function likeComment(comment_id, id, uuid, actionType) {
+    const form = document.getElementById('likeCommentForm-' + comment_id);
+    form.addEventListener('submit', (event) => {
+        event.preventDefault();
+    });
+    
+    const formData = new FormData();
+    formData.append('comment_id', comment_id);
+    formData.append('actionType', actionType);
+
+    const response = await fetch('/api/likeComment', {
+        method: 'POST',
+        body: formData,
+    });
+    res = await response.json();
+    showToast(res);
+
+    form.reset();
+    fetchPost(id, uuid);
+}
+
+async function updateComment(comment_id, id, uuid) {
+    const form = document.getElementById('updateCommentForm-' + comment_id);
+    form.addEventListener('submit', (event) => {
+        event.preventDefault();
+    });
+    
+    const response = await fetch('/api/updateComment', {
+        method: 'POST',
+        body: new FormData(form),
+    });
+    res = await response.json();
+    showToast(res);
+
+    form.reset();
+    const updateCommentModal = document.getElementById('updateCommentModal-' + comment_id);
+    const modalInstance = bootstrap.Modal.getInstance(updateCommentModal);
+    modalInstance.hide();
+    fetchPost(id, uuid);   
+}
+
+async function deleteComment(comment_id, id, uuid) {
+    const form = document.getElementById('deleteCommentForm-' + comment_id);
+    form.addEventListener('submit', (event) => {
+        event.preventDefault();
+    });
+    
+    const response = await fetch('/api/deleteComment', {
+        method: 'POST',
+        body: new FormData(form),
+    });
+    res = await response.json();
+    showToast(res);
+
+    form.reset();
+    const deleteCommentModal = document.getElementById('deletCommentModal-' + comment_id);
+    const modalInstance = bootstrap.Modal.getInstance(deleteCommentModal);
+    modalInstance.hide();
+    fetchPost(id, uuid);   
+}
+
 function fillPostsInHtml(posts, actionSubject = '') {
     // load posts for home page
     const postsContainer = document.getElementById('postsContainer');
@@ -651,7 +729,7 @@ function fillPostsInHtml(posts, actionSubject = '') {
                 </h2>
 
                 <div id="flush-collapse-${post.id}" class="accordion-collapse collapse" aria-labelledby="flush-heading-${post.id}" data-bs-parent="#accordionFlushExample">
-                    <div class="accordion-body" id="post-comments-${post.id}">
+                    <div class="accordion-body post-card bg-border-box" id="post-comments-${post.id}">
                     </div>
                 </div>
             </div>
@@ -786,120 +864,141 @@ function updatePostHtml(post, comments, postId) {
                                 </div>`;
 
         if(!comments || comments.length === 0) {
-            postCommentsElement.innerHTML = postCommentsHtml + '<div class="col-md-12 text-center">No comments found!</div>';
-            return;
-        }
-        comments.forEach(comment => {
-            const commentDateTime = comment.created_at.replace('T', ' ').replace('Z', '');
-
-            const postButtons = 
-            comment.user_id === loggedInUser.id
-                ? `<div style="float: right;margin-top: -16px;">
-                            <div class="row py-3 ms-2">
-                                <div class="btn-group">
-                                    <a type="button" class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="fa-solid fa-ellipsis"></i>
-                                    </a>
-                                    <ul class="dropdown-menu dropdown-menu-end" style="border: 1px solid #c2c2c270;">
-                                        <li>
-                                            <!-- Button trigger modal -->
-                                            <a type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#editCommentModal">
-                                                <i class="fas fa-edit me-2"></i>Edit Comment
-                                            </a>
-                                            
-                                        </li>
-                                        <li>
-                                            <a type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#deletCommentModal"><i class="fa-solid fa-trash me-2"></i>Delete Comment</a> 
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Modal -->
-                        <div class="modal fade" id="editCommentModal" tabindex="-1" aria-labelledby="editCommentModalLabel" aria-hidden="true">
-                            <div class="modal-dialog">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                <h1 class="modal-title fs-5" id="editCommentModalLabel">Edit comment</h1>
-                                <a type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></a>
-                                </div>
-                                <form method="post" action="/updateComment">
-                                <div class="modal-body">
-                                        <input type="hidden" name="post_uuid" value="${post.uuid}">
-                                        <input type="hidden" name="comment_id" value="${comment.id}}">
-                                        <div class="mb-3">
-                                        <label for="description-text" class="col-form-label">Comment:</label>
-                                        <textarea class="form-control" id="description-text" name="description">${comment.description}</textarea>
-                                        </div>
-                                </div>
-                                <div class="modal-footer">
-                                <a type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</a>
-                                <a type="submit" class="btn btn-success">Save changes</a>
-                            </form>
-                                </div>
-                            </div>
-                            </div>
-                        </div>
-                        <div class="modal fade" id="deletCommentModal" tabindex="-1" aria-labelledby="deletCommentModalLabel" aria-hidden="true">
-                            <form action="/deleteComment" method="post">
-                                <input type="hidden" name="post_uuid" value="${post.uuid}">
-                                <input type="hidden" name="comment_id" value="${comment.id}}">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <div class="modal-content">
-                                        <div class="modal-header bg-danger text-white">
-                                            <h5 class="modal-title" id="deletCommentModalLabel">Confirm Deletion</h5>
-                                            <a type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></a>
-                                        </div>
-                                        <div class="modal-body">
-                                            <p class="mb-0">Are you sure you want to delete this item? This action cannot be undone.</p>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <a type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</a>
-                                            <a type="submit" class="btn btn-danger" id="confirmDelete">Delete</a>
-                                        </div>
+            postCommentsHtml += '<div class="col-md-12 text-center">No comments found!</div>';
+        } else {
+            comments.forEach(comment => {
+                const commentDateTime = comment.created_at.replace('T', ' ').replace('Z', '');
+    
+                const postButtons = 
+                comment.user_id === loggedInUser.id
+                    ? `<div style="float: right;margin-top: -16px;">
+                                <div class="row py-3 ms-2">
+                                    <div class="btn-group">
+                                        <a type="button" class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="fa-solid fa-ellipsis"></i>
+                                        </a>
+                                        <ul class="dropdown-menu dropdown-menu-end" style="border: 1px solid #c2c2c270;">
+                                            <li>
+                                                <!-- Button trigger modal -->
+                                                <a type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#updateCommentModal-${comment.id}">
+                                                    <i class="fas fa-edit me-2"></i>Edit Comment
+                                                </a>
+                                                
+                                            </li>
+                                            <li>
+                                                <a type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#deletCommentModal-${comment.id}"><i class="fa-solid fa-trash me-2"></i>Delete Comment</a> 
+                                            </li>
+                                        </ul>
                                     </div>
                                 </div>
-                            </form>
-                        </div>`
-                : ``;
-
-            const commentLikeElement = comment.liked
-                ? `<a type="submit" name="like" value="like" class="btn btn-success"><i class="fa-solid fa-thumbs-up"></i></a>`
-                : `<a type="submit" name="like" value="like" class="btn btn-outline-success"><i class="fa-regular fa-thumbs-up"></i></a>`
-
-
-            const commentDisikeElement = comment.liked
-                ? `<a type="submit" name="dislike" value="dislike" class="btn btn-danger"><i class="fa-solid fa-thumbs-down"></i></a>`
-                : `<a type="submit" name="dislike" value="dislike" class="btn btn-outline-danger"><i class="fa-regular fa-thumbs-down"></i></a>`
-
-            postCommentsHtml += `
-                <div class="post-card bg-border-box">
-                    <div class="row">
-                        <h5 class="mt-2 post-user">${comment.user.username}</h5>
-                        <p class="post-dateTime">${commentDateTime}</p>
-                        <p class="post-description">${comment.description}</p>
-                    </div>
-                    <div class="mt-4">
-                        <span class="like-inpost"><i class="fa-solid fa-thumbs-up"></i> ${comment.number_of_likes}</span>
-                        <span class="dislike-inpost"><i class="fa-solid fa-thumbs-down"></i> ${comment.number_of_dislikes}</span>
-
-                        ${postButtons}
-
-                        <div style="float: right;margin-top: -16px;">
-                            <div class="row py-3 ms-2">
-                                <form method="post" action="/likeComment">
-                                    <input type="hidden" name="comment_id" value="${comment.id}">
-                                
-                                    ${commentLikeElement}
-
-                                    ${commentDisikeElement}
-                                
+                            </div>
+                            <!-- Modal -->
+                            <div class="modal fade" id="updateCommentModal-${comment.id}" tabindex="-1" aria-labelledby="editCommentModalLabel" aria-hidden="true">
+                                <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                    <h1 class="modal-title fs-5" id="editCommentModalLabel">Edit comment</h1>
+                                    <a type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></a>
+                                    </div>
+                                    <form id="updateCommentForm-${comment.id}" method="post">
+                                    <div class="modal-body">
+                                            <input type="hidden" name="post_uuid" value="${post.uuid}">
+                                            <input type="hidden" name="comment_id" value="${comment.id}">
+                                            <div class="mb-3">
+                                            <label for="description-text" class="col-form-label">Comment:</label>
+                                            <textarea class="form-control" id="description-text" name="description">${comment.description}</textarea>
+                                            </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                    <a type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</a>
+                                    <a onclick="updateComment(${comment.id}, ${post.id}, '${post.uuid}')" class="btn btn-success">Save changes</a>
                                 </form>
+                                    </div>
+                                </div>
+                                </div>
+                            </div>
+                            <div class="modal fade" id="deletCommentModal-${comment.id}" tabindex="-1" aria-labelledby="deletCommentModalLabel" aria-hidden="true">
+                                <form id="deleteCommentForm-${comment.id}" method="post">
+                                    <input type="hidden" name="post_uuid" value="${post.uuid}">
+                                    <input type="hidden" name="comment_id" value="${comment.id}">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content">
+                                            <div class="modal-header bg-danger text-white">
+                                                <h5 class="modal-title" id="deletCommentModalLabel">Confirm Deletion</h5>
+                                                <a type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></a>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p class="mb-0">Are you sure you want to delete this item? This action cannot be undone.</p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <a type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</a>
+                                                <a onclick="deleteComment(${comment.id}, ${post.id}, '${post.uuid}')" class="btn btn-danger" id="confirmDelete">Delete</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>`
+                    : ``;
+    
+                const commentLikeElement = comment.liked
+                    ? `<a onclick="likeComment(${comment.id}, ${post.id}, '${post.uuid}','like')" name="like" value="like" class="btn btn-success"><i class="fa-solid fa-thumbs-up"></i></a>`
+                    : `<a onclick="likeComment(${comment.id}, ${post.id}, '${post.uuid}','like')" name="like" value="like" class="btn btn-outline-success"><i class="fa-regular fa-thumbs-up"></i></a>`
+    
+                const commentDislikeElement = comment.disliked
+                    ? `<a onclick="likeComment(${comment.id}, ${post.id}, '${post.uuid}','dislike')" name="dislike" value="dislike" class="btn btn-danger"><i class="fa-solid fa-thumbs-down"></i></a>`
+                    : `<a onclick="likeComment(${comment.id}, ${post.id}, '${post.uuid}','dislike')" name="dislike" value="dislike" class="btn btn-outline-danger"><i class="fa-regular fa-thumbs-down"></i></a>`
+    
+                postCommentsHtml += `
+                    <div class="post-card bg-border-box">
+                        <div class="row">
+                            <h5 class="mt-2 post-user">${comment.user.username}</h5>
+                            <p class="post-dateTime">${commentDateTime}</p>
+                            <p class="post-description">${comment.description}</p>
+                        </div>
+                        <div class="mt-4">
+                            <span class="like-inpost"><i class="fa-solid fa-thumbs-up"></i> ${comment.number_of_likes}</span>
+                            <span class="dislike-inpost"><i class="fa-solid fa-thumbs-down"></i> ${comment.number_of_dislikes}</span>
+    
+                            ${postButtons}
+    
+                            <div style="float: right;margin-top: -16px;">
+                                <div class="row py-3 ms-2">
+                                    <form id="likeCommentForm-${comment.id}">
+                                        <input type="hidden" name="comment_id" value="${comment.id}">
+                                    
+                                        ${commentLikeElement}
+    
+                                        ${commentDislikeElement}
+                                    
+                                    </form>
+                                </div>
                             </div>
                         </div>
+                    </div>`;
+            })
+        }
+        
+
+        postCommentsHtml += `
+                <div class="container p-5">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h3>Your Comment</h3>
+                        <p class="text-secondary">You can share your ideas about this post here.</p>
+                        <form id="commentForm-${post.id}" method="post">
+                            <div class="mb-3">
+                                <input type="hidden" id="post_id" name="post_id" value="${post.id}">
+                            </div>
+
+                            <div class="mb-3">
+                                <textarea class="form-control" style="border-radius: 14px;" placeholder="Text" required rows="4" name="description"></textarea>
+                            </div>
+                            <button onclick="createComment(${post.id}, '${post.uuid}')" class="btn btn-success w-100" style="border-radius: 14px;">Comment</button>
+                        </form>
                     </div>
-                </div>`;
-        })
+                </div>
+            </div>
+            `;
 
         postCommentsElement.innerHTML = postCommentsHtml
     }

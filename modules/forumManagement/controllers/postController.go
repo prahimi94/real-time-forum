@@ -777,7 +777,7 @@ func LikePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// err := r.ParseForm()
-	err := r.ParseMultipartForm(10 << 20) // 10 MB limit
+	err := r.ParseMultipartForm(0)
 	if err != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 		return

@@ -50,10 +50,10 @@ func SetupRoutes() {
 	http.HandleFunc("/updatePost", forumManagementControllers.UpdatePost) /*post method*/
 	http.HandleFunc("/deletePost", forumManagementControllers.DeletePost) /*post method*/
 
-	http.HandleFunc("/likeComment", forumManagementControllers.LikeComment)
-	http.HandleFunc("/submitComment", forumManagementControllers.SubmitComment) /*post method*/
-	http.HandleFunc("/updateComment", forumManagementControllers.UpdateComment) /*post method*/
-	http.HandleFunc("/deleteComment", forumManagementControllers.DeleteComment) /*post method*/
+	http.HandleFunc("/api/likeComment", forumManagementControllers.LikeComment)
+	http.HandleFunc("/api/submitComment", forumManagementControllers.SubmitComment) /*post method*/
+	http.HandleFunc("/api/updateComment", forumManagementControllers.UpdateComment) /*post method*/
+	http.HandleFunc("/api/deleteComment", forumManagementControllers.DeleteComment) /*post method*/
 
 	// // Protected routes (using middleware)
 	// protectedRoutes := router.PathPrefix("/").Subrouter()

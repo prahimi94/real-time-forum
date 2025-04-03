@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"forum/middlewares"
+	"fmt"
 	errorManagementControllers "forum/modules/errorManagement/controllers"
 	"forum/modules/forumManagement/models"
 	"forum/utils"
@@ -9,7 +9,6 @@ import (
 	"strconv"
 
 	userManagementControllers "forum/modules/userManagement/controllers"
-	userManagementModels "forum/modules/userManagement/models"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -113,20 +112,28 @@ func SubmitComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginUser, ok := r.Context().Value(middlewares.UserContextKey).(userManagementModels.User)
-	if !ok {
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
+	if checkLoginError != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+	if !loginStatus {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
 		return
 	}
 
-	err := r.ParseForm()
+	err := r.ParseMultipartForm(0)
 	if err != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 		return
 	}
+
 	post_id_str := r.FormValue("post_id")
+	fmt.Println("post_id_str:", post_id_str)
 	description := utils.SanitizeInput(r.FormValue("description"))
+	fmt.Println("description:", description)
 	if len(post_id_str) == 0 || len(description) == 0 {
+		fmt.Println("Error: post_id or description is empty")
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 		return
 	}
@@ -144,8 +151,12 @@ func SubmitComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userManagementControllers.RedirectToPrevPage(w, r)
-
+	res := utils.Result{
+		Success: true,
+		Message: "Comment submitted successfully",
+		Data:    nil,
+	}
+	utils.ReturnJson(w, res)
 }
 
 func LikeComment(w http.ResponseWriter, r *http.Request) {
@@ -154,32 +165,57 @@ func LikeComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginUser, ok := r.Context().Value(middlewares.UserContextKey).(userManagementModels.User)
-	if !ok {
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
+	if checkLoginError != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+	if !loginStatus {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
 		return
 	}
 
-	err := r.ParseForm()
+	// err := r.ParseForm()
+	err := r.ParseMultipartForm(0)
 	if err != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 		return
 	}
 	commentID := r.FormValue("comment_id")
 	commentIDInt, _ := strconv.Atoi(commentID)
-	var Type string
-	like := r.FormValue("like")
-	dislike := r.FormValue("dislike")
-	if like == "like" {
-		Type = like
-	} else if dislike == "dislike" {
-		Type = dislike
-	}
+	// var Type string
+	// like := r.FormValue("like")
+	// dislike := r.FormValue("dislike")
+	// if like == "like" {
+	// 	Type = like
+	// } else if dislike == "dislike" {
+	// 	Type = dislike
+	// }
+	Type := r.FormValue("actionType")
 
 	existingLikeId, existingLikeType := models.CommentHasLiked(loginUser.ID, commentIDInt)
+
+	var resMessage string
+	if Type == "like" {
+		resMessage = "You liked successfully"
+	} else {
+		resMessage = "You disliked successfully"
+	}
+
 	if existingLikeId == -1 {
-		models.InsertCommentLike(Type, commentIDInt, loginUser.ID)
-		userManagementControllers.RedirectToPrevPage(w, r)
+		insertError := models.InsertCommentLike(Type, commentIDInt, loginUser.ID)
+		if insertError != nil {
+			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+			return
+		}
+
+		res := utils.Result{
+			Success: true,
+			Message: resMessage,
+			Data:    nil,
+		}
+		utils.ReturnJson(w, res)
+		return
 	} else {
 		updateError := models.UpdateCommentLikesStatus(existingLikeId, "delete", loginUser.ID)
 		if updateError != nil {
@@ -188,10 +224,24 @@ func LikeComment(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if existingLikeType != Type { //this is duplicated like or duplicated dislike so we should update it to disable
-			models.InsertCommentLike(Type, commentIDInt, loginUser.ID)
-
+			insertError := models.InsertCommentLike(Type, commentIDInt, loginUser.ID)
+			if insertError != nil {
+				errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+				return
+			}
+		} else {
+			if Type == "like" {
+				resMessage = "You removed like successfully"
+			} else {
+				resMessage = "You removed dislike successfully"
+			}
 		}
-		userManagementControllers.RedirectToPrevPage(w, r)
+		res := utils.Result{
+			Success: true,
+			Message: resMessage,
+			Data:    nil,
+		}
+		utils.ReturnJson(w, res)
 		return
 	}
 }
@@ -202,13 +252,17 @@ func UpdateComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginUser, ok := r.Context().Value(middlewares.UserContextKey).(userManagementModels.User)
-	if !ok {
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
+	if checkLoginError != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+	if !loginStatus {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
 		return
 	}
 
-	err := r.ParseForm()
+	err := r.ParseMultipartForm(0)
 	if err != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 		return
@@ -242,7 +296,12 @@ func UpdateComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/post/"+post_uuid, http.StatusFound)
+	res := utils.Result{
+		Success: true,
+		Message: "Comment updated successfully",
+		Data:    nil,
+	}
+	utils.ReturnJson(w, res)
 }
 
 func DeleteComment(w http.ResponseWriter, r *http.Request) {
@@ -251,13 +310,17 @@ func DeleteComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginUser, ok := r.Context().Value(middlewares.UserContextKey).(userManagementModels.User)
-	if !ok {
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
+	if checkLoginError != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+	if !loginStatus {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
 		return
 	}
 
-	err := r.ParseForm()
+	err := r.ParseMultipartForm(0)
 	if err != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 		return
@@ -284,5 +347,10 @@ func DeleteComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/post/"+post_uuid, http.StatusFound)
+	res := utils.Result{
+		Success: true,
+		Message: "Comment removed successfully",
+		Data:    nil,
+	}
+	utils.ReturnJson(w, res)
 }
