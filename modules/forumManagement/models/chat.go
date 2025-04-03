@@ -158,7 +158,7 @@ func InsertChatMember(chatID, userID int, tx *sql.Tx) error {
 	return nil
 }
 
-func InsertMsg(chatID int, userID int, content string, message *Message, uploadedFiles map[string]string) (int, error) {
+func InsertMsg(msg *Message, uploadedFiles map[string]string) (int, error) {
 	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
@@ -168,13 +168,8 @@ func InsertMsg(chatID int, userID int, content string, message *Message, uploade
 		return -1, err
 	}
 
-	message.ChatID = chatID
-	message.CreatedBy = userID
-	message.Content = content
-	message.CreatedAt = time.Now()
-
-	insertMsgQuery := `INSERT INTO messages (chat_id, content, status, created_at, created_by) VALUES (?, ?, ?, ?, ?);`
-	result, insertMsgQueryErr := tx.Exec(insertMsgQuery, message.ChatID, message.Content, message.Status, message.CreatedAt, message.CreatedBy)
+	insertMsgQuery := `INSERT INTO messages (chat_id, content, status, created_at, created_by, updated_at, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?);`
+	result, insertMsgQueryErr := tx.Exec(insertMsgQuery, msg.ChatID, msg.Content, msg.Status, msg.CreatedAt, msg.CreatedBy, `CURRENT_TIMESTAMP`, nil)
 	if insertMsgQueryErr != nil {
 		tx.Rollback()
 		return -1, insertMsgQueryErr
@@ -187,7 +182,7 @@ func InsertMsg(chatID int, userID int, content string, message *Message, uploade
 		return -1, err
 	}
 
-	insertMsgFilesErr := InsertMsgFiles(chatID, int(lastInsertID), uploadedFiles, userID, tx)
+	insertMsgFilesErr := InsertMsgFiles(msg.ChatID, int(lastInsertID), uploadedFiles, msg.CreatedBy, tx)
 	if insertMsgFilesErr != nil {
 		tx.Rollback()
 		return -1, insertMsgFilesErr

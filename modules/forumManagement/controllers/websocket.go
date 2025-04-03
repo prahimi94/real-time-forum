@@ -3,7 +3,9 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
+	forumManagementModels "forum/modules/forumManagement/models"
 	userManagementModels "forum/modules/userManagement/models"
+	"forum/utils"
 	"net/http"
 	"sync"
 	"time"
@@ -30,7 +32,7 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 
 	// Get myUsername from userid related to session token
-	_, myUsername, err := userManagementModels.GetUserIDFromCookie(r)
+	myUserID, myUsername, err := userManagementModels.GetUserIDFromCookie(r)
 	if err != nil {
 		fmt.Println("Error getting username:", err)
 		return
@@ -54,17 +56,27 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 			Mutex.Unlock()
 			break
 		}
-		
+
+		sanitizedMsg := utils.SanitizeInput(string(message))
 		// Ignore empty messages
-		if len(message) == 0 {
+		if sanitizedMsg == "" {
+			continue
+		}
+
+		// Insert the message into the database
+		msg := &forumManagementModels.Message{ChatID: 1, Content: sanitizedMsg, Status: "enable", CreatedBy: myUserID}
+		fmt.Println(msg)
+		_, err = forumManagementModels.InsertMsg(msg, nil)
+		if err != nil {
+			fmt.Println("Error inserting message into database:", msg, err)
 			continue
 		}
 
 		// Add timestamp and username to the message
 		timestamp := time.Now().Format("2006-01-02 15:04:05")
-		formattedMessage := fmt.Sprintf("[%s] %s: %s", timestamp, myUsername, string(message))
+		formattedMsg := fmt.Sprintf("[%s] %s: %s", timestamp, myUsername, sanitizedMsg)
 
-		Broadcast <- []byte(formattedMessage)
+		Broadcast <- []byte(formattedMsg)
 	}
 }
 
