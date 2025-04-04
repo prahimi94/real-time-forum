@@ -56,7 +56,7 @@ type MessageFile struct {
 
 func CheckChatExists(user1ID, user2ID int) (int, error) {
 	db := db.OpenDBConnection()
-	defer db.Close() //
+	defer db.Close()
 
 	var chatID int
 
@@ -69,12 +69,15 @@ func CheckChatExists(user1ID, user2ID int) (int, error) {
         WHERE c.type = 'private' AND cm1.user_id = ? AND cm2.user_id = ?
     `
 	err := db.QueryRow(query, user1ID, user2ID).Scan(&chatID)
-	if err != sql.ErrNoRows {
+	if err == sql.ErrNoRows {
+		// No chat exists
+		return 0, nil
+	} else if err != nil {
 		// Unexpected error
 		return 0, fmt.Errorf("failed to check for existing chat: %w", err)
 	}
 
-	// Chat already exists
+	// Chat exists
 	return chatID, nil
 }
 
@@ -202,46 +205,19 @@ func InsertMsgFiles(chatID int, msgID int, uploadedFiles map[string]string, user
 	return nil
 }
 
-func ReadAllMsgs(chatID int) ([]Message, error) {
+func ReadAllMsgs(chatID, userID int) ([]Message, error) {
 	db := db.OpenDBConnection()
 	defer db.Close()
 
 	var messages []Message
 
-	query := `SELECT id, chat_id, content, status, FROM messages WHERE chat_id = ?;`
-	rows, err := db.Query(query, chatID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read messages: %w", err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var message Message
-		if err := rows.Scan(&message.ID, &message.ChatID, &message.Content, &message.Status); err != nil {
-			return nil, fmt.Errorf("failed to scan message: %w", err)
-		}
-		messages = append(messages, message)
-	}
-
-	return messages, nil
-}
-
-// ReadTenMsgs at a time for a given chat, with pagination support
-func ReadTenMsgs(chatID int, offset int) ([]Message, error) {
-	db := db.OpenDBConnection()
-	defer db.Close()
-
-	var messages []Message
-
-	// Query to fetch messages with pagination
 	query := `
-		SELECT id, chat_id, content, status, created_at, created_by, updated_at, updated_by
-		FROM messages
-		WHERE chat_id = ?
-		ORDER BY created_at DESC
-		LIMIT 10 OFFSET ?;
-	`
-	rows, err := db.Query(query, chatID, offset)
+        SELECT m.id, m.chat_id, m.content, m.status, m.created_at, m.created_by, m.updated_at, m.updated_by
+        FROM messages m
+        JOIN chat_members cm ON m.chat_id = cm.chat_id
+        WHERE m.chat_id = ? AND cm.user_id = ?;
+    `
+	rows, err := db.Query(query, chatID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read messages: %w", err)
 	}
@@ -263,6 +239,48 @@ func ReadTenMsgs(chatID int, offset int) ([]Message, error) {
 		}
 		messages = append(messages, message)
 	}
+
+	return messages, nil
+}
+
+// ReadTenMsgs at a time for a given chat, with pagination support
+func ReadTenMsgs(chatID, userID, offset int) ([]Message, error) {
+	db := db.OpenDBConnection()
+	defer db.Close()
+
+	var messages []Message
+
+	// Query to fetch messages with pagination
+	query := `
+        SELECT m.id, m.chat_id, m.content, m.status, m.created_at, m.created_by, m.updated_at, m.updated_by
+        FROM messages m
+        JOIN chat_members cm ON m.chat_id = cm.chat_id
+        WHERE m.chat_id = ? AND cm.user_id = ?
+        ORDER BY m.created_at DESC
+        LIMIT 10 OFFSET ?;
+    `
+	rows, err := db.Query(query, chatID, userID, offset)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read messages: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+        var message Message
+        if err := rows.Scan(
+            &message.ID,
+            &message.ChatID,
+            &message.Content,
+            &message.Status,
+            &message.CreatedAt,
+            &message.CreatedBy,
+            &message.UpdatedAt,
+            &message.UpdatedBy,
+        ); err != nil {
+            return nil, fmt.Errorf("failed to scan message: %w", err)
+        }
+        messages = append(messages, message)
+    }
 
 	return messages, nil
 }

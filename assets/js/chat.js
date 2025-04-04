@@ -1,5 +1,5 @@
 let ws;
-let onlineUsers;
+let onlineUsers = []; // Initialize as an empty array
 let usernames = [];
 
 async function fetchOnlineUsers() {
@@ -20,7 +20,7 @@ async function fetchOnlineUsers() {
 // Function to update the online users list in the frontend
 function updateOnlineUsersList(usernames) {
   const onlineUsersList = document.getElementById("online-users-list");
-  onlineUsersList.textContent = "";  // Clear the current list
+  onlineUsersList.textContent = ""; // Clear the current list
 
   if (usernames.length === 0 || (usernames.length === 1 && usernames[0] === loggedInUser.name)) {
     onlineUsersList.textContent = "It's just you here.";
@@ -52,13 +52,12 @@ function openPrivateChat(username) {
   }
 }
 
-
 function connect() {
   ws = new WebSocket("ws://localhost:8080/ws");
 
   ws.onopen = function () {
     console.log("Online: Connected to WebSocket server");
-    updateOnlineUsersList(onlineUsers);
+    fetchOnlineUsers(); // Fetch the latest online users when connected
   };
 
   ws.onmessage = function (event) {
@@ -67,8 +66,9 @@ function connect() {
 
     try {
       // Check if the message is a JSON array (online users list)
-      onlineUsers = JSON.parse(message);
-      if (Array.isArray(onlineUsers)) {
+      const parsedMessage = JSON.parse(message);
+      if (Array.isArray(parsedMessage)) {
+        onlineUsers = parsedMessage; // Update the onlineUsers array
         updateOnlineUsersList(onlineUsers);
         return;
       }
@@ -87,6 +87,7 @@ function connect() {
 
   ws.onclose = function () {
     console.log("Offline: WebSocket connection closed, retrying...");
+    onlineUsers = []; // Clear the onlineUsers list on disconnect
     updateOnlineUsersList(onlineUsers);
     setTimeout(connect, 1000); // Reconnect after 1 second
   };
