@@ -591,8 +591,12 @@ func UpdatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginUser, ok := r.Context().Value(middlewares.UserContextKey).(userManagementModels.User)
-	if !ok {
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
+	if checkLoginError != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+	if !loginStatus {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
 		return
 	}
@@ -605,7 +609,7 @@ func UpdatePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	idStr := r.FormValue("id")
-	uuid := utils.SanitizeInput(r.FormValue("uuid"))
+	// uuid := utils.SanitizeInput(r.FormValue("uuid"))
 	title := utils.SanitizeInput(r.FormValue("title"))
 	description := utils.SanitizeInput(r.FormValue("description"))
 	categories := r.Form["categories"]
@@ -670,7 +674,12 @@ func UpdatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/post/"+uuid, http.StatusFound)
+	res := utils.Result{
+		Success: true,
+		Message: "Post updated successfully",
+		Data:    nil,
+	}
+	utils.ReturnJson(w, res)
 }
 
 func DeletePost(w http.ResponseWriter, r *http.Request) {
@@ -679,13 +688,17 @@ func DeletePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginUser, ok := r.Context().Value(middlewares.UserContextKey).(userManagementModels.User)
-	if !ok {
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
+	if checkLoginError != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+	if !loginStatus {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
 		return
 	}
 
-	err := r.ParseForm()
+	err := r.ParseMultipartForm(0)
 	if err != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 		return
@@ -711,7 +724,12 @@ func DeletePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userManagementControllers.RedirectToIndex(w, r)
+	res := utils.Result{
+		Success: true,
+		Message: "Post removed successfully",
+		Data:    nil,
+	}
+	utils.ReturnJson(w, res)
 }
 
 func AdminDeletePost(w http.ResponseWriter, r *http.Request) {

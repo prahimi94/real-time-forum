@@ -47,8 +47,8 @@ func SetupRoutes() {
 	http.HandleFunc("/api/likePost", forumManagementControllers.LikePost)
 	// protectedRoutes.HandleFunc("/editPost/{id}", forumManagementControllers.EditPost).Methods("GET")
 	http.HandleFunc("/editPost/", forumManagementControllers.EditPost)
-	http.HandleFunc("/updatePost", forumManagementControllers.UpdatePost) /*post method*/
-	http.HandleFunc("/deletePost", forumManagementControllers.DeletePost) /*post method*/
+	http.HandleFunc("/api/updatePost", forumManagementControllers.UpdatePost) /*post method*/
+	http.HandleFunc("/api/deletePost", forumManagementControllers.DeletePost) /*post method*/
 
 	http.HandleFunc("/api/likeComment", forumManagementControllers.LikeComment)
 	http.HandleFunc("/api/submitComment", forumManagementControllers.SubmitComment) /*post method*/
