@@ -227,3 +227,19 @@ func UpdateStatusUser(user_id int, status string, login_user_id int) error {
 
 	return nil
 }
+
+func GetUserIDByUsername(username string) (int, error) {
+	db := db.OpenDBConnection()
+	defer db.Close() // Close the connection after the function finishes
+
+	var userID int
+	err := db.QueryRow("SELECT id FROM users WHERE username = ?", username).Scan(&userID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return -1, errors.New("user not found")
+		}
+		return -1, err // Other DB errors
+	}
+
+	return userID, nil
+}

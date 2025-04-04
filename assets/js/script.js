@@ -17,7 +17,7 @@ async function checkSessionActive() {
             const data = res.data;
             if (data.Active) {
                 loggedInUser = data.LoginUser;
-                console.log(loggedInUser);
+                /* console.log(loggedInUser); */
                 return true; // Session is active
             } else {
                 return false; // Session is not active
@@ -531,7 +531,7 @@ function fillPostsInHtml(posts, actionSubject = '') {
     postsContainer.innerHTML += '<div class="accordion accordion-flush" id="accordionFlushExample">';
 
     posts.forEach(post => {
-        console.log(post);
+        /* console.log(post); */
         const postImage = post.user.profile_photo
             ? `<img class="bd-placeholder-img flex-shrink-0 me-2 rounded" role="img" src="/uploads/${post.user.profile_photo}" width="45" height="45"/>`
             : `<div style="padding: 7px;"><i class="fa-solid fa-user" style="font-size: 2rem;"></i></div>`;

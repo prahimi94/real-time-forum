@@ -45,6 +45,11 @@ function openPrivateChat(username) {
   const chatHeader = document.getElementById("chat-header");
   chatHeader.textContent = `Chat with ${username}`;
   document.getElementById("messageInput").placeholder = `Type a message to ${username}`;
+
+  // Send a message to the server to initiate or check the chat
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: "private_chat", recipient: username }));
+  }
 }
 
 
@@ -97,7 +102,7 @@ function sendMessage() {
   if (message.length === 0) return; // Do not accept empty messages
 
   if (privateRecipient) {
-    ws.send(message);
+    ws.send(JSON.stringify({ type: "message_content", content: message }));
   }
   input.value = "";
 }

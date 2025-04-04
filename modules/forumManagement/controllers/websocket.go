@@ -57,21 +57,66 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
+		// Parse the incoming message as JSON
+		var msgData map[string]string
+		if err := json.Unmarshal(message, &msgData); err != nil {
+			fmt.Printf("Invalid message format: %s | Error: %v\n", string(message), err)
+			continue
+		}
+
+		var chatID int
+		// Handle "private_chat" message type
+		if msgData["type"] == "private_chat" {
+			recipientUsername := msgData["recipient"]
+
+			// Get recipient user ID
+			recipientUserID, err := userManagementModels.GetUserIDByUsername(recipientUsername)
+			if err != nil {
+				fmt.Println("Error getting recipient user ID:", err)
+				continue
+			}
+
+			// Check if chat exists, if not create it and add chat members
+			chatID, err = forumManagementModels.CheckChatExists(myUserID, recipientUserID)
+			if err != nil {
+				fmt.Println("Error checking chat existence:", err)
+				continue
+			}
+			// if no chatID exists (0), create a new chat row
+			if chatID == 0 {
+				chat := &forumManagementModels.Chat{ID: chatID, Type: "private"}
+				chatID, err = forumManagementModels.InsertChat(chat, myUserID, recipientUserID, nil)
+				if err != nil {
+					fmt.Println("Error creating or retrieving chat:", err)
+					continue
+				}
+			}
+
+			fmt.Printf("Chat initialized between %s and %s (Chat ID: %d)\n", myUsername, recipientUsername, chatID)
+			continue
+		}
+
 		sanitizedMsg := utils.SanitizeInput(string(message))
 		// Ignore empty messages
 		if sanitizedMsg == "" {
 			continue
 		}
-
-		// Insert the message into the database
-		msg := &forumManagementModels.Message{ChatID: 1, Content: sanitizedMsg, Status: "enable", CreatedBy: myUserID}
-		fmt.Println(msg)
-		_, err = forumManagementModels.InsertMsg(msg, nil)
-		if err != nil {
-			fmt.Println("Error inserting message into database:", msg, err)
-			continue
+		// if chatID exists, then just InsertMsg
+		if chatID != 0 {
+			// Insert the message into the database
+			msg := &forumManagementModels.Message{
+				ChatID:    chatID, // Use the chat ID from the "private_chat" logic
+				Content:   sanitizedMsg,
+				Status:    "enable",
+				CreatedBy: myUserID,
+			}
+			fmt.Println(msg)
+			_, err = forumManagementModels.InsertMsg(msg, nil)
+			if err != nil {
+				fmt.Println("Error inserting message into database:", msg, err)
+				continue
+			}
 		}
-
 		// Add timestamp and username to the message
 		timestamp := time.Now().Format("2006-01-02 15:04:05")
 		formattedMsg := fmt.Sprintf("[%s] %s: %s", timestamp, myUsername, sanitizedMsg)

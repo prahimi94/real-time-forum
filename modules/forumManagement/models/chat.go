@@ -69,27 +69,16 @@ func CheckChatExists(user1ID, user2ID int) (int, error) {
         WHERE c.type = 'private' AND cm1.user_id = ? AND cm2.user_id = ?
     `
 	err := db.QueryRow(query, user1ID, user2ID).Scan(&chatID)
-	if err == nil {
-		// Chat already exists
-		return chatID, nil
-	} else if err != sql.ErrNoRows {
+	if err != sql.ErrNoRows {
 		// Unexpected error
 		return 0, fmt.Errorf("failed to check for existing chat: %w", err)
 	}
 
-	// No chat exists
-	return 0, nil
+	// Chat already exists
+	return chatID, nil
 }
 
 func InsertChat(chat *Chat, user1ID, user2ID int, uploadedFiles map[string]string) (int, error) {
-	chatID, err := CheckChatExists(user1ID, user2ID)
-	if err != nil {
-		return 0, err
-	}
-	if chatID != 0 {
-		return chatID, nil
-	}
-
 	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
@@ -140,21 +129,11 @@ func InsertChat(chat *Chat, user1ID, user2ID int, uploadedFiles map[string]strin
 }
 
 func InsertChatMember(chatID, userID int, tx *sql.Tx) error {
-	db := db.OpenDBConnection()
-	defer db.Close() // Close the connection after the function finishes
-
 	insertChatMemberQuery := `INSERT INTO chat_members (chat_id, user_id) VALUES (?, ?);`
 	_, err := tx.Exec(insertChatMemberQuery, chatID, userID)
 	if err != nil {
-		tx.Rollback()
-		return err
+		return fmt.Errorf("failed to insert chat member: %w", err)
 	}
-
-	if err := tx.Commit(); err != nil {
-		tx.Rollback()
-		return err
-	}
-
 	return nil
 }
 
