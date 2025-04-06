@@ -147,13 +147,17 @@ func InsertMsg(msg *Message, uploadedFiles map[string]string) (int, error) {
 	// Start a transaction for atomicity
 	tx, err := db.Begin()
 	if err != nil {
+		log.Printf("Error starting InsertMsg transaction: %v", err)
 		return -1, err
 	}
 
-	insertMsgQuery := `INSERT INTO messages (chat_id, content, status, created_at, created_by, updated_at, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?);`
-	result, insertMsgQueryErr := tx.Exec(insertMsgQuery, msg.ChatID, msg.Content, msg.Status, msg.CreatedAt, msg.CreatedBy, `CURRENT_TIMESTAMP`, nil)
+	msg.Content = utils.SanitizeInput(msg.Content)
+
+	insertMsgQuery := `INSERT INTO messages (chat_id, content, status, created_at, created_by, updated_by) VALUES (?, ?, ?, ?, ?, ?);`
+	result, insertMsgQueryErr := tx.Exec(insertMsgQuery, msg.ChatID, msg.Content, msg.Status, msg.CreatedAt, msg.CreatedBy, msg.UpdatedBy)
 	if insertMsgQueryErr != nil {
 		tx.Rollback()
+		log.Printf("Error inserting message: %v", insertMsgQueryErr)
 		return -1, insertMsgQueryErr
 	}
 
@@ -161,20 +165,27 @@ func InsertMsg(msg *Message, uploadedFiles map[string]string) (int, error) {
 	lastInsertID, err := result.LastInsertId()
 	if err != nil {
 		tx.Rollback()
+		log.Printf("Error retrieving last insert ID: %v", err)
 		return -1, err
 	}
 
-	insertMsgFilesErr := InsertMsgFiles(msg.ChatID, int(lastInsertID), uploadedFiles, msg.CreatedBy, tx)
-	if insertMsgFilesErr != nil {
-		tx.Rollback()
-		return -1, insertMsgFilesErr
+	// Check if there are uploaded files before calling InsertMsgFiles
+	if len(uploadedFiles) > 0 {
+		insertMsgFilesErr := InsertMsgFiles(msg.ChatID, int(lastInsertID), uploadedFiles, msg.CreatedBy, tx)
+		if insertMsgFilesErr != nil {
+			tx.Rollback()
+			log.Printf("Error inserting message files: %v", insertMsgFilesErr)
+			return -1, insertMsgFilesErr
+		}
 	}
 
 	if err := tx.Commit(); err != nil {
 		tx.Rollback()
+		log.Printf("Error committing transaction: %v", err)
 		return -1, err
 	}
 
+	log.Printf("Message inserted successfully with ID: %d", lastInsertID)
 	return int(lastInsertID), nil
 }
 
@@ -183,14 +194,14 @@ func InsertMsgFiles(chatID int, msgID int, uploadedFiles map[string]string, user
 		query := `INSERT INTO message_files (chat_id, message_id, file_real_name, file_uploaded_name, created_by) VALUES `
 		values := make([]any, 0, len(uploadedFiles)*3)
 
-		for i := 0; i < len(uploadedFiles); i++ {
+		for i := range len(uploadedFiles) {
 			if i > 0 {
 				query += ", "
 			}
 			query += "(?, ?, ?, ?, ?)"
-			for key, value := range uploadedFiles {
-				values = append(values, chatID, msgID, key, value, user_id)
-			}
+		}
+		for key, value := range uploadedFiles {
+			values = append(values, chatID, msgID, key, value, user_id)
 		}
 		query += ";"
 
@@ -266,21 +277,21 @@ func ReadTenMsgs(chatID, userID, offset int) ([]Message, error) {
 	defer rows.Close()
 
 	for rows.Next() {
-        var message Message
-        if err := rows.Scan(
-            &message.ID,
-            &message.ChatID,
-            &message.Content,
-            &message.Status,
-            &message.CreatedAt,
-            &message.CreatedBy,
-            &message.UpdatedAt,
-            &message.UpdatedBy,
-        ); err != nil {
-            return nil, fmt.Errorf("failed to scan message: %w", err)
-        }
-        messages = append(messages, message)
-    }
+		var message Message
+		if err := rows.Scan(
+			&message.ID,
+			&message.ChatID,
+			&message.Content,
+			&message.Status,
+			&message.CreatedAt,
+			&message.CreatedBy,
+			&message.UpdatedAt,
+			&message.UpdatedBy,
+		); err != nil {
+			return nil, fmt.Errorf("failed to scan message: %w", err)
+		}
+		messages = append(messages, message)
+	}
 
 	return messages, nil
 }

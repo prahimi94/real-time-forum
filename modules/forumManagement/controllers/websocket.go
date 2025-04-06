@@ -45,6 +45,8 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Online: User %s connected. Current OnlineUsers: %v\n", myUsername, OnlineUsers)
 	Mutex.Unlock()
 
+	var chatID int // Declare chatID outside the loop
+
 	for {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
@@ -57,14 +59,13 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		// Parse the incoming message as JSON
+		// Parse incoming message as JSON
 		var msgData map[string]string
 		if err := json.Unmarshal(message, &msgData); err != nil {
 			fmt.Printf("Invalid message format: %s | Error: %v\n", string(message), err)
 			continue
 		}
 
-		var chatID int
 		// Handle "private_chat" message type
 		if msgData["type"] == "private_chat" {
 			recipientUsername := msgData["recipient"]
@@ -82,7 +83,7 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 				fmt.Println("Error checking chat existence:", err)
 				continue
 			}
-			// if no chatID exists (0), create a new chat row
+			// If no chatID exists (0), InsertChat
 			if chatID == 0 {
 				chat := &forumManagementModels.Chat{ID: chatID, Type: "private"}
 				chatID, err = forumManagementModels.InsertChat(chat, myUserID, recipientUserID, nil)
@@ -101,14 +102,16 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 		if sanitizedMsg == "" {
 			continue
 		}
-		// if chatID exists, then just InsertMsg
+
+		// If chatID exists, go directly to InsertMsg
 		if chatID != 0 {
-			// Insert the message into the database
 			msg := &forumManagementModels.Message{
 				ChatID:    chatID, // Use the chat ID from the "private_chat" logic
 				Content:   sanitizedMsg,
 				Status:    "enable",
 				CreatedBy: myUserID,
+				CreatedAt: time.Now(), // Ensure CreatedAt is set
+				UpdatedBy: &myUserID,
 			}
 			fmt.Println(msg)
 			_, err = forumManagementModels.InsertMsg(msg, nil)
@@ -117,6 +120,7 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 		}
+
 		// Add timestamp and username to the message
 		timestamp := time.Now().Format("2006-01-02 15:04:05")
 		formattedMsg := fmt.Sprintf("[%s] %s: %s", timestamp, myUsername, sanitizedMsg)
