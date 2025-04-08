@@ -122,10 +122,10 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Add timestamp and username to the message
-		timestamp := time.Now().Format("2006-01-02 15:04:05")
-		formattedMsg := fmt.Sprintf("[%s] %s: %s", timestamp, myUsername, sanitizedMsg)
+		//timestamp := time.Now().Format("2006-01-02 15:04:05")
+		//formattedMsg := fmt.Sprintf("[%s] %s: %s", timestamp, myUsername, sanitizedMsg)
 
-		Broadcast <- []byte(formattedMsg)
+		Broadcast <- []byte(sanitizedMsg)
 	}
 }
 
