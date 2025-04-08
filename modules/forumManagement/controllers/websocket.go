@@ -7,6 +7,7 @@ import (
 	userManagementModels "forum/modules/userManagement/models"
 	"forum/utils"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
@@ -188,4 +189,75 @@ func OnlineUsersHandler(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(usernames); err != nil {
 		http.Error(w, "Failed to encode online users", http.StatusInternalServerError)
 	}
+}
+
+func ChatMsgHandler(w http.ResponseWriter, r *http.Request) {
+	// Extract chatID from the URL path
+	chatIDStr := r.URL.Path[len("/api/chat-messages/"):]
+	if chatIDStr == "" {
+		http.Error(w, "Chat ID is required", http.StatusBadRequest)
+		return
+	}
+
+	// Convert chatID to int
+	chatID, err := strconv.Atoi(chatIDStr)
+	if err != nil {
+		http.Error(w, "Invalid Chat ID", http.StatusBadRequest)
+		return
+	}
+
+	// Retrieve userID from the session or cookie
+	userID, _, err := userManagementModels.GetUserIDFromCookie(r)
+	if err != nil {
+		http.Error(w, "Failed to retrieve user ID", http.StatusUnauthorized)
+		return
+	}
+
+	// Read all messages for the given chat ID
+	messages, err := forumManagementModels.ReadAllMsgs(chatID, userID)
+	if err != nil {
+		http.Error(w, "Failed to read messages", http.StatusInternalServerError)
+		return
+	}
+
+	// Respond with the messages in JSON format
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(messages); err != nil {
+		http.Error(w, "Failed to encode messages", http.StatusInternalServerError)
+	}
+}
+
+func GetChatIDHandler(w http.ResponseWriter, r *http.Request) {
+	// Parse sender and recipient from the request
+	sender := r.URL.Query().Get("sender")
+	recipient := r.URL.Query().Get("recipient")
+
+	if sender == "" || recipient == "" {
+		http.Error(w, "Sender and recipient are required", http.StatusBadRequest)
+		return
+	}
+
+	// Get sender and recipient user IDs
+	senderID, err := userManagementModels.GetUserIDByUsername(sender)
+	if err != nil {
+		http.Error(w, "Invalid sender username", http.StatusBadRequest)
+		return
+	}
+
+	recipientID, err := userManagementModels.GetUserIDByUsername(recipient)
+	if err != nil {
+		http.Error(w, "Invalid recipient username", http.StatusBadRequest)
+		return
+	}
+
+	// Query the database for the chat ID
+	chatID, err := forumManagementModels.CheckChatExists(senderID, recipientID)
+	if err != nil {
+		http.Error(w, "Failed to retrieve chat ID", http.StatusInternalServerError)
+		return
+	}
+
+	// Respond with the chat ID
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]int{"chatID": chatID})
 }

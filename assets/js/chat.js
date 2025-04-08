@@ -1,7 +1,6 @@
 let ws;
 let onlineUsers = [];
 let usernames = [];
-let messageQueue = []; // Queue to store incoming messages
 let isProcessingMessages = false;
 
 async function fetchOnlineUsers() {
@@ -39,7 +38,7 @@ function updateOnlineUsersList(usernames) {
     const li = document.createElement("li");
     li.textContent = `${username} is online!`;
     li.style.cursor = "pointer";
-    li.onclick = () => handlePrivateChat(username);
+    li.onclick = () => handlePrivateChat(loggedInUser.name, username);
     onlineUsersList.appendChild(li);
   });
 }
@@ -57,9 +56,8 @@ function connect() {
       const message = JSON.parse(event.data);
       //console.log("message: ", message);
       if (message.type === "message_content") {
-        handleMessageContent(message);
-      } else {
-        console.warn("Unknown message format:", message);
+        handlePrivateChat(message.sender, message.recipient);
+        //handleMessageContent(message);
       }
     } catch (error) {
       console.error("Failed to parse WebSocket message:", event.data, error);
@@ -79,73 +77,113 @@ function connect() {
 }
 
 // Handle private chat initiation
-function handlePrivateChat(username) {
-  privateRecipient = username;
+async function handlePrivateChat(senderUsername, recipientUsername) {
   document.getElementById("messages").style.display = "block";
   const chatHeader = document.getElementById("chat-header");
-  chatHeader.textContent = `Chat with ${username}`;
+  chatHeader.textContent = `Chat with ${recipientUsername}`;
   document.getElementById(
     "messageInput"
-  ).placeholder = `Type a message to ${username}`;
+  ).placeholder = `Type a message to ${recipientUsername}`;
+
+  const sendButton = document.getElementById("send-btn");
+  sendButton.onclick = () => sendMessage(senderUsername, recipientUsername);
 
   // Send a message to the server to initiate or check the chat
   if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({ type: "private_chat", recipient: username }));
+    ws.send(
+      JSON.stringify({
+        type: "private_chat",
+        sender: senderUsername,
+        recipient: recipientUsername,
+      })
+    );
   }
-}
 
-// Handle incoming chat messages
-function handleMessageContent(message) {
-  // Add the new message to the queue
-  messageQueue.push(message);
-
-  // Process the queue if not already processing
-  if (!isProcessingMessages) {
-    processMessageQueue();
-  }
-}
-
-// Throttle to process msgs in batches of 10
-function processMessageQueue() {
-  isProcessingMessages = true;
-
-  const batchSize = 10;
-  const messageDisplay = document.getElementById("message-display");
-
-  function processBatch() {
-    const batch = messageQueue.splice(0, batchSize); // Get the next batch of messages
-
-    batch.forEach((message) => {
-      const messageElement = document.createElement("p");
-      messageElement.textContent = `[${message.timestamp}] ${message.sender}: ${message.content}`;
-      messageDisplay.appendChild(messageElement);
-    });
-
-    // Scroll to the bottom of the chatbox
-    messageDisplay.scrollTop = messageDisplay.scrollHeight;
-
-    if (messageQueue.length > 0) {
-      // If there are more messages, process the next batch after a delay
-      setTimeout(processBatch, 500); // Adjust delay as needed
-    } else {
-      isProcessingMessages = false; // Mark processing as complete
+  // Fetch the chat ID and load the chat messages
+  const chatID = await getChatIDForUsers(senderUsername, recipientUsername);
+  if (chatID) {
+    if (
+      loggedInUser.name === senderUsername ||
+      loggedInUser.name === recipientUsername
+    ) {
+      fetchChatMessages(chatID);
     }
+  } else {
+    console.error("Failed to retrieve chat ID");
   }
-
-  processBatch();
 }
 
-function sendMessage() {
+async function fetchChatMessages(chatID) {
+  try {
+    const response = await fetch(`/api/chat-messages/${chatID}`);
+    if (!response.ok) {
+      console.error("Failed to fetch chat messages");
+      return;
+    }
+
+    const messages = await response.json();
+    const messageDisplay = document.getElementById("message-display");
+    messageDisplay.textContent = ""; // Clear existing messages
+
+    isProcessingMessages = true;
+
+    // Throttle to process msgs in batches of 10
+    const batchSize = 10;
+    function processBatch() {
+      const batch = messages.splice(0, batchSize); // Get the next batch of messages
+
+      batch.forEach((message) => {
+        const parsedContent = JSON.parse(message.content);
+        const messageElement = document.createElement("p");
+        messageElement.textContent = `[${parsedContent.timestamp}] ${parsedContent.sender}: ${parsedContent.content}`;
+        messageDisplay.appendChild(messageElement);
+      });
+
+      // Scroll to the bottom of the chatbox
+      messageDisplay.scrollTop = messageDisplay.scrollHeight;
+      
+      if (batch.length > 0) {
+        // If there are more messages, process the next batch after a delay
+        setTimeout(processBatch, 500); // Adjust delay as needed
+      } else {
+        isProcessingMessages = false; // Mark processing as complete
+      }
+    }
+    processBatch();
+  } catch (error) {
+    console.error("Error fetching chat messages:", error);
+  }
+}
+
+async function getChatIDForUsers(senderUsername, recipientUsername) {
+  try {
+    const response = await fetch(
+      `/api/get-chat-id?sender=${senderUsername}&recipient=${recipientUsername}`
+    );
+    if (!response.ok) {
+      console.error("Failed to fetch chat ID");
+      return null;
+    }
+
+    const data = await response.json();
+    return data.chatID; // Return the chatID from the response
+  } catch (error) {
+    console.error("Error fetching chat ID:", error);
+    return null;
+  }
+}
+
+function sendMessage(senderUsername, recipientUsername) {
   let input = document.getElementById("messageInput");
   let message = input.value.trim(); // Remove leading/trailing whitespace
   if (message.length === 0) return; // Do not accept empty messages
 
-  if (privateRecipient) {
+  if (recipientUsername) {
     ws.send(
       JSON.stringify({
         type: "message_content",
-        sender: loggedInUser.name,
-        recipient: privateRecipient,
+        sender: senderUsername,
+        recipient: recipientUsername,
         content: message,
         timestamp: new Date().toLocaleString(),
       })

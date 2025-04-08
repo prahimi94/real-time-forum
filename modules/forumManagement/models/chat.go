@@ -60,7 +60,6 @@ func CheckChatExists(user1ID, user2ID int) (int, error) {
 
 	var chatID int
 
-	// Check if a private chat already exists between the two users
 	query := `
         SELECT c.id
         FROM chats c
@@ -70,14 +69,12 @@ func CheckChatExists(user1ID, user2ID int) (int, error) {
     `
 	err := db.QueryRow(query, user1ID, user2ID).Scan(&chatID)
 	if err == sql.ErrNoRows {
-		// No chat exists
-		return 0, nil
+		return 0, nil // No chat exists
 	} else if err != nil {
 		// Unexpected error
 		return 0, fmt.Errorf("failed to check for existing chat: %w", err)
 	}
 
-	// Chat exists
 	return chatID, nil
 }
 
