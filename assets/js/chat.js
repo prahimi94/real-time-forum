@@ -1,6 +1,8 @@
 let ws;
 let onlineUsers = [];
 let usernames = [];
+let messageQueue = []; // Queue to store incoming messages
+let isProcessingMessages = false;
 
 async function fetchOnlineUsers() {
   try {
@@ -53,9 +55,9 @@ function connect() {
   ws.onmessage = function (event) {
     try {
       const message = JSON.parse(event.data);
-      console.log("message: ", message);
-      if (message.type) {
-        handleMessage(message);
+      //console.log("message: ", message);
+      if (message.type === "message_content") {
+        handleMessageContent(message);
       } else {
         console.warn("Unknown message format:", message);
       }
@@ -76,38 +78,6 @@ function connect() {
   };
 }
 
-// Centralized message handler
-function handleMessage(message) {
-  switch (message.type) {
-    /* case "online_users_list":
-      console.log("Received online users list:", message.data);
-      handleOnlineUsersList(message.data);
-      break; */
-
-    case "private_chat":
-      handlePrivateChat(message.data);
-      break;
-
-    case "message_content":
-      handleMessageContent(message);
-      break;
-
-    default:
-      console.warn("Unhandled message type:", message.type);
-  }
-}
-
-// Handle online users list
-/* function handleOnlineUsersList(data) {
-  console.log("handleOnlineUsersList(data):", data);
-  if (Array.isArray(data)) {
-    onlineUsers = data; // Update the onlineUsers array
-    updateOnlineUsersList(onlineUsers);
-  } else {
-    console.warn("Invalid data for online_users_list:", data);
-  }
-} */
-
 // Handle private chat initiation
 function handlePrivateChat(username) {
   privateRecipient = username;
@@ -126,16 +96,43 @@ function handlePrivateChat(username) {
 
 // Handle incoming chat messages
 function handleMessageContent(message) {
-  if (loggedInUser.name === message.recipient || loggedInUser.name === message.sender) {
-    const messageDisplay = document.getElementById("message-display");
-    messageDisplay.style.display = "block";
-    const messageElement = document.createElement("p");
-    messageElement.textContent = `[${message.timestamp}] ${message.sender}: ${message.content}`;
-    messageDisplay.appendChild(messageElement);
+  // Add the new message to the queue
+  messageQueue.push(message);
+
+  // Process the queue if not already processing
+  if (!isProcessingMessages) {
+    processMessageQueue();
+  }
+}
+
+// Throttle to process msgs in batches of 10
+function processMessageQueue() {
+  isProcessingMessages = true;
+
+  const batchSize = 10;
+  const messageDisplay = document.getElementById("message-display");
+
+  function processBatch() {
+    const batch = messageQueue.splice(0, batchSize); // Get the next batch of messages
+
+    batch.forEach((message) => {
+      const messageElement = document.createElement("p");
+      messageElement.textContent = `[${message.timestamp}] ${message.sender}: ${message.content}`;
+      messageDisplay.appendChild(messageElement);
+    });
 
     // Scroll to the bottom of the chatbox
     messageDisplay.scrollTop = messageDisplay.scrollHeight;
+
+    if (messageQueue.length > 0) {
+      // If there are more messages, process the next batch after a delay
+      setTimeout(processBatch, 500); // Adjust delay as needed
+    } else {
+      isProcessingMessages = false; // Mark processing as complete
+    }
   }
+
+  processBatch();
 }
 
 function sendMessage() {
