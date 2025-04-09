@@ -166,6 +166,15 @@ func InsertMsg(msg *Message, uploadedFiles map[string]string) (int, error) {
 		return -1, err
 	}
 
+	// Update the chats table's updated_at and updated_by fields
+	updateChatQuery := `UPDATE chats SET updated_at = ?, updated_by = ? WHERE id = ?;`
+	_, updateChatErr := tx.Exec(updateChatQuery, msg.CreatedAt, msg.CreatedBy, msg.ChatID)
+	if updateChatErr != nil {
+		tx.Rollback()
+		log.Printf("Error updating chat: %v", updateChatErr)
+		return -1, updateChatErr
+	}
+
 	// Check if there are uploaded files before calling InsertMsgFiles
 	if len(uploadedFiles) > 0 {
 		insertMsgFilesErr := InsertMsgFiles(msg.ChatID, int(lastInsertID), uploadedFiles, msg.CreatedBy, tx)
@@ -226,48 +235,6 @@ func ReadAllMsgs(chatID, userID int) ([]Message, error) {
         WHERE m.chat_id = ? AND cm.user_id = ?;
     `
 	rows, err := db.Query(query, chatID, userID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read messages: %w", err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var message Message
-		if err := rows.Scan(
-			&message.ID,
-			&message.ChatID,
-			&message.Content,
-			&message.Status,
-			&message.CreatedAt,
-			&message.CreatedBy,
-			&message.UpdatedAt,
-			&message.UpdatedBy,
-		); err != nil {
-			return nil, fmt.Errorf("failed to scan message: %w", err)
-		}
-		messages = append(messages, message)
-	}
-
-	return messages, nil
-}
-
-// ReadTenMsgs at a time for a given chat, with pagination support
-func ReadTenMsgs(chatID, userID, offset int) ([]Message, error) {
-	db := db.OpenDBConnection()
-	defer db.Close()
-
-	var messages []Message
-
-	// Query to fetch messages with pagination
-	query := `
-        SELECT m.id, m.chat_id, m.content, m.status, m.created_at, m.created_by, m.updated_at, m.updated_by
-        FROM messages m
-        JOIN chat_members cm ON m.chat_id = cm.chat_id
-        WHERE m.chat_id = ? AND cm.user_id = ?
-        ORDER BY m.created_at DESC
-        LIMIT 10 OFFSET ?;
-    `
-	rows, err := db.Query(query, chatID, userID, offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read messages: %w", err)
 	}
