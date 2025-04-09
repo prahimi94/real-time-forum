@@ -168,6 +168,61 @@ func ReadAllUsers() ([]User, error) {
 	return users, nil
 }
 
+func ReadAllChatUsers(user_id int) ([]User, error) {
+	db := db.OpenDBConnection()
+	defer db.Close()
+
+	rows, selectError := db.Query(`
+        SELECT u.id as user_id, u.name as user_name, u.username as user_username, u.email as user_email, 
+		IFNULL(u.profile_photo, '') as profile_photo, u.status as user_status, u.created_at as user_created_at, 
+		u.updated_at as user_updated_at, u.updated_by as user_updated_by
+			FROM users u
+			LEFT JOIN chat_members cm 
+				ON u.id = cm.user_id
+				AND cm.status != 'delete'
+			LEFT JOIN chats c
+				ON cm.chat_id = c.id
+				AND c.status != 'delete'
+				AND c.id in (
+					SELECT chat_id
+					FROM chat_members
+					WHERE user_id = ?
+					AND status != 'delete'
+				)
+			WHERE u.status != 'delete'
+			AND u.type != 'admin'
+			GROUP BY u.id
+			ORDER BY MAX(c.updated_at) desc, u.username;
+    `, user_id)
+	if selectError != nil {
+		return nil, selectError
+	}
+	defer rows.Close()
+
+	var users []User
+
+	for rows.Next() {
+		var user User
+
+		err := rows.Scan(
+			&user.ID, &user.Name, &user.Username, &user.Email,
+			&user.ProfilePhoto, &user.Status, &user.CreatedAt,
+			&user.UpdatedAt, &user.UpdatedBy,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("error scanning row: %v", err)
+		}
+
+		users = append(users, user)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("row iteration error: %v", err)
+	}
+
+	return users, nil
+}
+
 func ReadUserByID(user_id int) (User, error) {
 	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes

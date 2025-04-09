@@ -44,7 +44,7 @@ function updateOnlineUsersList(onlineUsernames) {
   });
 }
 
-async function fetchAllUsers() {
+async function fetchAllChatUsers() {
   try {
     const response = await fetch("/api/users");
     if (!response.ok) {
@@ -53,15 +53,14 @@ async function fetchAllUsers() {
     }
 
     allUserData = await response.json();
-  
-    const offlineUsersList = document.getElementById("offline-users-list");
-    offlineUsersList.textContent = ""; // Clear the current list
-  
+    const chatUsersList = document.getElementById("chat-users-list");
+    chatUsersList.textContent = ""; // Clear the current list
+
     allUserData.forEach((user) => {
-      if (!onlineUsernames.includes(user.name)) {
+      if (user.name !== loggedInUser.name) {
         const li = document.createElement("li");
         li.textContent = user.name;
-        offlineUsersList.appendChild(li);
+        chatUsersList.appendChild(li);
       }
     });
   } catch (error) {
@@ -75,7 +74,7 @@ function connect() {
   ws.onopen = function () {
     console.log("Online: Connected to WebSocket server");
     fetchOnlineUsers(); // Fetch the latest online users when connected
-    fetchAllUsers(); // Fetch all users to populate the list
+    fetchAllChatUsers(); // Fetch all users to populate the list
   };
 
   ws.onmessage = function (event) {
@@ -87,8 +86,8 @@ function connect() {
       }
 
       if (Array.isArray(onlineUsers)) {
-        fetchOnlineUsers()
-        fetchAllUsers();
+        fetchOnlineUsers();
+        fetchAllChatUsers();
         return;
       }
     } catch (error) {

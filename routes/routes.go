@@ -28,7 +28,7 @@ func SetupRoutes() {
 	//TO GET LOGGED-IN USERS = active session
 	http.HandleFunc("/api/loggedin-users", userManagementControllers.LoggedInUsersHandler)
 
-	http.HandleFunc("/api/users", userManagementControllers.GetAllUsersHandler) //GET ALL USERS
+	http.HandleFunc("/api/users", userManagementControllers.GetAllChatUsersHandler) //GET ALL USERS
 
 	// http.HandleFunc("/home/", forumManagementControllers.HomePageHandler)
 	http.HandleFunc("/auth/", userManagementControllers.AuthHandler)
