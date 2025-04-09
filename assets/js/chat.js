@@ -1,6 +1,7 @@
 let ws;
 let onlineUsers = [];
-let usernames = [];
+let onlineUsernames = [];
+let allUserData = {};
 let isProcessingMessages = false;
 
 async function fetchOnlineUsers() {
@@ -11,36 +12,61 @@ async function fetchOnlineUsers() {
       return;
     }
 
-    usernames = await response.json();
-    updateOnlineUsersList(usernames);
+    onlineUsernames = await response.json();
+    updateOnlineUsersList(onlineUsernames);
   } catch (error) {
     console.error("Error fetching online users:", error);
   }
 }
 
 // Function to update the online users list in the frontend
-function updateOnlineUsersList(usernames) {
+function updateOnlineUsersList(onlineUsernames) {
   const onlineUsersList = document.getElementById("online-users-list");
   onlineUsersList.textContent = ""; // Clear the current list
 
   if (
-    usernames.length === 0 ||
-    (usernames.length === 1 && usernames[0] === loggedInUser.name)
+    onlineUsernames.length === 0 ||
+    (onlineUsernames.length === 1 && onlineUsernames[0] === loggedInUser.name)
   ) {
     onlineUsersList.textContent = "It's just you here.";
     return;
   }
 
-  // Populate the list with usernames
-  usernames.forEach((username) => {
-    if (username === loggedInUser.name) return;
+  // Populate the list with onlineUsernames
+  onlineUsernames.forEach((onlineUsername) => {
+    if (onlineUsername === loggedInUser.name) return;
 
     const li = document.createElement("li");
-    li.textContent = `${username} is online!`;
+    li.textContent = onlineUsername;
     li.style.cursor = "pointer";
-    li.onclick = () => handlePrivateChat(loggedInUser.name, username);
+    li.onclick = () => handlePrivateChat(loggedInUser.name, onlineUsername);
     onlineUsersList.appendChild(li);
   });
+}
+
+async function fetchAllUsers() {
+  try {
+    const response = await fetch("/api/users");
+    if (!response.ok) {
+      console.error("Failed to fetch all users");
+      return;
+    }
+
+    allUserData = await response.json();
+  
+    const offlineUsersList = document.getElementById("offline-users-list");
+    offlineUsersList.textContent = ""; // Clear the current list
+  
+    allUserData.forEach((user) => {
+      if (!onlineUsernames.includes(user.name)) {
+        const li = document.createElement("li");
+        li.textContent = user.name;
+        offlineUsersList.appendChild(li);
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching all users:", error);
+  }
 }
 
 function connect() {
@@ -49,6 +75,7 @@ function connect() {
   ws.onopen = function () {
     console.log("Online: Connected to WebSocket server");
     fetchOnlineUsers(); // Fetch the latest online users when connected
+    fetchAllUsers(); // Fetch all users to populate the list
   };
 
   ws.onmessage = function (event) {
@@ -57,7 +84,12 @@ function connect() {
       //console.log("message: ", message);
       if (message.type === "message_content") {
         handlePrivateChat(message.sender, message.recipient);
-        //handleMessageContent(message);
+      }
+
+      if (Array.isArray(onlineUsers)) {
+        fetchOnlineUsers()
+        fetchAllUsers();
+        return;
       }
     } catch (error) {
       console.error("Failed to parse WebSocket message:", event.data, error);
@@ -141,7 +173,7 @@ async function fetchChatMessages(chatID) {
 
       // Scroll to the bottom of the chatbox
       messageDisplay.scrollTop = messageDisplay.scrollHeight;
-      
+
       if (batch.length > 0) {
         // If there are more messages, process the next batch after a delay
         setTimeout(processBatch, 500); // Adjust delay as needed

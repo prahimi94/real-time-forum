@@ -392,3 +392,13 @@ func LoggedInUsersHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(usernames)
 }
+
+func GetAllUsersHandler(w http.ResponseWriter, r *http.Request) {
+	users, err := userManagementModels.ReadAllUsers()
+	if err != nil {
+		http.Error(w, "Failed to fetch users", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(users)
+}

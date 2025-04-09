@@ -345,12 +345,17 @@ function showAuthenticatedContainer() {
 
                         <!-- ONLINE USERS -->
                         <div id="online-users" class="online-users-container">
-                            <h2>Online Users</h2>
+                            <h3>Online Users</h3>
                             <ul id="online-users-list"></ul>
+                        </div>
+                        <!-- OFFLINE USERS -->
+                        <div id="offline-users" class="offline-users-container">
+                            <h3>Offline Users</h3>
+                            <ul id="offline-users-list"></ul>
                         </div>
                         <!-- CHATBOX -->
                         <div class="chatbox">
-                            <h1 id="chat-header"></h1>
+                            <h2 id="chat-header"></h2>
                             <div id="messages" style="display: none">
                                 <input type="text" id="messageInput">
                                 <button id="send-btn">Send</button>
@@ -932,8 +937,7 @@ addEventListener("DOMContentLoaded", async function () {
         console.log('Session is active');
         fetchCategories();
         fetchPosts();
-        connect();
-        fetchOnlineUsers();
+        connect(); // websocket
         showAuthenticatedContainer();
     } else {
         console.log('Session is NOT active'); 
