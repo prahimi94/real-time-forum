@@ -108,7 +108,7 @@ async function handlePrivateChat(senderUsername, recipientUsername) {
       "messageInput"
     ).placeholder = `Type a message to ${senderUsername}`;
     const sendButton = document.getElementById("send-btn");
-    sendButton.onclick = () => sendMessage(recipientUsername, senderUsername);
+    sendButton.onclick = () => sendMessage(recipientUsername,   senderUsername);
   }
 
   // Send a message to the server to initiate or check the chat
