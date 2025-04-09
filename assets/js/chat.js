@@ -1,5 +1,4 @@
 let ws;
-let onlineUsers = [];
 let onlineUsernames = [];
 let allUserData = {};
 let isProcessingMessages = false;
@@ -13,35 +12,9 @@ async function fetchOnlineUsers() {
     }
 
     onlineUsernames = await response.json();
-    updateOnlineUsersList(onlineUsernames);
   } catch (error) {
     console.error("Error fetching online users:", error);
   }
-}
-
-// Function to update the online users list in the frontend
-function updateOnlineUsersList(onlineUsernames) {
-  const onlineUsersList = document.getElementById("online-users-list");
-  onlineUsersList.textContent = ""; // Clear the current list
-
-  if (
-    onlineUsernames.length === 0 ||
-    (onlineUsernames.length === 1 && onlineUsernames[0] === loggedInUser.name)
-  ) {
-    onlineUsersList.textContent = "It's just you here.";
-    return;
-  }
-
-  // Populate the list with onlineUsernames
-  onlineUsernames.forEach((onlineUsername) => {
-    if (onlineUsername === loggedInUser.name) return;
-
-    const li = document.createElement("li");
-    li.textContent = onlineUsername;
-    li.style.cursor = "pointer";
-    li.onclick = () => handlePrivateChat(loggedInUser.name, onlineUsername);
-    onlineUsersList.appendChild(li);
-  });
 }
 
 async function fetchAllChatUsers() {
@@ -59,7 +32,14 @@ async function fetchAllChatUsers() {
     allUserData.forEach((user) => {
       if (user.name !== loggedInUser.name) {
         const li = document.createElement("li");
-        li.textContent = user.name;
+        if (onlineUsernames.includes(user.name)) {
+          li.style.color = "green"; // Change color for online users
+          li.style.cursor = "pointer";
+          li.onclick = () => handlePrivateChat(loggedInUser.name, user.name);
+          li.textContent = `${user.name} (Online)`;
+        } else {
+          li.textContent = user.name;
+        }
         chatUsersList.appendChild(li);
       }
     });
@@ -80,16 +60,21 @@ function connect() {
   ws.onmessage = function (event) {
     try {
       const message = JSON.parse(event.data);
-      //console.log("message: ", message);
+
       if (message.type === "message_content") {
         handlePrivateChat(message.sender, message.recipient);
+        if (message.recipient === loggedInUser.name) {
+          const res = {
+            success: true,
+            message: `You have a new message from ${message.sender}`,
+            data: message,
+          };
+          showToast(res);
+        }
       }
 
-      if (Array.isArray(onlineUsers)) {
-        fetchOnlineUsers();
-        fetchAllChatUsers();
-        return;
-      }
+      fetchOnlineUsers();
+      fetchAllChatUsers();
     } catch (error) {
       console.error("Failed to parse WebSocket message:", event.data, error);
     }
@@ -97,8 +82,6 @@ function connect() {
 
   ws.onclose = function () {
     console.log("Offline: WebSocket connection closed, retrying...");
-    onlineUsers = []; // Clear the onlineUsers list on disconnect
-    updateOnlineUsersList(onlineUsers);
     setTimeout(connect, 1000); // Reconnect after 1 second
   };
 
@@ -111,13 +94,22 @@ function connect() {
 async function handlePrivateChat(senderUsername, recipientUsername) {
   document.getElementById("messages").style.display = "block";
   const chatHeader = document.getElementById("chat-header");
-  chatHeader.textContent = `Chat with ${recipientUsername}`;
-  document.getElementById(
-    "messageInput"
-  ).placeholder = `Type a message to ${recipientUsername}`;
 
-  const sendButton = document.getElementById("send-btn");
-  sendButton.onclick = () => sendMessage(senderUsername, recipientUsername);
+  if (loggedInUser.name === senderUsername) {
+    chatHeader.textContent = `Chat with ${recipientUsername}`;
+    document.getElementById(
+      "messageInput"
+    ).placeholder = `Type a message to ${recipientUsername}`;
+    const sendButton = document.getElementById("send-btn");
+    sendButton.onclick = () => sendMessage(senderUsername, recipientUsername);
+  } else if (loggedInUser.name === recipientUsername) {
+    chatHeader.textContent = `Chat with ${senderUsername}`;
+    document.getElementById(
+      "messageInput"
+    ).placeholder = `Type a message to ${senderUsername}`;
+    const sendButton = document.getElementById("send-btn");
+    sendButton.onclick = () => sendMessage(recipientUsername, senderUsername);
+  }
 
   // Send a message to the server to initiate or check the chat
   if (ws && ws.readyState === WebSocket.OPEN) {
@@ -175,7 +167,7 @@ async function fetchChatMessages(chatID) {
 
       if (batch.length > 0) {
         // If there are more messages, process the next batch after a delay
-        setTimeout(processBatch, 500); // Adjust delay as needed
+        setTimeout(processBatch, 500);
       } else {
         isProcessingMessages = false; // Mark processing as complete
       }
