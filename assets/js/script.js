@@ -83,7 +83,7 @@ function showNotAuthenticatedContainer() {
                             <form method="post" id="loginForm">
                                 <h1>Login</h1>
                                 <div class="input-box">
-                                    <input type="text" placeholder="Username" name="username" required>
+                                    <input type="text" placeholder="Username Or Email" name="username" required>
                                     <i class='bx bxs-user'></i>
                                 </div>
                                 <div class="input-box">
@@ -846,7 +846,7 @@ function fillPostsInHtml(posts, actionSubject = '') {
                                             <input type="hidden" name="post_uuid" value="${post.uuid}">
                                             <input type="hidden" name="post_id" value="${post.id}">
                                             <div class="mt-3">
-                                                <select id="categories" name="categories" required
+                                                <select id="update_post_categories" name="update_post_categories" required
                                                     class="form-control multiSelect" multiple="multiple"
                                                     data-placeholder="Select categories">
                                                 </select>
@@ -1023,7 +1023,7 @@ function updatePostHtml(post, comments, postId) {
                                         <input type="hidden" name="post_uuid" value="${post.uuid}">
                                         <input type="hidden" name="post_id" value="${post.id}">
                                         <div class="mt-3">
-                                            <select id="categories" name="categories" required
+                                            <select id="update_post_categories" name="update_post_categories" required
                                                 class="form-control multiSelect" multiple="multiple"
                                                 data-placeholder="Select categories">
                                             </select>
@@ -1304,6 +1304,41 @@ addEventListener("DOMContentLoaded", async function () {
 
     const toastLiveExample = document.getElementById('liveToast')
     toast = new bootstrap.Toast(toastLiveExample)
+
+    // Add this in your script.js file
+    document.addEventListener('shown.bs.modal', async function (event) {
+        const modal = event.target; // The modal that was opened
+        console.log(`Modal with ID ${modal.id} is fully opened`);
+        if (modal.id.startsWith('updatePostModal-')) {
+            const postId = modal.id.split('-')[1]; // Extract the post ID from the modal ID
+            console.log(`Post ID: ${postId}`);
+            // Fetch and populate the form with post data here
+            const postElement = document.getElementById(`post-${postId}`);
+            const title = postElement.querySelector('.post-title').textContent.trim();
+            const description = postElement.querySelector('.post-description').textContent.trim();
+            const selectedCategories = Array.from(postElement.querySelectorAll('.m-posts-ctg a')).map(category => {
+                const categoryName = category.textContent.trim();
+                const categoryObj = categories.find(cat => cat.name === categoryName);
+                return categoryObj ? categoryObj.id : null;
+            }).filter(id => id !== null);
+            console.log('Selected Categories:', selectedCategories);
+
+            const form = document.getElementById(`updatePostForm-${postId}`);
+            form.querySelector('input[name="title"]').value = title;
+            form.querySelector('textarea[name="description"]').value = description;
+            const categoriesSelect = form.querySelector('select[name="update_post_categories"]');
+            $(categoriesSelect).select2(); // Initialize select2
+            const allCategories = Array.from(document.querySelectorAll('#categories option')).map(option => option.value);
+            console.log('All categories:', allCategories);
+            $(categoriesSelect).val(allCategories).trigger('change'); // Set all values
+            if (selectedCategories && selectedCategories.length > 0) {
+                $(categoriesSelect).val(selectedCategories).trigger('change'); // Set values if selectedCategories are populated
+            } else {
+                console.error('Categories array is empty or not populated.');
+            }
+        }
+            
+    });
 
     await checkSession();
 });
