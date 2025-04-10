@@ -17,7 +17,7 @@ async function checkSessionActive() {
             const data = res.data;
             if (data.Active) {
                 loggedInUser = data.LoginUser;
-                console.log(loggedInUser);
+                /* console.log(loggedInUser); */
                 return true; // Session is active
             } else {
                 return false; // Session is not active
@@ -342,19 +342,18 @@ function showAuthenticatedContainer() {
                                     Out</a>
                             </div>
                         </div>
-
-                        <!-- ONLINE USERS -->
-                        <div id="online-users" class="online-users-container">
-                            <h2>Online Users</h2>
-                            <ul id="online-users-list"></ul>
+                        <!-- ALL CHAT USERS -->
+                        <div id="chat-users" class="chat-users-container">
+                            <h3>All Chat Users</h3>
+                            <ul id="chat-users-list"></ul>
                         </div>
                         <!-- CHATBOX -->
-                        <div class="chatbox">
-                            <h1>CHATBOX</h1>
-                            <div id="messages"></div>
-                            <div>
-                                <input type="text" id="messageInput" placeholder="Enter your message">
-                                <button onclick="sendMessage()">Send</button>
+                        <div id="chatbox" class="chatbox" style="display: none">
+                            <h3 id="chat-header"></h3>
+                            <div id="messages" style="display: none">
+                                <div id="message-display"></div>
+                                <input type="text" id="messageInput">
+                                <button id="send-btn">Send</button>
                             </div>
                         </div>
                         <!-- END CHATBOX -->
@@ -650,7 +649,7 @@ function fillPostsInHtml(posts, actionSubject = '') {
     postsContainer.innerHTML += '<div class="accordion accordion-flush" id="accordionFlushExample">';
 
     posts.forEach(post => {
-        console.log(post);
+        /* console.log(post); */
         const postImage = post.user.profile_photo
             ? `<img class="bd-placeholder-img flex-shrink-0 me-2 rounded" role="img" src="/uploads/${post.user.profile_photo}" width="45" height="45"/>`
             : `<div style="padding: 7px;"><i class="fa-solid fa-user" style="font-size: 2rem;"></i></div>`;
@@ -1167,8 +1166,7 @@ addEventListener("DOMContentLoaded", async function () {
         console.log('Session is active');
         fetchCategories();
         fetchPosts();
-        connect();
-        fetchOnlineUsers();
+        connect(); // websocket
         showAuthenticatedContainer();
     } else {
         console.log('Session is NOT active'); 

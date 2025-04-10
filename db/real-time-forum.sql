@@ -187,6 +187,8 @@ CREATE TABLE IF NOT EXISTS "chats" (
   "status" TEXT NOT NULL CHECK ("status" IN ('enable', 'disable', 'delete')) DEFAULT 'enable',
   "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "created_by" INTEGER NOT NULL,
+  "updated_at" DATETIME DEFAULT CURRENT_TIMESTAMP,
+  "updated_by" INTEGER,
   FOREIGN KEY (created_by) REFERENCES "users" ("id")
 );
 

@@ -3,8 +3,11 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
+	forumManagementModels "forum/modules/forumManagement/models"
 	userManagementModels "forum/modules/userManagement/models"
+	"forum/utils"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
@@ -18,8 +21,8 @@ var upgrader = websocket.Upgrader{
 }
 
 var OnlineUsers = make(map[*websocket.Conn]string) // Map of online users (connected to WS) to usernames
-var Broadcast = make(chan []byte)                     // Broadcast channel
-var Mutex = &sync.Mutex{}                             // Protect OnlineUsers map
+var Broadcast = make(chan []byte)                  // Broadcast channel
+var Mutex = &sync.Mutex{}                          // Protect OnlineUsers map
 
 func WsHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -30,7 +33,7 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 
 	// Get myUsername from userid related to session token
-	_, myUsername, err := userManagementModels.GetUserIDFromCookie(r)
+	myUserID, myUsername, err := userManagementModels.GetUserIDFromCookie(r)
 	if err != nil {
 		fmt.Println("Error getting username:", err)
 		return
@@ -42,6 +45,8 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 	UpdateOnlineUsers()
 	fmt.Printf("Online: User %s connected. Current OnlineUsers: %v\n", myUsername, OnlineUsers)
 	Mutex.Unlock()
+
+	var chatID int // Declare chatID outside the loop
 
 	for {
 		_, message, err := conn.ReadMessage()
@@ -55,11 +60,73 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		// Add timestamp and username to the message
-		timestamp := time.Now().Format("2006-01-02 15:04:05")
-		formattedMessage := fmt.Sprintf("[%s] %s: %s", timestamp, myUsername, string(message))
+		// Parse incoming message as JSON
+		var msgData map[string]string
+		if err := json.Unmarshal(message, &msgData); err != nil {
+			fmt.Printf("Invalid message format: %s | Error: %v\n", string(message), err)
+			continue
+		}
 
-		Broadcast <- []byte(formattedMessage)
+		// Handle "private_chat" message type
+		if msgData["type"] == "private_chat" {
+			recipientUsername := msgData["recipient"]
+
+			// Get recipient user ID
+			recipientUserID, err := userManagementModels.GetUserIDByUsername(recipientUsername)
+			if err != nil {
+				fmt.Println("Error getting recipient user ID:", err)
+				continue
+			}
+
+			// Check if chat exists, if not create it and add chat members
+			chatID, err = forumManagementModels.CheckChatExists(myUserID, recipientUserID)
+			if err != nil {
+				fmt.Println("Error checking chat existence:", err)
+				continue
+			}
+			// If no chatID exists (0), InsertChat
+			if chatID == 0 {
+				chat := &forumManagementModels.Chat{ID: chatID, Type: "private"}
+				chatID, err = forumManagementModels.InsertChat(chat, myUserID, recipientUserID, nil)
+				if err != nil {
+					fmt.Println("Error creating or retrieving chat:", err)
+					continue
+				}
+			}
+
+			fmt.Printf("Chat initialized between %s and %s (Chat ID: %d)\n", myUsername, recipientUsername, chatID)
+			continue
+		}
+
+		sanitizedMsg := utils.SanitizeInput(string(message))
+		// Ignore empty messages
+		if sanitizedMsg == "" {
+			continue
+		}
+
+		// If chatID exists, go directly to InsertMsg
+		if chatID != 0 {
+			msg := &forumManagementModels.Message{
+				ChatID:    chatID, // Use the chat ID from the "private_chat" logic
+				Content:   sanitizedMsg,
+				Status:    "enable",
+				CreatedBy: myUserID,
+				CreatedAt: time.Now(), // Ensure CreatedAt is set
+				UpdatedBy: &myUserID,
+			}
+			fmt.Println(msg)
+			_, err = forumManagementModels.InsertMsg(msg, nil)
+			if err != nil {
+				fmt.Println("Error inserting message into database:", msg, err)
+				continue
+			}
+		}
+
+		// Add timestamp and username to the message
+		//timestamp := time.Now().Format("2006-01-02 15:04:05")
+		//formattedMsg := fmt.Sprintf("[%s] %s: %s", timestamp, myUsername, sanitizedMsg)
+
+		Broadcast <- []byte(sanitizedMsg)
 	}
 }
 
@@ -122,4 +189,75 @@ func OnlineUsersHandler(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(usernames); err != nil {
 		http.Error(w, "Failed to encode online users", http.StatusInternalServerError)
 	}
+}
+
+func ChatMsgHandler(w http.ResponseWriter, r *http.Request) {
+	// Extract chatID from the URL path
+	chatIDStr := r.URL.Path[len("/api/chat-messages/"):]
+	if chatIDStr == "" {
+		http.Error(w, "Chat ID is required", http.StatusBadRequest)
+		return
+	}
+
+	// Convert chatID to int
+	chatID, err := strconv.Atoi(chatIDStr)
+	if err != nil {
+		http.Error(w, "Invalid Chat ID", http.StatusBadRequest)
+		return
+	}
+
+	// Retrieve userID from the session or cookie
+	userID, _, err := userManagementModels.GetUserIDFromCookie(r)
+	if err != nil {
+		http.Error(w, "Failed to retrieve user ID", http.StatusUnauthorized)
+		return
+	}
+
+	// Read all messages for the given chat ID
+	messages, err := forumManagementModels.ReadAllMsgs(chatID, userID)
+	if err != nil {
+		http.Error(w, "Failed to read messages", http.StatusInternalServerError)
+		return
+	}
+
+	// Respond with the messages in JSON format
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(messages); err != nil {
+		http.Error(w, "Failed to encode messages", http.StatusInternalServerError)
+	}
+}
+
+func GetChatIDHandler(w http.ResponseWriter, r *http.Request) {
+	// Parse sender and recipient from the request
+	sender := r.URL.Query().Get("sender")
+	recipient := r.URL.Query().Get("recipient")
+
+	if sender == "" || recipient == "" {
+		http.Error(w, "Sender and recipient are required", http.StatusBadRequest)
+		return
+	}
+
+	// Get sender and recipient user IDs
+	senderID, err := userManagementModels.GetUserIDByUsername(sender)
+	if err != nil {
+		http.Error(w, "Invalid sender username", http.StatusBadRequest)
+		return
+	}
+
+	recipientID, err := userManagementModels.GetUserIDByUsername(recipient)
+	if err != nil {
+		http.Error(w, "Invalid recipient username", http.StatusBadRequest)
+		return
+	}
+
+	// Query the database for the chat ID
+	chatID, err := forumManagementModels.CheckChatExists(senderID, recipientID)
+	if err != nil {
+		http.Error(w, "Failed to retrieve chat ID", http.StatusInternalServerError)
+		return
+	}
+
+	// Respond with the chat ID
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]int{"chatID": chatID})
 }
