@@ -96,7 +96,6 @@ function connect() {
   };
 }
 
-// Handle private chat initiation
 async function handlePrivateChat(senderUsername, recipientUsername) {
   document.getElementById("chatbox").style.display = "block";
   document.getElementById("messages").style.display = "block";
@@ -151,46 +150,61 @@ async function fetchChatMessages(chatID) {
       return;
     }
 
-    const messages = await response.json();
+    let messages = await response.json();
     const messageDisplay = document.getElementById("message-display");
-    messageDisplay.textContent = ""; // Clear existing messages
+    messageDisplay.textContent = ""
 
-    isProcessingMessages = true;
+    // Reverse the messages to show the latest ones at the bottom
+    messages.reverse();
+
+    isProcessingMessages = false;
 
     // Throttle to process msgs in batches of 10
     const batchSize = 10;
+    let loadedMessages = []; // Keep track of already loaded messages
+
     function processBatch() {
+      if (isProcessingMessages) return; // Prevent multiple triggers
+      isProcessingMessages = true;
+
       const batch = messages.splice(0, batchSize); // Get the next batch of messages
+      loadedMessages = [...batch, ...loadedMessages]; // Add to the loaded messages
 
       batch.forEach((message) => {
         const parsedContent = JSON.parse(message.content);
         const messageElement = document.createElement("p");
-        const sender = document.createElement("sender");
-        const time = document.createElement("time");
+        const details = document.createElement("div");
+        details.classList.add("details");
 
-        messageElement.classList.add("msg")
-        sender.style.display = "block";
-        sender.textContent = parsedContent.sender;
+        messageElement.classList.add("msg");
+        details.textContent = `${parsedContent.sender} (${parsedContent.timestamp})`;
         messageElement.textContent = parsedContent.content;
-        time.textContent = parsedContent.timestamp;
-        time.style.display = "block";
-        messageDisplay.appendChild(messageElement);
+        messageDisplay.prepend(details);
+        messageDisplay.prepend(messageElement);
         if (loggedInUser.name === parsedContent.sender) {
-          messageElement.classList.add("from-me")
+          messageElement.classList.add("from-me");
+          details.classList.add("my-details");
         }
       });
 
-      // Scroll to the bottom of the chatbox
-      messageDisplay.scrollTop = messageDisplay.scrollHeight;
-
-      if (batch.length > 0) {
-        // If there are more messages, process the next batch after a delay
-        setTimeout(processBatch, 500);
-      } else {
-        isProcessingMessages = false; // Mark processing as complete
-      }
+      isProcessingMessages = false;
     }
+
+    // Initial batch load (latest 10 messages)
     processBatch();
+
+    // Scroll to the bottom of the chatbox to show the latest messages
+    messageDisplay.scrollTop = messageDisplay.scrollHeight;
+
+    // Add scroll event listener to load more messages when scrolling near the top
+    messageDisplay.addEventListener("scroll", () => {
+      if (messageDisplay.scrollTop === 0 && messages.length > 0) {
+        const previousHeight = messageDisplay.scrollHeight; // Store the current height
+        processBatch();
+        // Maintain the scroll position after loading more messages
+        messageDisplay.scrollTop = messageDisplay.scrollHeight - previousHeight;
+      }
+    });
   } catch (error) {
     console.error("Error fetching chat messages:", error);
   }
