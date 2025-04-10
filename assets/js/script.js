@@ -342,20 +342,14 @@ function showAuthenticatedContainer() {
                                     Out</a>
                             </div>
                         </div>
-
-                        <!-- ONLINE USERS -->
-                        <div id="online-users" class="online-users-container">
-                            <h3>Online Users</h3>
-                            <ul id="online-users-list"></ul>
-                        </div>
                         <!-- ALL CHAT USERS -->
                         <div id="chat-users" class="chat-users-container">
                             <h3>All Chat Users</h3>
                             <ul id="chat-users-list"></ul>
                         </div>
                         <!-- CHATBOX -->
-                        <div class="chatbox">
-                            <h2 id="chat-header"></h2>
+                        <div id="chatbox" class="chatbox" style="display: none">
+                            <h3 id="chat-header"></h3>
                             <div id="messages" style="display: none">
                                 <div id="message-display"></div>
                                 <input type="text" id="messageInput">

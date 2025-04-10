@@ -32,14 +32,20 @@ async function fetchAllChatUsers() {
     allUserData.forEach((user) => {
       if (user.name !== loggedInUser.name) {
         const li = document.createElement("li");
+
         if (onlineUsernames.includes(user.name)) {
-          li.style.color = "green"; // Change color for online users
-          li.style.cursor = "pointer";
-          li.onclick = () => handlePrivateChat(loggedInUser.name, user.name);
-          li.textContent = `${user.name} (Online)`;
+          const link = document.createElement("a");
+          link.href = `#chat-with-${user.name}`;
+          link.onclick = (e) => {
+            e.preventDefault(); // Prevent default link behavior
+            handlePrivateChat(loggedInUser.name, user.name);
+          };
+          link.textContent = `${user.name} (Online)`;
+          li.appendChild(link);
         } else {
           li.textContent = user.name;
         }
+
         chatUsersList.appendChild(li);
       }
     });
@@ -92,6 +98,7 @@ function connect() {
 
 // Handle private chat initiation
 async function handlePrivateChat(senderUsername, recipientUsername) {
+  document.getElementById("chatbox").style.display = "block";
   document.getElementById("messages").style.display = "block";
   const chatHeader = document.getElementById("chat-header");
 
@@ -108,7 +115,7 @@ async function handlePrivateChat(senderUsername, recipientUsername) {
       "messageInput"
     ).placeholder = `Type a message to ${senderUsername}`;
     const sendButton = document.getElementById("send-btn");
-    sendButton.onclick = () => sendMessage(recipientUsername,   senderUsername);
+    sendButton.onclick = () => sendMessage(recipientUsername, senderUsername);
   }
 
   // Send a message to the server to initiate or check the chat
@@ -158,8 +165,19 @@ async function fetchChatMessages(chatID) {
       batch.forEach((message) => {
         const parsedContent = JSON.parse(message.content);
         const messageElement = document.createElement("p");
-        messageElement.textContent = `[${parsedContent.timestamp}] ${parsedContent.sender}: ${parsedContent.content}`;
+        const sender = document.createElement("sender");
+        const time = document.createElement("time");
+
+        messageElement.classList.add("msg")
+        sender.style.display = "block";
+        sender.textContent = parsedContent.sender;
+        messageElement.textContent = parsedContent.content;
+        time.textContent = parsedContent.timestamp;
+        time.style.display = "block";
         messageDisplay.appendChild(messageElement);
+        if (loggedInUser.name === parsedContent.sender) {
+          messageElement.classList.add("from-me")
+        }
       });
 
       // Scroll to the bottom of the chatbox
