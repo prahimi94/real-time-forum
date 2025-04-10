@@ -2,6 +2,7 @@ let ws;
 let onlineUsernames = [];
 let allUserData = {};
 let isProcessingMessages = false;
+let chatboxOpen = false;
 
 async function fetchOnlineUsers() {
   try {
@@ -38,7 +39,14 @@ async function fetchAllChatUsers() {
           link.href = `#chat-with-${user.name}`;
           link.onclick = (e) => {
             e.preventDefault(); // Prevent default link behavior
-            handlePrivateChat(loggedInUser.name, user.name);
+            if (chatboxOpen) {
+              chatboxOpen = false;
+              document.getElementById("chatbox").style.display = "none";
+            } else if (!chatboxOpen) {
+              chatboxOpen = true;
+              document.getElementById("chatbox").style.display = "block";
+              handlePrivateChat(loggedInUser.name, user.name);
+            }
           };
           link.textContent = `${user.name} (Online)`;
           li.appendChild(link);
@@ -77,6 +85,7 @@ function connect() {
           };
           showToast(res);
         }
+        chatboxOpen = true;
       }
 
       fetchOnlineUsers();
@@ -100,20 +109,18 @@ async function handlePrivateChat(senderUsername, recipientUsername) {
   document.getElementById("chatbox").style.display = "block";
   document.getElementById("messages").style.display = "block";
   const chatHeader = document.getElementById("chat-header");
+  const messageInput = document.getElementById("messageInput");
+  const sendButton = document.getElementById("send-btn");
+  messageInput.style.display = "block";
+  sendButton.style.display = "block";
 
   if (loggedInUser.name === senderUsername) {
     chatHeader.textContent = `Chat with ${recipientUsername}`;
-    document.getElementById(
-      "messageInput"
-    ).placeholder = `Type a message to ${recipientUsername}`;
-    const sendButton = document.getElementById("send-btn");
+    messageInput.placeholder = `Type a message to ${recipientUsername}`;
     sendButton.onclick = () => sendMessage(senderUsername, recipientUsername);
   } else if (loggedInUser.name === recipientUsername) {
     chatHeader.textContent = `Chat with ${senderUsername}`;
-    document.getElementById(
-      "messageInput"
-    ).placeholder = `Type a message to ${senderUsername}`;
-    const sendButton = document.getElementById("send-btn");
+    messageInput.placeholder = `Type a message to ${senderUsername}`;
     sendButton.onclick = () => sendMessage(recipientUsername, senderUsername);
   }
 
@@ -175,7 +182,6 @@ async function fetchChatMessages(chatID) {
         const messageElement = document.createElement("p");
         const details = document.createElement("div");
         details.classList.add("details");
-
         messageElement.classList.add("msg");
         details.textContent = `${parsedContent.sender} (${parsedContent.timestamp})`;
         messageElement.textContent = parsedContent.content;

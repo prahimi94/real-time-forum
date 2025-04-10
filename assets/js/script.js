@@ -352,8 +352,8 @@ function showAuthenticatedContainer() {
                             <h3 id="chat-header"></h3>
                             <div id="messages" style="display: none">
                                 <div id="message-display"></div>
-                                <input type="text" id="messageInput">
-                                <button id="send-btn">Send</button>
+                                <input type="text" id="messageInput" style="display: none">
+                                <button id="send-btn" style="display: none">Send</button>
                             </div>
                         </div>
                         <!-- END CHATBOX -->
