@@ -4,13 +4,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
 
 body {
-    background: rgb(239,245,249);
-    background: -moz-linear-gradient(220deg, rgba(239,245,249,1) 0%, rgba(246,235,248,1) 35%, rgba(239,245,249,1) 100%);
-    background: -webkit-linear-gradient(220deg, rgba(239,245,249,1) 0%, rgba(246,235,248,1) 35%, rgba(239,245,249,1) 100%);
-    background: linear-gradient(220deg, rgba(239,245,249,1) 0%, rgba(246,235,248,1) 35%, rgba(239,245,249,1) 100%);
-    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr="#eff5f9",endColorstr="#eff5f9",GradientType=1);
+    background: rgb(239, 245, 249);
+    background: -moz-linear-gradient(220deg, rgba(239, 245, 249, 1) 0%, rgba(246, 235, 248, 1) 35%, rgba(239, 245, 249, 1) 100%);
+    background: -webkit-linear-gradient(220deg, rgba(239, 245, 249, 1) 0%, rgba(246, 235, 248, 1) 35%, rgba(239, 245, 249, 1) 100%);
+    background: linear-gradient(220deg, rgba(239, 245, 249, 1) 0%, rgba(246, 235, 248, 1) 35%, rgba(239, 245, 249, 1) 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr="#eff5f9", endColorstr="#eff5f9", GradientType=1);
     padding-top: 160px;
 }
+
 .navbar {
     background-color: #ffffff;
     height: 93px;
@@ -24,29 +25,36 @@ body {
 
     box-shadow: 0 0.150rem 0.25rem rgba(0, 0, 0, 0.065);
 }
-.navbar-logined > a.link-un,.navbar-logined > span{
+
+.navbar-logined>a.link-un,
+.navbar-logined>span {
     font-family: "Dongle", serif;
     font-size: 1.9rem;
     color: #999999;
     line-height: 93px;
 }
-.navbar-logined:hover{
+
+.navbar-logined:hover {
     color: #999999;
 }
-.navbar-logined a.link-un{
+
+.navbar-logined a.link-un {
     border-bottom: unset;
     transition: border-bottom padding-top 0.5s ease-in-out;
     padding-top: 0px;
 }
-.navbar-logined a.link-un:hover{
+
+.navbar-logined a.link-un:hover {
     color: #5e5e5e;
     border-bottom: 3px solid #533DE1;
     padding-top: 3px;
 }
-.dropdown-toggle-user.dropdown-toggle::after{
+
+.dropdown-toggle-user.dropdown-toggle::after {
     display: none;
 }
-.btn-dropdown{
+
+.btn-dropdown {
     background: transparent;
     font-family: "Dongle", serif;
     font-size: 1.9rem;
@@ -55,54 +63,66 @@ body {
     border: unset;
     border-radius: 0;
 }
-.btn-dropdown:hover{
+
+.btn-dropdown:hover {
     background: transparent;
     color: #5e5e5e;
     border-bottom: 3px solid #533DE1;
     padding-top: 10px;
 }
-.btn-dropdown:active, .btn-dropdown:focus-visible{
+
+.btn-dropdown:active,
+.btn-dropdown:focus-visible {
     background: transparent !important;
     color: #5e5e5e !important;
 }
-.btn-dropdown::after{
+
+.btn-dropdown::after {
     font-size: 1.2rem;
 }
 
-.input-p-main{
+.input-p-main {
     background: #F2F2F2;
     padding: .675rem .65rem;
     border-radius: 20px;
 }
-.input-p{
+
+.input-p {
     background: #F2F2F2;
     border: unset;
     color: #68696D;
 }
-.input-p:focus{
+
+.input-p:focus {
     background: #fafafa;
     box-shadow: 0 0 0 0.25rem rgba(165, 165, 165, 0.25);
     border-radius: 10px;
 }
+
 .input-p::placeholder {
     color: #999999;
 }
-.input-p::-ms-input-placeholder { /* Edge 12 -18 */
+
+.input-p::-ms-input-placeholder {
+    /* Edge 12 -18 */
     color: #999999;
 }
-.input-p-main .btn{
+
+.input-p-main .btn {
     background: #FFFFFF;
     border: 1px solid #EDEDED;
     color: #68696D;
     border-radius: 12px;
     transition: background 0.5s;
 }
-.input-p-main .btn:hover{
+
+.input-p-main .btn:hover {
     background: #f7f7f7;
     border: 1px solid #EDEDED;
     color: #68696D;
 }
-.singIn-btn{
+
+.singIn-btn {
     background: #533DE1;
     color: #F1E9FD;
     border: 1px solid #EDEDED;
@@ -111,15 +131,18 @@ body {
     border: unset;
     transition: background 0.5s;
 }
-.singIn-btn:hover{
+
+.singIn-btn:hover {
     background: #4130b3;
     border: unset;
 }
-.singIn-btn:active{
+
+.singIn-btn:active {
     background: #372897 !important;
     border: unset;
 }
-.createPost-btn{
+
+.createPost-btn {
     background: #533DE1;
     color: #F1E9FD;
     border: 1px solid #EDEDED;
@@ -128,11 +151,13 @@ body {
     border: unset;
     transition: background 0.5s;
 }
-.createPost-btn:hover{
+
+.createPost-btn:hover {
     background: #4130b3;
     border: unset;
 }
-.createPost-btn:active{
+
+.createPost-btn:active {
     background: #372897 !important;
     border: unset;
 }
@@ -143,17 +168,20 @@ body {
     padding: 0;
     text-align: center;
 }
+
 .hero img {
     width: 462px;
 }
-.hero .text-content{
+
+.hero .text-content {
     text-align: left;
     font-family: "Dongle", serif;
     font-size: 1.9rem;
     line-height: 30px;
     text-align: justify;
 }
-.hero .text-content .text-header{
+
+.hero .text-content .text-header {
     font-size: 5rem;
     font-family: "Berkshire Swash", serif;
     font-weight: 700;
@@ -161,7 +189,7 @@ body {
     margin-bottom: 2rem;
 }
 
-.title-recentPosts{
+.title-recentPosts {
     font-family: "Dongle", serif;
     text-align: center;
     margin: 3rem 0;
@@ -170,7 +198,8 @@ body {
     color: #505050;
     font-size: 5rem;
 }
-.title-recentPosts::before{
+
+.title-recentPosts::before {
     font-family: "Dongle", serif;
     content: "Recent Posts";
     font-size: 12rem;
@@ -184,40 +213,48 @@ body {
     -webkit-text-fill-color: transparent;
     opacity: 0.7;
 }
-@media screen and (max-width: 650px){
-    .title-recentPosts{
+
+@media screen and (max-width: 650px) {
+    .title-recentPosts {
         margin: 1.5rem 0 .5rem 0;
         padding: 1.5rem 0 .5rem 0;
         font-size: 4rem;
     }
-    .title-recentPosts::before{
+
+    .title-recentPosts::before {
         opacity: 0;
     }
 }
 
-.search-box-content{
+.search-box-content {
     background: #fff;
     padding: .675rem .65rem;
     border-radius: 20px;
     margin-bottom: 1rem;
     box-shadow: 0 3px 10px rgba(148, 148, 148, 0.1);
 }
-.search-box-content input{
+
+.search-box-content input {
     color: #68696D;
     border: unset;
 }
-.search-box-content input:focus{
+
+.search-box-content input:focus {
     background: #fafafa;
     box-shadow: 0 0 0 0.25rem rgba(165, 165, 165, 0.25);
     border-radius: 10px;
 }
+
 .search-box-content input::placeholder {
     color: #999999;
 }
-.search-box-content input::-ms-input-placeholder { /* Edge 12 -18 */
+
+.search-box-content input::-ms-input-placeholder {
+    /* Edge 12 -18 */
     color: #999999;
 }
-.search-box-content .btn{
+
+.search-box-content .btn {
     background: #533DE1;
     border: unset;
     color: #fff;
@@ -225,13 +262,14 @@ body {
     transition: background 0.5s;
     box-shadow: 2px 0 10px #4130b35b;
 }
-.search-box-content .btn:hover{
+
+.search-box-content .btn:hover {
     background: #4130b3;
     border: unset;
     color: #fff;
 }
 
-.categories .btn{
+.categories .btn {
     padding: 4px 15px;
     background: #EEE7FF;
     border: 1px solid #8E76D8;
@@ -240,25 +278,27 @@ body {
     margin: 0 0 8px 8px;
     font-size: 1rem;
 }
-.categories .btn:hover{
+
+.categories .btn:hover {
     background: #e3d8fd !important;
 }
-.categories .btn.ctg-active{
+
+.categories .btn.ctg-active {
     background: #372897 !important;
     color: #F1E9FD !important;
 }
 
-.divaider{
+.divaider {
     border-bottom: 1px solid #dadada;
 }
 
-.search-title{
+.search-title {
     font-family: "Dongle", serif;
     color: #505050;
     font-size: 4rem;
 }
 
-.breadcrumb ul li span{
+.breadcrumb ul li span {
     font-family: "Dongle", serif;
     color: #505050;
     font-size: 1.7rem !important;
@@ -272,33 +312,39 @@ body {
     box-shadow: 0 3px 10px rgba(90, 90, 90, 0.1);
     margin-bottom: 2rem;
 }
-.bg-border-box{
+
+.bg-border-box {
     background: border-box;
 }
-.post-card .post-title{
+
+.post-card .post-title {
     font-weight: bold;
     font-family: "Open Sans", serif;
     font-size: 2.3rem;
 }
-.post-card .post-user{
+
+.post-card .post-user {
     font-family: "Dongle", serif;
     font-size: 1.8rem;
     line-height: 21px;
 }
-.post-card .post-dateTime{
+
+.post-card .post-dateTime {
     color: #c7c7c7;
     font-size: 22px;
     font-family: "Dongle", serif;
     line-height: 15px;
 }
-.post-card .post-description{
+
+.post-card .post-description {
     font-family: "Open Sans", serif;
     font-size: 1rem;
     line-height: 26px;
     color: #666;
     font-weight: normal;
 }
-.post-card .badge-p{
+
+.post-card .badge-p {
     padding: 4px 15px;
     background: #EEE7FF;
     border: 1px solid #8E76D8;
@@ -307,13 +353,16 @@ body {
     margin: 0 0 0 8px;
     font-size: 1rem;
 }
-.post-card .badge-p:hover{
+
+.post-card .badge-p:hover {
     background: #e3d8fd !important;
 }
-.post-card .badge-p a{
+
+.post-card .badge-p a {
     color: #8E76D8 !important;
     text-decoration: none;
 }
+
 .categories button {
     margin-right: 10px;
 }
@@ -326,6 +375,7 @@ body {
     border-radius: 10px;
     box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
 }
+
 .dropdown-menu {
     /* background-color: #fdf4eb; */
     border: none;
@@ -336,26 +386,30 @@ body {
     color: green;
 } */
 
-.col-left-userLogin{
+.col-left-userLogin {
     border-right: .13rem solid #e7e7e7;
     height: 100%;
     margin-right: 2rem;
     padding-right: 15px;
 }
-.col-left-userLogin .left-menu{
+
+.col-left-userLogin .left-menu {
     padding-left: 0rem;
     list-style-type: none;
     margin-bottom: 4rem;
 }
-.col-left-userLogin .left-menu li{
+
+.col-left-userLogin .left-menu li {
     margin-bottom: 1.5rem;
 }
-.col-left-userLogin .left-menu li a{
+
+.col-left-userLogin .left-menu li a {
     text-decoration: none;
     color: #555555;
     padding: 11px 55px 12px 0
 }
-.col-left-userLogin .left-menu li a i{
+
+.col-left-userLogin .left-menu li a i {
     background: #f7f7f7;
     border: 1px solid #EDEDED;
     color: #999999;
@@ -364,20 +418,22 @@ body {
     padding: .75rem;
     margin-right: 1rem;
 }
-.section-title-list{
+
+.section-title-list {
     font-family: "Dongle", serif;
     color: #505050;
     font-size: 2rem !important;
     line-height: 22px;
 }
 
-.col-right-userLogin{
+.col-right-userLogin {
     border-left: .13rem solid #e7e7e7;
     height: 100%;
     margin-left: 2rem;
     padding-left: 15px;
 }
-.col-right-userLogin .title-username{
+
+.col-right-userLogin .title-username {
     font-family: "Dongle", serif;
     color: #505050;
     font-size: 2.5rem !important;
@@ -385,7 +441,8 @@ body {
     margin-top: 1rem;
     margin-bottom: 1rem;
 }
-.col-right-userLogin .info-box-username{
+
+.col-right-userLogin .info-box-username {
     background: #fff;
     padding: 1.8rem 1.2rem;
     border-radius: 18px;
@@ -395,19 +452,22 @@ body {
     font-family: "Open Sans", serif;
     text-align: left;
 }
-.col-right-userLogin .info-box-username p{
+
+.col-right-userLogin .info-box-username p {
     margin-bottom: 1.5rem;
 }
-.col-right-userLogin .info-box-logout a{
+
+.col-right-userLogin .info-box-logout a {
     color: #999999;
     text-decoration: none;
     padding: 0.5rem 5rem 0.5rem 0;
 }
-.col-right-userLogin .info-box-logout a:hover{
+
+.col-right-userLogin .info-box-logout a:hover {
     color: #505050;
 }
 
-.like-inpost{
+.like-inpost {
     padding: 13px;
     background: #F2F2F2;
     border: 1px solid #EDEDED;
@@ -417,7 +477,7 @@ body {
     margin-right: .25rem;
 }
 
-.dislike-inpost{
+.dislike-inpost {
     padding: 11px;
     background: #F2F2F2;
     border: 1px solid #EDEDED;
@@ -427,43 +487,154 @@ body {
     border-radius: 12px;
 }
 
-@media screen and (min-width: 651px){
-    #offcanvasNavbar{
+@media screen and (min-width: 651px) {
+    #offcanvasNavbar {
         display: none !important;
     }
 }
 
-@media screen and (max-width: 650px){
-    .mt-3{
-        margin-top: 0rem!important;
+@media screen and (max-width: 650px) {
+    .mt-3 {
+        margin-top: 0rem !important;
     }
-    .hero .text-content .text-header{
+
+    .hero .text-content .text-header {
         font-size: 3.5rem;
         text-align: center;
     }
-    .m-posts-userInfo{
+
+    .m-posts-userInfo {
         display: grid !important;
     }
+
     .m-posts-ctg {
         margin: 10px 0 !important;
     }
-    .m-posts-ctg span{
+
+    .m-posts-ctg span {
         margin: 0 8px 0 0 !important;
     }
-    .m-post-detail{
-        padding-right: 1rem!important;
-        padding-left: 1rem!important;
+
+    .m-post-detail {
+        padding-right: 1rem !important;
+        padding-left: 1rem !important;
     }
-    .offcanvas .singIn-btn{
+
+    .offcanvas .singIn-btn {
         margin-bottom: 1.5rem;
     }
-    .col-right-userLogin{
+
+    .col-right-userLogin {
         display: none !important;
     }
+
     .col-left-userLogin {
         border-right: 0rem solid #e7e7e7;
         height: 100%;
         margin-right: 0rem;
         padding-right: 0px;
     }
+}
+
+/* CHAT */
+.chat-users-container,
+.chatbox {
+    border-left: .13rem solid #e7e7e7;
+    height: auto;
+    padding-left: 15px;
+    background: #fff;
+    padding: 1.8rem 1.2rem;
+    border-radius: 18px;
+    box-shadow: 0 3px 10px rgba(90, 90, 90, 0.1);
+    margin-bottom: 2rem;
+    color: #999999;
+    font-family: "Open Sans", serif;
+    text-align: left;
+}
+
+.chatbox {
+    height: 500px;
+    overflow-y: scroll;
+}
+
+.chat-users-container h3,
+.chatbox h3 {
+    font-family: "Dongle", serif;
+    color: #505050;
+    font-size: 2.5rem !important;
+    line-height: 22px;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+.chatbox .msg {
+    text-align: left;
+    text-decoration: none;
+    padding: 4px 15px;
+    border-radius: 9px;
+    margin: 8px;
+    background: #F2F2F2;
+    border: 1px solid #EDEDED;
+}
+
+.chatbox .from-me {
+    text-align: right;
+    color: #8E76D8 !important;
+    text-decoration: none;
+    padding: 4px 15px;
+    background: #EEE7FF;
+    border: 1px solid #8E76D8;
+    border-radius: 9px;
+    margin: 8px;
+}
+
+.message-display #sender, .message-display #time {
+    color: #c7c7c7;
+    font-size: 22px;
+    font-family: "Dongle", serif;
+    line-height: 15px;
+}
+
+.chat-users-container a {
+    color: #198754;
+    text-decoration: none;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.chat-users-container a:hover {
+    color: #157347;
+}
+
+.chat-users-container ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.chatbox input {
+    width: 100%;
+    background-color: white;
+    background-clip: padding-box;
+    border-color: #dee2e6;
+    border-radius: 0.375rem;
+    padding: 0.75rem 0.375rem;
+    resize: vertical;
+    margin: 4px;
+}
+
+.chatbox button {
+    cursor: pointer;
+    background-color: #198754;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    vertical-align: middle;
+    border-radius: 0.375rem;
+    border: none;
+    padding: 0.5rem 0.5rem;
+}
+
+.chatbox button:hover {
+    background-color: #157347;
 }

@@ -392,3 +392,27 @@ func LoggedInUsersHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(usernames)
 }
+
+func GetAllChatUsersHandler(w http.ResponseWriter, r *http.Request) {
+	// Retrieve the logged-in user's information
+	loginStatus, loginUser, _, checkLoginError := CheckLogin(w, r)
+	if checkLoginError != nil {
+		http.Error(w, "Failed to check login status", http.StatusInternalServerError)
+		return
+	}
+	if !loginStatus {
+		http.Error(w, "Unauthorized access", http.StatusUnauthorized)
+		return
+	}
+
+	// Pass the logged-in user's ID to ReadAllChatUsers
+	users, err := userManagementModels.ReadAllChatUsers(loginUser.ID)
+	if err != nil {
+		http.Error(w, "Failed to fetch users", http.StatusInternalServerError)
+		return
+	}
+
+	// Return the users as JSON
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(users)
+}

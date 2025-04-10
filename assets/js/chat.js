@@ -1,56 +1,7 @@
-/* WEBSOCKET FOR CHAT */
 let ws;
-
-function connect() {
-  ws = new WebSocket("ws://localhost:8080/ws");
-
-  ws.onopen = function () {
-    console.log("Online: Connected to WebSocket server");
-    updateOnlineUsersList(onlineUsers);
-  };
-
-  ws.onmessage = function (event) {
-    let messageDisplay = document.getElementById("messages");
-    let message = event.data;
-
-    try {
-      // Check if the message is a JSON array (online users list)
-      const onlineUsers = JSON.parse(message);
-      if (Array.isArray(onlineUsers)) {
-        updateOnlineUsersList(onlineUsers);
-        return;
-      }
-    } catch (e) {
-      // Not a JSON array, proceed with normal message handling
-    }
-
-    // Append the message to the chatbox
-    let messageElement = document.createElement("p");
-    messageElement.textContent = message;
-    messageDisplay.appendChild(messageElement);
-
-    // Scroll to the bottom of the chatbox
-    messageDisplay.scrollTop = messageDisplay.scrollHeight;
-  };
-
-  ws.onclose = function () {
-    console.log("Offline: WebSocket connection closed, retrying...");
-    updateOnlineUsersList(onlineUsers);
-    setTimeout(connect, 1000); // Reconnect after 1 second
-  };
-
-  ws.onerror = function (error) {
-    console.error("Offline: WebSocket error:", error);
-  };
-}
-
-function sendMessage() {
-  let input = document.getElementById("messageInput");
-  let message = input.value;
-  ws.send(message);
-  input.value = "";
-}
-/* END OF WEBSOCKET FOR CHAT */
+let onlineUsernames = [];
+let allUserData = {};
+let isProcessingMessages = false;
 
 async function fetchOnlineUsers() {
   try {
@@ -60,29 +11,224 @@ async function fetchOnlineUsers() {
       return;
     }
 
-    const usernames = await response.json();
-    updateOnlineUsersList(usernames);
+    onlineUsernames = await response.json();
   } catch (error) {
     console.error("Error fetching online users:", error);
   }
 }
 
-// Function to update the online users list in the frontend
-function updateOnlineUsersList(usernames) {
-  const onlineUsersList = document.getElementById("online-users-list");
+async function fetchAllChatUsers() {
+  try {
+    const response = await fetch("/api/users");
+    if (!response.ok) {
+      console.error("Failed to fetch all users");
+      return;
+    }
 
-  // Clear the current list
-  onlineUsersList.textContent = "";
+    allUserData = await response.json();
+    const chatUsersList = document.getElementById("chat-users-list");
+    chatUsersList.textContent = ""; // Clear the current list
 
-  if (usernames.length === 0 || (usernames.length === 1 && usernames[0] === "OnlineUsername")) { //TODO: "OnlineUsername" to be changed with correct var
-    onlineUsersList.textContent = "It's just you here.";
-    return;
+    allUserData.forEach((user) => {
+      if (user.name !== loggedInUser.name) {
+        const li = document.createElement("li");
+
+        if (onlineUsernames.includes(user.name)) {
+          const link = document.createElement("a");
+          link.href = `#chat-with-${user.name}`;
+          link.onclick = (e) => {
+            e.preventDefault(); // Prevent default link behavior
+            handlePrivateChat(loggedInUser.name, user.name);
+          };
+          link.textContent = `${user.name} (Online)`;
+          li.appendChild(link);
+        } else {
+          li.textContent = user.name;
+        }
+
+        chatUsersList.appendChild(li);
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching all users:", error);
+  }
+}
+
+function connect() {
+  ws = new WebSocket("ws://localhost:8080/ws");
+
+  ws.onopen = function () {
+    console.log("Online: Connected to WebSocket server");
+    fetchOnlineUsers(); // Fetch the latest online users when connected
+    fetchAllChatUsers(); // Fetch all users to populate the list
+  };
+
+  ws.onmessage = function (event) {
+    try {
+      const message = JSON.parse(event.data);
+
+      if (message.type === "message_content") {
+        handlePrivateChat(message.sender, message.recipient);
+        if (message.recipient === loggedInUser.name) {
+          const res = {
+            success: true,
+            message: `You have a new message from ${message.sender}`,
+            data: message,
+          };
+          showToast(res);
+        }
+      }
+
+      fetchOnlineUsers();
+      fetchAllChatUsers();
+    } catch (error) {
+      console.error("Failed to parse WebSocket message:", event.data, error);
+    }
+  };
+
+  ws.onclose = function () {
+    console.log("Offline: WebSocket connection closed, retrying...");
+    setTimeout(connect, 1000); // Reconnect after 1 second
+  };
+
+  ws.onerror = function (error) {
+    console.error("Offline: WebSocket error:", error);
+  };
+}
+
+// Handle private chat initiation
+async function handlePrivateChat(senderUsername, recipientUsername) {
+  document.getElementById("chatbox").style.display = "block";
+  document.getElementById("messages").style.display = "block";
+  const chatHeader = document.getElementById("chat-header");
+
+  if (loggedInUser.name === senderUsername) {
+    chatHeader.textContent = `Chat with ${recipientUsername}`;
+    document.getElementById(
+      "messageInput"
+    ).placeholder = `Type a message to ${recipientUsername}`;
+    const sendButton = document.getElementById("send-btn");
+    sendButton.onclick = () => sendMessage(senderUsername, recipientUsername);
+  } else if (loggedInUser.name === recipientUsername) {
+    chatHeader.textContent = `Chat with ${senderUsername}`;
+    document.getElementById(
+      "messageInput"
+    ).placeholder = `Type a message to ${senderUsername}`;
+    const sendButton = document.getElementById("send-btn");
+    sendButton.onclick = () => sendMessage(recipientUsername, senderUsername);
   }
 
-  // Populate the list with usernames
-  usernames.forEach((username) => {
-    const li = document.createElement("li");
-    li.textContent = username;
-    onlineUsersList.appendChild(li);
-  });
+  // Send a message to the server to initiate or check the chat
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(
+      JSON.stringify({
+        type: "private_chat",
+        sender: senderUsername,
+        recipient: recipientUsername,
+      })
+    );
+  }
+
+  // Fetch the chat ID and load the chat messages
+  const chatID = await getChatIDForUsers(senderUsername, recipientUsername);
+  if (chatID) {
+    if (
+      loggedInUser.name === senderUsername ||
+      loggedInUser.name === recipientUsername
+    ) {
+      fetchChatMessages(chatID);
+    }
+  } else {
+    console.error("Failed to retrieve chat ID");
+  }
+}
+
+async function fetchChatMessages(chatID) {
+  try {
+    const response = await fetch(`/api/chat-messages/${chatID}`);
+    if (!response.ok) {
+      console.error("Failed to fetch chat messages");
+      return;
+    }
+
+    const messages = await response.json();
+    const messageDisplay = document.getElementById("message-display");
+    messageDisplay.textContent = ""; // Clear existing messages
+
+    isProcessingMessages = true;
+
+    // Throttle to process msgs in batches of 10
+    const batchSize = 10;
+    function processBatch() {
+      const batch = messages.splice(0, batchSize); // Get the next batch of messages
+
+      batch.forEach((message) => {
+        const parsedContent = JSON.parse(message.content);
+        const messageElement = document.createElement("p");
+        const sender = document.createElement("sender");
+        const time = document.createElement("time");
+
+        messageElement.classList.add("msg")
+        sender.style.display = "block";
+        sender.textContent = parsedContent.sender;
+        messageElement.textContent = parsedContent.content;
+        time.textContent = parsedContent.timestamp;
+        time.style.display = "block";
+        messageDisplay.appendChild(messageElement);
+        if (loggedInUser.name === parsedContent.sender) {
+          messageElement.classList.add("from-me")
+        }
+      });
+
+      // Scroll to the bottom of the chatbox
+      messageDisplay.scrollTop = messageDisplay.scrollHeight;
+
+      if (batch.length > 0) {
+        // If there are more messages, process the next batch after a delay
+        setTimeout(processBatch, 500);
+      } else {
+        isProcessingMessages = false; // Mark processing as complete
+      }
+    }
+    processBatch();
+  } catch (error) {
+    console.error("Error fetching chat messages:", error);
+  }
+}
+
+async function getChatIDForUsers(senderUsername, recipientUsername) {
+  try {
+    const response = await fetch(
+      `/api/get-chat-id?sender=${senderUsername}&recipient=${recipientUsername}`
+    );
+    if (!response.ok) {
+      console.error("Failed to fetch chat ID");
+      return null;
+    }
+
+    const data = await response.json();
+    return data.chatID; // Return the chatID from the response
+  } catch (error) {
+    console.error("Error fetching chat ID:", error);
+    return null;
+  }
+}
+
+function sendMessage(senderUsername, recipientUsername) {
+  let input = document.getElementById("messageInput");
+  let message = input.value.trim(); // Remove leading/trailing whitespace
+  if (message.length === 0) return; // Do not accept empty messages
+
+  if (recipientUsername) {
+    ws.send(
+      JSON.stringify({
+        type: "message_content",
+        sender: senderUsername,
+        recipient: recipientUsername,
+        content: message,
+        timestamp: new Date().toLocaleString(),
+      })
+    );
+  }
+  input.value = "";
 }
