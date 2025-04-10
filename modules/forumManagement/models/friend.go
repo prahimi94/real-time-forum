@@ -28,8 +28,8 @@ func ReadFriendsByUserId(userId int) ([]Friend, error) {
 	// Query the records
 	rows, selectError := db.Query(`
         SELECT 
-			first_user.id as first_user_id, first_user.name as first_user_name, first_user.username as first_user_username, first_user.email as first_user_email, first_user.profile_photo as first_user_profile_photo,
-			second_user.id as second_user_id, second_user.name as second_user_name, second_user.username as second_user_username, second_user.email as second_user_email, second_user.profile_photo as second_user_profile_photo,
+			first_user.id as first_user_id, first_user.firstname as first_user_firstname, first_user.lastname as first_user_lastname, first_user.username as first_user_username, first_user.email as first_user_email, first_user.profile_photo as first_user_profile_photo,
+			second_user.id as second_user_id, second_user.firstname as second_user_firstname, second_user.lastname as second_user_lastname, second_user.username as second_user_username, second_user.email as second_user_email, second_user.profile_photo as second_user_profile_photo,
 			f.status
 		FROM friends f
 			INNER JOIN users first_user
@@ -54,8 +54,8 @@ func ReadFriendsByUserId(userId int) ([]Friend, error) {
 
 		// Scan the post and user data
 		err := rows.Scan(
-			&first_user.ID, &first_user.Name, &first_user.Username, &first_user.Email, &first_user.ProfilePhoto,
-			&second_user.ID, &second_user.Name, &second_user.Username, &second_user.Email, &second_user.ProfilePhoto,
+			&first_user.ID, &first_user.Firstname, &first_user.Lastname, &first_user.Username, &first_user.Email, &first_user.ProfilePhoto,
+			&second_user.ID, &second_user.Firstname, &second_user.Lastname, &second_user.Username, &second_user.Email, &second_user.ProfilePhoto,
 			&friend.Status,
 		)
 		if err != nil {

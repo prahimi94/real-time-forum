@@ -32,9 +32,9 @@ func SetupRoutes() {
 
 	// http.HandleFunc("/home/", forumManagementControllers.HomePageHandler)
 	http.HandleFunc("/auth/", userManagementControllers.AuthHandler)
-	http.HandleFunc("/logout/", userManagementControllers.Logout)
-	http.HandleFunc("/register", userManagementControllers.RegisterHandler) /*post method*/
-	http.HandleFunc("/login", userManagementControllers.LoginHandler)       /*post method*/
+	http.HandleFunc("/api/logout/", userManagementControllers.Logout)
+	http.HandleFunc("/api/register", userManagementControllers.RegisterHandler) /*post method*/
+	http.HandleFunc("/api/login", userManagementControllers.LoginHandler)       /*post method*/
 
 	http.HandleFunc("/api/categories/", forumManagementControllers.ReadAllCategories)
 	http.HandleFunc("/api/allPosts/", forumManagementControllers.ReadAllPosts)

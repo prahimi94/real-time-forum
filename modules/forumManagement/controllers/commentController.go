@@ -107,7 +107,10 @@ func CreateComment(w http.ResponseWriter, r *http.Request) {
 }
 
 func SubmitComment(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("SubmitComment called")
+	fmt.Println(r.Method)
 	if r.Method != http.MethodPost {
+		fmt.Println("Method not allowed")
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
 		return
 	}

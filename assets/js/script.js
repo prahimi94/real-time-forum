@@ -50,7 +50,7 @@ function showNotAuthenticatedContainer() {
                     <div class="offcanvas-body">
                         <ul class="navbar-nav justify-content-end flex-grow-1 pe-3">
                             <li class="nav-item">
-                                <a class="btn btn-success singIn-btn" href="/auth/"><i class="fa-solid fa-user pe-2"></i> Sign in</a>
+                                <a type="button" class="btn btn-success singIn-btn" data-bs-toggle="modal" data-bs-target="#authModal"><i class="fa-solid fa-user pe-2"></i> Sign in</a>
                             </li>
                         </ul>
                         
@@ -62,12 +62,113 @@ function showNotAuthenticatedContainer() {
                     
                 </div>
                 <div class="d-lg-flex col-sm-12 col-lg-2 justify-content-lg-end">
-                    <a class="btn btn-success singIn-btn" href="/auth/"><i class="fa-solid fa-user pe-2"></i> Sign in</a>
+                    <a type="button" class="btn btn-success singIn-btn"data-bs-toggle="modal" data-bs-target="#authModal"><i class="fa-solid fa-user pe-2"></i> Sign in</a>
                 </div>
             </div>
             </div>
         </nav>
     </header>
+
+    <!-- Modal -->
+    <div class="modal fade bd-example-modal-xl" id="authModal" tabindex="-1" aria-labelledby="editPostModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="editPostModalLabel">Login/Register</h1>
+                    <a type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></a>
+                </div>
+                <div class="modal-body">
+                    <div class="containerAuth">
+                        <div class="form-box login">
+                            <form method="post" id="loginForm">
+                                <h1>Login</h1>
+                                <div class="input-box">
+                                    <input type="text" placeholder="Username" name="username" required>
+                                    <i class='bx bxs-user'></i>
+                                </div>
+                                <div class="input-box">
+                                    <input id="login-password" type="password" placeholder="Password" name="password" required>
+                                    <i id="toggle-login-password-icon" class='bx bxs-show' style="cursor: pointer;" ></i>
+                                </div>
+                                <!-- <div class="forgot-link">
+                                    <a href="#">Forgot Password?</a>
+                                </div> -->
+                                <button type="submit" onclick="loginFunc()" class="btnAuth">Login</button>
+                            </form>
+                        </div>
+
+                        <div class="form-box register">
+                            <form method="post" id="registerForm">
+                                <h1>Registration</h1>
+                                <div class="input-box">
+                                    <input type="text" name="username" placeholder="Nick Name" required>
+                                    <i class='bx bxs-user'></i>
+                                </div>
+                                <div class="input-box">
+                                    <input type="text" name="firstname" placeholder="First Name" required>
+                                    <i class='bx bxs-user'></i>
+                                </div>
+                                <div class="input-box">
+                                    <input type="text" name="lastname" placeholder="Last Name" required>
+                                    <i class='bx bxs-user'></i>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="gender" id="genderMale" value="male">
+                                    <label class="form-check-label" for="genderMale">
+                                        Male
+                                        <i class='bx bx-male'></i>
+                                    </label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="gender" id="genderFemale" value="female">
+                                    <label class="form-check-label" for="genderFemale">
+                                        Female
+                                        <i class='bx bx-female'></i>
+                                    </label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="gender" id="genderNeutral" value="neutral" checked>
+                                    <label class="form-check-label" for="genderNeutral">
+                                        Neutral
+                                        <i class='bx bx-body'></i>
+                                    </label>
+                                </div>
+                                <div class="input-box">
+                                    <input type="number" name="age" placeholder="Age" required>
+                                    <i class='bx bxs-calendar'></i>
+                                </div>
+                                <div class="input-box">
+                                    <input type="email" name="email" placeholder="Email" required>
+                                    <i class='bx bxs-envelope' ></i>
+                                </div>
+                                <div class="input-box">
+                                    <input id="register-password" type="password" placeholder="Password" name="password" required>
+                                    <i id="toggle-register-password-icon" class='bx bxs-show'  style="cursor: pointer;" ></i>
+                                </div>
+                                <button type="submit" onclick="registerFunc()" class="btnAuth">Register</button>
+                            </form>
+                        </div>
+
+                        <div class="toggle-box">
+                            <div class="toggle-panel toggle-left">
+                                <h1 style="color: #fff;">Hello, Welcome!</h1>
+                                <p>Don't have an account?</p>
+                                <button class="btnAuth register-btn">Register</button>
+                            </div>
+
+                            <div class="toggle-panel toggle-right">
+                                <h1 style="color: #fff;">Welcome Back!</h1>
+                                <p>Already have an account?</p>
+                                <button class="btnAuth login-btn">Login</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <header class="hero">
         <div class="container">
             <div class="row align-items-center">
@@ -92,70 +193,51 @@ function showNotAuthenticatedContainer() {
         </div>
     </header>
     `;
-}
 
-function showAuthContainer() {
-    const authContainer = document.getElementsByTagName('main')[0];
-    authContainer.innerHTML = `
-    <header>
-        <nav class="navbar navbar-expand-lg navbar-light py-10" aria-label="Thirteenth navbar example">
-            <div class="container-fluid">
-                <a class="navbar-brand" href="/">
-                    <img src="/img/logo.png" alt="Forum" class="me-2" style="height: 60px;">
-                </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasNavbar" aria-labelledby="offcanvasNavbarLabel">
-                    <div class="offcanvas-header">
-                        <h5 class="offcanvas-title" id="offcanvasNavbarLabel"><img src="/img/logo.png" alt="Forum" class="me-2" style="height: 50px;"></h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-                    </div>
-                    <div class="offcanvas-body">
-                        <ul class="navbar-nav justify-content-end flex-grow-1 pe-3">
-                            <li class="nav-item">
-                                <a class="btn btn-success singIn-btn" href="/auth/"><i class="fa-solid fa-user pe-2"></i> Sign in</a>
-                            </li>
-                        </ul>
-                        
-                    </div>
-                </div>
 
-            <div class="collapse navbar-collapse" id="navbarsExample11">
-                <div class="navbar-nav col-sm-12 col-lg-10 justify-content-lg-center">
-                    
-                </div>
-                <div class="d-lg-flex col-sm-12 col-lg-2 justify-content-lg-end">
-                    <a class="btn btn-success singIn-btn" href="/auth/"><i class="fa-solid fa-user pe-2"></i> Sign in</a>
-                </div>
-            </div>
-            </div>
-        </nav>
-    </header>
-    <header class="hero">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-6 text-content">
-                    <h1 class="text-header">Welcome To <br/> Future Lab!</h1>
-                    <p style="color: #7c7e82;">Discover a thriving online community where ideas come to life! Our forum is the perfect place to connect with like-minded individuals, share your thoughts, ask questions, and explore engaging discussions across a variety of topics. Join us today and be part of something bigger!</p>
-                    <!-- <a class="btn btn-success" href="/auth/">Join Now</a> -->
-                </div>
-                <div class="col-md-6">
-                    <!-- <img src="/img/background.png" class="img-fluid" alt="Background Image"> -->
-                    <!-- https://lottie.host/e4c9739c-85ef-441d-8064-2b6fc1c7ad60/rrBxdg5bgH.lottie -->
-                    <dotlottie-player
-                    src="/img/Animation-1739026245825.lottie"
-                    background="transparent"
-                    speed="1"
-                    style="width: 100%;"
-                    loop
-                    autoplay
-                    ></dotlottie-player>
-                </div>
-            </div>
-        </div>
-    </header>
-    `;
+    const container = document.querySelector('.containerAuth');
+    const registerBtn = document.querySelector('.register-btn');
+    const loginBtn = document.querySelector('.login-btn');
+
+    registerBtn.addEventListener('click', () => {
+        container.classList.add('active');
+    })
+
+    loginBtn.addEventListener('click', () => {
+        container.classList.remove('active');
+    })
+
+    const toggleLoginPasswordIcon = document.getElementById('toggle-login-password-icon');
+    const loginPasswordInput = document.getElementById('login-password');
+
+    toggleLoginPasswordIcon.addEventListener('click', function() {
+        // Toggle password visibility
+        if (loginPasswordInput.type === 'password') {
+            loginPasswordInput.type = 'text'; // Show password
+            toggleLoginPasswordIcon.classList.remove('bxs-show'); // Remove eye icon
+            toggleLoginPasswordIcon.classList.add('bxs-hide');
+        } else {
+            loginPasswordInput.type = 'password'; // Hide password
+            toggleLoginPasswordIcon.classList.remove('bxs-hide'); // Remove eye icon
+            toggleLoginPasswordIcon.classList.add('bxs-show');
+        }
+    });
+
+    const toggleRegisterPasswordIcon = document.getElementById('toggle-register-password-icon');
+    const loginRegisterInput = document.getElementById('register-password');
+
+    toggleRegisterPasswordIcon.addEventListener('click', function() {
+        // Toggle password visibility
+        if (loginRegisterInput.type === 'password') {
+            loginRegisterInput.type = 'text'; // Show password
+            toggleRegisterPasswordIcon.classList.remove('bxs-show'); // Remove eye icon
+            toggleRegisterPasswordIcon.classList.add('bxs-hide');
+        } else {
+            loginRegisterInput.type = 'password'; // Hide password
+            toggleRegisterPasswordIcon.classList.remove('bxs-hide'); // Remove eye icon
+            toggleRegisterPasswordIcon.classList.add('bxs-show');
+        }
+    });
 }
 
 function showAuthenticatedContainer() {
@@ -192,14 +274,16 @@ function showAuthenticatedContainer() {
                                     </div>
                                 </li>
                                 <li class="nav-item text-center pt-3">                                    
-                                    <span class="me-3">Welcome, ${loggedInUser.name}</span>
+                                    <span class="me-3">Welcome, ${loggedInUser.firstname}</span>
                                 </li>
                                 <li class="nav-item text-center pb-2 pt-2">
                                     span class="me-3">${loggedInUser.email}</span>
                                 </li>
                                 <li class="nav-item text-center pb-3">
-                                <a class="btn btn-outline-secondary" href="/profile"><i class="fa-regular fa-address-card"></i></a>
-                                    <a class="btn btn-danger" href="/logout/"><i class="fas fa-power-off"></i></a>
+                                
+                                <!--  todo  -->
+                                <!--  <a class="btn btn-outline-secondary" href="/profile"><i class="fa-regular fa-address-card"></i></a>-->
+                                    <a type="button" class="btn btn-danger" onclick="logoutFunc()"><i class="fas fa-power-off"></i></a>
                                 </li>
                                 <li><div class="divaider mb-2"></div></li>
                                     <li class="nav-item">
@@ -213,7 +297,8 @@ function showAuthenticatedContainer() {
                                     <a class="nav-link" href="/">Home</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link" href="/newPost/">Create Post</a>
+                                    <!-- todo -->
+                                    <!-- <a class="nav-link" href="/newPost/">Create Post</a> -->
                                     <!-- <a class="nav-link" href="/newPost/"><i class="fa-solid fa-plus pe-2"></i> Create Post</a> -->
                                 </li>
                                 <li class="nav-item dropdown">
@@ -262,8 +347,9 @@ function showAuthenticatedContainer() {
                                         </div>
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-end">
-                                        <li><a class="dropdown-item" href="/profile"><i class="fa-regular fa-address-card me-2"></i> Profile</a></li>
-                                        <li><a class="dropdown-item" href="/logout/"><i class="fas fa-power-off me-2"></i> Log Out</a></li>
+                                    <!--  todo  -->
+                                        <!--  <li><a class="dropdown-item" href="/profile"><i class="fa-regular fa-address-card me-2"></i> Profile</a></li> -->
+                                        <li><a type="button" class="dropdown-item" onclick="logoutFunc()"><i class="fas fa-power-off me-2"></i> Log Out</a></li>
                                     </ul>
                                 </div>
                             </div>
@@ -332,13 +418,14 @@ function showAuthenticatedContainer() {
                         <div class="text-center w-100 py-4">
                         ${loggedInUserProfilePhoto}
                         </div>
-                        <div class="text-center title-username">${loggedInUser.name}</div>
+                        <div class="text-center title-username">${loggedInUser.firstname}</div>
                         <div class="info-box-username">
                             <p> ${loggedInUser.email}</p>
                             <div class="info-box-logout">
-                                <p style="margin-bottom: 1rem;"><a href="/profile"><i
-                                            class="fa-regular fa-address-card me-2"></i> Profile</a></p>
-                                <a href="/logout/"><i class="fas fa-power-off me-2" style="color: #c44343;"></i> Log
+                            <!--  todo  -->
+                                <!-- <p style="margin-bottom: 1rem;"><a href="/profile"><i
+                                            class="fa-regular fa-address-card me-2"></i> Profile</a></p> -->
+                                <a type="button" onclick="logoutFunc()"><i class="fas fa-power-off me-2" style="color: #c44343;"></i> Log
                                     Out</a>
                             </div>
                         </div>
@@ -554,11 +641,13 @@ async function deletePost(id, uuid) {
     removePostHtml(id);
 }
 
-async function createComment(id, uuid) {
+async function sumbitComment(id, uuid) {
+    console.log(1)
     const form = document.getElementById('commentForm-' + id);
     form.addEventListener('submit', (event) => {
         event.preventDefault();
     });
+    console.log(2)
     
     const response = await fetch('/api/submitComment', {
         method: 'POST',
@@ -567,6 +656,7 @@ async function createComment(id, uuid) {
     res = await response.json();
     showToast(res);
 
+    console.log(3)
     form.reset();
     fetchPost(id, uuid);
 }
@@ -632,6 +722,61 @@ async function deleteComment(comment_id, id, uuid) {
     fetchPost(id, uuid);   
 }
 
+async function loginFunc() {
+    const form = document.getElementById('loginForm');
+    form.addEventListener('submit', (event) => {
+        event.preventDefault();
+    });
+    
+    const response = await fetch('/api/login', {
+        method: 'POST',
+        body: new FormData(form),
+    });
+    res = await response.json();
+    showToast(res);
+
+    if(res.success) {
+        form.reset();
+        const authModal = document.getElementById('authModal');
+        const modalInstance = bootstrap.Modal.getInstance(authModal);
+        modalInstance.hide();
+        await checkSession();
+    }
+}
+
+async function registerFunc() {
+    const form = document.getElementById('registerForm');
+    form.addEventListener('submit', (event) => {
+        event.preventDefault();
+    });
+    
+    const response = await fetch('/api/register', {
+        method: 'POST',
+        body: new FormData(form),
+    });
+    res = await response.json();
+    showToast(res);
+
+    if(res.success) {
+        form.reset();
+        const authModal = document.getElementById('authModal');
+        const modalInstance = bootstrap.Modal.getInstance(authModal);
+        modalInstance.hide();
+        await checkSession();
+    }
+}
+
+async function logoutFunc() {
+    const response = await fetch('/api/logout', {
+        method: 'GET',
+        credentials: 'include',
+    });
+    res = await response.json();
+    showToast(res);
+
+    await checkSession();
+}
+
 function fillPostsInHtml(posts, actionSubject = '') {
     // load posts for home page
     const postsContainer = document.getElementById('postsContainer');
@@ -655,7 +800,7 @@ function fillPostsInHtml(posts, actionSubject = '') {
             : `<div style="padding: 7px;"><i class="fa-solid fa-user" style="font-size: 2rem;"></i></div>`;
 
         const postCategories = post.categories.map(category =>
-            `<span class="badge-p text-dark"><a href="/posts/${category.name}">${category.name}</a></span>`
+            `<span class="badge-p text-dark"><a href="javascript:fetchCategoryPosts('${category.name}')">${category.name}</a></span>`
         ).join('');
 
         const postFiles = post.post_files.map(post_file =>
@@ -832,7 +977,7 @@ function updatePostHtml(post, comments, postId) {
             : `<div style="padding: 7px;"><i class="fa-solid fa-user" style="font-size: 2rem;"></i></div>`;
 
     const postCategories = post.categories.map(category =>
-        `<span class="badge-p text-dark"><a href="/posts/${category.name}">${category.name}</a></span>`
+        `<span class="badge-p text-dark"><a href="javascript:fetchCategoryPosts('${category.name}')">${category.name}</a></span>`
     ).join('');
 
     const postFiles = post.post_files.map(post_file =>
@@ -1123,7 +1268,7 @@ function updatePostHtml(post, comments, postId) {
                             <div class="mb-3">
                                 <textarea class="form-control" style="border-radius: 14px;" placeholder="Text" required rows="4" name="description"></textarea>
                             </div>
-                            <button onclick="createComment(${post.id}, '${post.uuid}')" class="btn btn-success w-100" style="border-radius: 14px;">Comment</button>
+                            <button onclick="sumbitComment(${post.id}, '${post.uuid}')" class="btn btn-success w-100" style="border-radius: 14px;">Comment</button>
                         </form>
                     </div>
                 </div>
@@ -1160,6 +1305,10 @@ addEventListener("DOMContentLoaded", async function () {
     const toastLiveExample = document.getElementById('liveToast')
     toast = new bootstrap.Toast(toastLiveExample)
 
+    await checkSession();
+});
+
+async function checkSession(){
     // Call the function to check session status
     const sessionActive = await checkSessionActive();
     if (sessionActive) {
@@ -1172,4 +1321,4 @@ addEventListener("DOMContentLoaded", async function () {
         console.log('Session is NOT active'); 
         showNotAuthenticatedContainer();
     }
-});
+}

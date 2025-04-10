@@ -1,32 +1,31 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
 
-*{
+/* *{
     margin: 0;
     padding: 0;
     box-sizing: border-box;
     font-family: "Poppins", sans-serif;
     text-decoration: none;
     list-style: none;
-}
+} */
 
-body{
+/* body{
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    /* background: linear-gradient(90deg, #e2e2e2, #c9d6ff); */
-    /* background: linear-gradient(90deg, #e2e2e2, rgb(252, 242, 229)); */
     background: rgb(239,245,249);
     background: -moz-linear-gradient(220deg, rgba(239,245,249,1) 0%, rgba(246,235,248,1) 35%, rgba(239,245,249,1) 100%);
     background: -webkit-linear-gradient(220deg, rgba(239,245,249,1) 0%, rgba(246,235,248,1) 35%, rgba(239,245,249,1) 100%);
     background: linear-gradient(220deg, rgba(239,245,249,1) 0%, rgba(246,235,248,1) 35%, rgba(239,245,249,1) 100%);
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr="#eff5f9",endColorstr="#eff5f9",GradientType=1);
-}
+} */
 
-.container{
+.containerAuth{
     position: relative;
-    width: 850px;
-    height: 550px;
+    /* width: 850px; */
+    width: 90%;
+    height: 700px;
     background: #fff;
     margin: 20px;
     border-radius: 25px;
@@ -34,13 +33,13 @@ body{
     overflow: hidden;
 }
 
-    .container h1{
+    .containerAuth h1{
         font-size: 36px;
         margin: -10px 0;
         color: #505050;
     }
 
-    .container p{
+    .containerAuth p{
         font-size: 14.5px;
         margin: 15px 0;
     }
@@ -62,10 +61,10 @@ form{ width: 100%; }
     transition: .6s ease-in-out 1.2s, visibility 0s 1s;
 }
 
-    .container.active .form-box{ right: 50%; }
+    .containerAuth.active .form-box{ right: 50%; }
 
     .form-box.register{ visibility: hidden; }
-        .container.active .form-box.register{ visibility: visible; }
+        .containerAuth.active .form-box.register{ visibility: visible; }
 
 .input-box{
     position: relative;
@@ -104,7 +103,7 @@ form{ width: 100%; }
         color: #333;
     }
 
-.btn{
+.btnAuth{
     width: 100%;
     height: 48px;
     /* background: #7494ec; */
@@ -118,7 +117,7 @@ form{ width: 100%; }
     font-weight: 600;
     transition: background 0.5s;
 }
-.btn:hover{
+.btnAuth:hover{
     background: #105f3a;
     color: #fff;
 }
@@ -163,7 +162,7 @@ form{ width: 100%; }
         transition: 1.8s ease-in-out;
     }
 
-        .container.active .toggle-box::before{ left: 50%; }
+        .containerAuth.active .toggle-box::before{ left: 50%; }
 
 .toggle-panel{
     position: absolute;
@@ -183,7 +182,7 @@ form{ width: 100%; }
         left: 0;
         transition-delay: 1.2s; 
     }
-        .container.active .toggle-panel.toggle-left{
+        .containerAuth.active .toggle-panel.toggle-left{
             left: -50%;
             transition-delay: .6s;
         }
@@ -192,14 +191,14 @@ form{ width: 100%; }
         right: -50%;
         transition-delay: .6s;
     }
-        .container.active .toggle-panel.toggle-right{
+        .containerAuth.active .toggle-panel.toggle-right{
             right: 0;
             transition-delay: 1.2s;
         }
 
     .toggle-panel p{ margin-bottom: 20px; }
 
-    .toggle-panel .btn{
+    .toggle-panel .btnAuth{
         width: 160px;
         height: 46px;
         border: 2px solid #fff;
@@ -207,14 +206,14 @@ form{ width: 100%; }
         transition: background 0.5s;
         background: #533DE1;
     }
-    .toggle-panel .btn:hover{
+    .toggle-panel .btnAuth:hover{
         background: #4130b3;
     }
 
     
 
 @media screen and (max-width: 650px){
-    .container{ height: calc(100vh - 40px); }
+    .containerAuth{ height: calc(100vh - 40px); }
 
     .form-box{
         bottom: 0;
@@ -222,7 +221,7 @@ form{ width: 100%; }
         height: 70%;
     }
 
-        .container.active .form-box{
+        .containerAuth.active .form-box{
             right: 0;
             bottom: 30%;
         }
@@ -235,12 +234,12 @@ form{ width: 100%; }
         border-radius: 20vw;
     }
 
-        .container.active .toggle-box::before{
+        .containerAuth.active .toggle-box::before{
             left: 0;
             top: 70%;
         }
 
-        .container.active .toggle-panel.toggle-left{
+        .containerAuth.active .toggle-panel.toggle-left{
             left: 0;
             top: -30%;
         }
@@ -255,7 +254,7 @@ form{ width: 100%; }
             bottom: -30%;
         }
 
-            .container.active .toggle-panel.toggle-right{ bottom: 0; }
+            .containerAuth.active .toggle-panel.toggle-right{ bottom: 0; }
 }
 
 @media screen and (max-width: 400px){

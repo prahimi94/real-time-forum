@@ -17,8 +17,11 @@ type User struct {
 	ID           int        `json:"id"`
 	UUID         string     `json:"uuid"`
 	Type         string     `json:"type"`
-	Name         string     `json:"name"`
 	Username     string     `json:"username"`
+	Firstname    string     `json:"firstname"`
+	Lastname     string     `json:"lastname"`
+	Gender       string     `json:"gender"`
+	Age          int        `json:"age"`
 	Email        string     `json:"email"`
 	Password     string     `json:"password"`
 	ProfilePhoto string     `json:"profile_photo"`
@@ -54,9 +57,11 @@ func InsertUser(user *User) (int, error) {
 		}
 	}
 
-	insertQuery := `INSERT INTO users (uuid, name, username, email, password) VALUES (?, ?, ?, ?, ?);`
-	result, insertErr := db.Exec(insertQuery, user.UUID, user.Username, user.Username, user.Email, user.Password)
+	insertQuery := `INSERT INTO users (uuid, firstname, lastname, gender, age, username, email, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?);`
+	result, insertErr := db.Exec(insertQuery, user.UUID, user.Firstname, user.Lastname, user.Gender, user.Age, user.Username, user.Email, user.Password)
 	if insertErr != nil {
+		fmt.Println(insertErr)
+		fmt.Println(user.Gender)
 		// Check if the error is a SQLite constraint violation (duplicate entry)
 		if sqliteErr, ok := insertErr.(interface{ ErrorCode() int }); ok {
 			if sqliteErr.ErrorCode() == 19 { // 19 = UNIQUE constraint failed (SQLite error code)
@@ -81,12 +86,15 @@ func UpdateUser(user *User) error {
 	defer db.Close() // Close the connection after the function finishes
 
 	updateUser := `UPDATE users
-					SET name = ?,
+					SET firstname = ?,
+						lastname = ?,
+						gender = ?,
+						age = ?,
 						profile_photo = ?,
 						updated_at = CURRENT_TIMESTAMP,
 						updated_by = ?
 					WHERE id = ?;`
-	_, updateErr := db.Exec(updateUser, user.Name, user.ProfilePhoto, user.ID, user.ID)
+	_, updateErr := db.Exec(updateUser, user.Firstname, user.Lastname, user.Gender, user.Age, user.ProfilePhoto, user.ID, user.ID)
 	if updateErr != nil {
 		return updateErr
 	}
@@ -102,7 +110,7 @@ func AuthenticateUser(username, password string) (bool, int, error) {
 	// Query to retrieve the hashed password stored in the database for the given username
 	var userId int
 	var storedHashedPassword string
-	err := db.QueryRow("SELECT id, password FROM users WHERE username = ?", username).Scan(&userId, &storedHashedPassword)
+	err := db.QueryRow("SELECT id, password FROM users WHERE username = ? or email = ?", username, username).Scan(&userId, &storedHashedPassword)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			// Username not found
@@ -129,7 +137,7 @@ func ReadAllUsers() ([]User, error) {
 
 	// Query the records
 	rows, selectError := db.Query(`
-        SELECT u.id as user_id, u.name as user_name, u.username as user_username, u.email as user_email, 
+        SELECT u.id as user_id, u.firstname as user_firstname, u.lastname as user_lastname, u.username as user_username, u.email as user_email, 
 		IFNULL(u.profile_photo, '') as profile_photo, u.status as user_status, u.created_at as user_created_at, 
 		u.updated_at as user_updated_at, u.updated_by as user_updated_by
 		FROM users u
@@ -149,7 +157,7 @@ func ReadAllUsers() ([]User, error) {
 
 		// Scan the post and user data
 		err := rows.Scan(
-			&user.ID, &user.Name, &user.Username, &user.Email,
+			&user.ID, &user.Firstname, &user.Lastname, &user.Username, &user.Email,
 			&user.ProfilePhoto, &user.Status, &user.CreatedAt,
 			&user.UpdatedAt, &user.UpdatedBy,
 		)
@@ -173,7 +181,7 @@ func ReadAllChatUsers(user_id int) ([]User, error) {
 	defer db.Close()
 
 	rows, selectError := db.Query(`
-        SELECT u.id as user_id, u.name as user_name, u.username as user_username, u.email as user_email, 
+        SELECT u.id as user_id, u.firstname as user_firstname, u.lastname as user_lastname, u.username as user_username, u.email as user_email, 
 		IFNULL(u.profile_photo, '') as profile_photo, u.status as user_status, u.created_at as user_created_at, 
 		u.updated_at as user_updated_at, u.updated_by as user_updated_by
 			FROM users u
@@ -205,7 +213,7 @@ func ReadAllChatUsers(user_id int) ([]User, error) {
 		var user User
 
 		err := rows.Scan(
-			&user.ID, &user.Name, &user.Username, &user.Email,
+			&user.ID, &user.Firstname, &user.Lastname, &user.Username, &user.Email,
 			&user.ProfilePhoto, &user.Status, &user.CreatedAt,
 			&user.UpdatedAt, &user.UpdatedBy,
 		)
@@ -229,7 +237,7 @@ func ReadUserByID(user_id int) (User, error) {
 
 	// Query the records
 	rows, selectError := db.Query(`
-        SELECT u.id as user_id, u.name as user_name, u.username as user_username, u.email as user_email, 
+        SELECT u.id as user_id, u.firstname as user_firstname, u.lastname as user_lastname, u.username as user_username, u.email as user_email, 
 		IFNULL(u.profile_photo, '') as profile_photo, u.status as user_status, u.created_at as user_created_at, 
 		u.updated_at as user_updated_at, u.updated_by as user_updated_by
 		FROM users u
@@ -248,7 +256,7 @@ func ReadUserByID(user_id int) (User, error) {
 	for rows.Next() {
 		// Scan the post and user data
 		err := rows.Scan(
-			&user.ID, &user.Name, &user.Username, &user.Email,
+			&user.ID, &user.Firstname, &user.Lastname, &user.Username, &user.Email,
 			&user.ProfilePhoto, &user.Status, &user.CreatedAt,
 			&user.UpdatedAt, &user.UpdatedBy,
 		)
