@@ -3,6 +3,7 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
+	errorManagementControllers "forum/modules/errorManagement/controllers"
 	forumManagementModels "forum/modules/forumManagement/models"
 	userManagementModels "forum/modules/userManagement/models"
 	"forum/utils"
@@ -28,6 +29,7 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		fmt.Println("Error upgrading:", err)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 	defer conn.Close()
@@ -36,6 +38,7 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 	myUserID, myUsername, err := userManagementModels.GetUserIDFromCookie(r)
 	if err != nil {
 		fmt.Println("Error getting username:", err)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 
@@ -43,7 +46,6 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 	Mutex.Lock()
 	OnlineUsers[conn] = myUsername
 	UpdateOnlineUsers()
-	fmt.Printf("Online: User %s connected. Current OnlineUsers: %v\n", myUsername, OnlineUsers)
 	Mutex.Unlock()
 
 	var chatID int // Declare chatID outside the loop
@@ -54,7 +56,6 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 			// Remove the connection from the clients map on disconnect
 			Mutex.Lock()
 			delete(OnlineUsers, conn)
-			fmt.Printf("Offline: User %s disconnected. Current OnlineUsers: %v\n", myUsername, OnlineUsers)
 			UpdateOnlineUsers()
 			Mutex.Unlock()
 			break
@@ -75,6 +76,7 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 			recipientUserID, err := userManagementModels.GetUserIDByUsername(recipientUsername)
 			if err != nil {
 				fmt.Println("Error getting recipient user ID:", err)
+				errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 				continue
 			}
 
@@ -82,6 +84,7 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 			chatID, err = forumManagementModels.CheckChatExists(myUserID, recipientUserID)
 			if err != nil {
 				fmt.Println("Error checking chat existence:", err)
+				errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 				continue
 			}
 			// If no chatID exists (0), InsertChat
@@ -90,6 +93,7 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 				chatID, err = forumManagementModels.InsertChat(chat, myUserID, recipientUserID, nil)
 				if err != nil {
 					fmt.Println("Error creating or retrieving chat:", err)
+					errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 					continue
 				}
 			}
@@ -114,17 +118,13 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 				CreatedAt: time.Now(), // Ensure CreatedAt is set
 				UpdatedBy: &myUserID,
 			}
-			fmt.Println(msg)
 			_, err = forumManagementModels.InsertMsg(msg, nil)
 			if err != nil {
 				fmt.Println("Error inserting message into database:", msg, err)
+				errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 				continue
 			}
 		}
-
-		// Add timestamp and username to the message
-		//timestamp := time.Now().Format("2006-01-02 15:04:05")
-		//formattedMsg := fmt.Sprintf("[%s] %s: %s", timestamp, myUsername, sanitizedMsg)
 
 		Broadcast <- []byte(sanitizedMsg)
 	}
@@ -137,7 +137,7 @@ func HandleMessages() {
 
 		// Send the message to all online users
 		Mutex.Lock()
-		fmt.Println("Broadcasting message:", string(message), " | OnlineUsers:", OnlineUsers)
+		
 		for client := range OnlineUsers {
 			err := client.WriteMessage(websocket.TextMessage, message)
 			if err != nil {

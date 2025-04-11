@@ -268,7 +268,7 @@ func sessionGenerator(w http.ResponseWriter, r *http.Request, userId int) {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
-	SetCookie(w, session.SessionToken, session.ExpiresAt)
+	UserSetCookie(w, session.SessionToken, session.ExpiresAt)
 	// Set the session token in a cookie
 
 }
@@ -462,7 +462,6 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 			// Extra safety: check file size from the header
 			if handler.Size > maxUploadSize {
 				// "File is too large or missing"
-				fmt.Println("Error is here2:", handler.Size)
 				errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 				return
 			}
@@ -522,21 +521,24 @@ func RedirectToPrevPage(w http.ResponseWriter, r *http.Request) {
 
 func deleteCookie(w http.ResponseWriter, cookieName string) {
 	http.SetCookie(w, &http.Cookie{
-		Name:    cookieName,
-		Value:   "",              // Optional but recommended
-		Expires: time.Unix(0, 0), // Set expiration to a past date
-		MaxAge:  -1,              // Ensure immediate removal
-		Path:    "/",             // Must match the original cookie path
+		Name:     cookieName,
+		Value:    "",              // Optional but recommended
+		Expires:  time.Unix(0, 0), // Set expiration to a past date
+		MaxAge:   -1,              // Ensure immediate removal
+		Path:     "/",             // Must match the original cookie path
+		HttpOnly: true,
+		Secure:   false,
 	})
 }
 
-func SetCookie(w http.ResponseWriter, sessionToken string, expiresAt time.Time) {
+func UserSetCookie(w http.ResponseWriter, sessionToken string, expiresAt time.Time) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session_token",
 		Value:    sessionToken,
 		Expires:  expiresAt,
 		HttpOnly: true,
 		Secure:   false,
+		Path:     "/",
 	})
 }
 

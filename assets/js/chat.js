@@ -47,7 +47,6 @@ async function fetchAllChatUsers() {
               chatboxOpen = false;
               document.getElementById("chatbox").style.display = "none";
             } else if (!chatboxOpen) {
-              console.log("from close to open:", user.username)
               chatboxOpen = true;
               document.getElementById("chatbox").style.display = "block";
               handlePrivateChat(loggedInUser.username, user.username);
@@ -82,9 +81,11 @@ async function fetchAllChatUsers() {
 
               } else if (chatID === 0 || !chatID) {
                 const chatHeader = document.getElementById("chat-header");
+                document.getElementById("messageInput").style.display = "none";
+                document.getElementById("send-btn").style.display = "none";
+
                 chatHeader.textContent = `Chat with ${user.username}`;
                 document.getElementById("message-display").innerHTML = "No chat history.";
-                console.error("No chatID")
               } else {
                 console.error("Failed to retrieve chat ID");
               }
@@ -174,11 +175,16 @@ async function handlePrivateChat(senderUsername, recipientUsername) {
   // Fetch the chat ID and load the chat messages
   const chatID = await getChatIDForUsers(senderUsername, recipientUsername);
   if (chatID) {
-    if (
-      loggedInUser.username === senderUsername ||
-      loggedInUser.username === recipientUsername
+    if (loggedInUser.username === senderUsername
     ) {
       await fetchChatMessages(chatID, recipientUsername);
+
+      messageInput.style.display = "block";
+      sendButton.style.display = "block";
+    } else if (
+      loggedInUser.username === recipientUsername
+    ) {
+      await fetchChatMessages(chatID, senderUsername);
 
       messageInput.style.display = "block";
       sendButton.style.display = "block";
@@ -193,9 +199,8 @@ async function fetchChatMessages(chatID, recipientUsername) {
   const sendButton = document.getElementById("send-btn");
   const chatHeader = document.getElementById("chat-header");
   const messageDisplay = document.getElementById("message-display");
-  
-    messageDisplay.innerHTML = ""
-    console.log(recipientUsername)
+
+  messageDisplay.innerHTML = ""
   chatHeader.textContent = `Chat with ${recipientUsername}`;
 
   messageInput.style.display = "none";

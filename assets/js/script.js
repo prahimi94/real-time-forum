@@ -17,7 +17,6 @@ async function checkSessionActive() {
             const data = res.data;
             if (data.Active) {
                 loggedInUser = data.LoginUser;
-                /* console.log(loggedInUser); */
                 return true; // Session is active
             } else {
                 return false; // Session is not active
@@ -735,12 +734,10 @@ async function deletePost(id, uuid) {
 }
 
 async function sumbitComment(id, uuid) {
-    console.log(1)
     const form = document.getElementById('commentForm-' + id);
     form.addEventListener('submit', (event) => {
         event.preventDefault();
     });
-    console.log(2)
     
     const response = await fetch('/api/submitComment', {
         method: 'POST',
@@ -749,7 +746,6 @@ async function sumbitComment(id, uuid) {
     res = await response.json();
     showToast(res);
 
-    console.log(3)
     form.reset();
     fetchPost(id, uuid);
 }
@@ -925,7 +921,6 @@ function fillPostsInHtml(posts, actionSubject = '') {
     postsContainer.innerHTML += '<div class="accordion accordion-flush" id="accordionFlushExample">';
 
     posts.forEach(post => {
-        /* console.log(post); */
         const postImage = post.user.profile_photo
             ? `<img class="bd-placeholder-img flex-shrink-0 me-2 rounded" role="img" src="/uploads/${post.user.profile_photo}" width="45" height="45"/>`
             : `<div style="padding: 7px;"><i class="fa-solid fa-user" style="font-size: 2rem;"></i></div>`;
@@ -1432,8 +1427,6 @@ function showToast(res) {
 }
 
 addEventListener("DOMContentLoaded", async function () {
-    console.log('DOMContentLoaded');
-
     const toastLiveExample = document.getElementById('liveToast')
     toast = new bootstrap.Toast(toastLiveExample)
 
@@ -1453,7 +1446,6 @@ addEventListener("DOMContentLoaded", async function () {
                 const categoryObj = categories.find(cat => cat.name === categoryName);
                 return categoryObj ? categoryObj.id : null;
             }).filter(id => id !== null);
-            console.log('Selected Categories:', selectedCategories);
 
             const form = document.getElementById(`updatePostForm-${postId}`);
             form.querySelector('input[name="title"]').value = title;
@@ -1470,8 +1462,6 @@ addEventListener("DOMContentLoaded", async function () {
             }); // Initialize select2
             if (selectedCategories && selectedCategories.length > 0) {
                 $(categoriesSelect).val(selectedCategories).trigger('change'); // Set values if selectedCategories are populated
-            } else {
-                console.error('Categories array is empty or not populated.');
             }
         }
             
@@ -1484,13 +1474,11 @@ async function checkSession(){
     // Call the function to check session status
     const sessionActive = await checkSessionActive();
     if (sessionActive) {
-        console.log('Session is active');
         fetchCategories();
         fetchPosts();
         connect(); // websocket
         showAuthenticatedContainer();
     } else {
-        console.log('Session is NOT active'); 
         showNotAuthenticatedContainer();
     }
 }

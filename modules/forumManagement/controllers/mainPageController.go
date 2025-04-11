@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"fmt"
 	errorManagementControllers "forum/modules/errorManagement/controllers"
 	"forum/modules/forumManagement/models"
 	"forum/utils"
@@ -156,28 +155,24 @@ func AdminMainPageHandler(w http.ResponseWriter, r *http.Request) {
 
 	posts, err := models.ReadAllPosts(loginUser.ID)
 	if err != nil {
-		fmt.Println(1)
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 
 	comments, err := models.ReadAllComments()
 	if err != nil {
-		fmt.Println(2)
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 
 	users, err := userManagementModels.ReadAllUsers()
 	if err != nil {
-		fmt.Println(3)
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 
 	postLikes, err := models.ReadAllPostsLikes()
 	if err != nil {
-		fmt.Println(3)
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
