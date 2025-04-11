@@ -85,20 +85,36 @@ func UpdateUser(user *User) error {
 	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
-	updateUser := `UPDATE users
+	if user.ProfilePhoto == "" {
+		updateUser := `UPDATE users
 					SET firstname = ?,
 						lastname = ?,
 						gender = ?,
 						age = ?,
-						profile_photo = ?,
 						updated_at = CURRENT_TIMESTAMP,
 						updated_by = ?
 					WHERE id = ?;`
-	_, updateErr := db.Exec(updateUser, user.Firstname, user.Lastname, user.Gender, user.Age, user.ProfilePhoto, user.ID, user.ID)
-	if updateErr != nil {
-		return updateErr
-	}
+		_, updateErr := db.Exec(updateUser, user.Firstname, user.Lastname, user.Gender, user.Age, user.ID, user.ID)
 
+		if updateErr != nil {
+			return updateErr
+		}
+	} else {
+		updateUser := `UPDATE users
+		SET firstname = ?,
+			lastname = ?,
+			gender = ?,
+			age = ?,
+			profile_photo = ?,
+			updated_at = CURRENT_TIMESTAMP,
+			updated_by = ?
+		WHERE id = ?;`
+		_, updateErr := db.Exec(updateUser, user.Firstname, user.Lastname, user.Gender, user.Age, user.ProfilePhoto, user.ID, user.ID)
+
+		if updateErr != nil {
+			return updateErr
+		}
+	}
 	return nil
 }
 

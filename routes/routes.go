@@ -59,6 +59,8 @@ func SetupRoutes() {
 	http.HandleFunc("/api/updateComment", forumManagementControllers.UpdateComment) /*post method*/
 	http.HandleFunc("/api/deleteComment", forumManagementControllers.DeleteComment) /*post method*/
 
+	http.HandleFunc("/api/updateUser", userManagementControllers.UpdateUser) /*post method*/
+
 	// // Protected routes (using middleware)
 	// protectedRoutes := router.PathPrefix("/").Subrouter()
 	// protectedRoutes.Use(middlewares.AuthMiddleware) // Apply AuthMiddleware to protectedRoutes routes

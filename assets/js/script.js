@@ -281,8 +281,7 @@ function showAuthenticatedContainer() {
                                 </li>
                                 <li class="nav-item text-center pb-3">
                                 
-                                <!--  todo  -->
-                                <!--  <a class="btn btn-outline-secondary" href="/profile"><i class="fa-regular fa-address-card"></i></a>-->
+                                  <a type="button" class="btn btn-outline-secondary" onclick="showProfile()"><i class="fa-regular fa-address-card"></i></a>
                                     <a type="button" class="btn btn-danger" onclick="logoutFunc()"><i class="fas fa-power-off"></i></a>
                                 </li>
                                 <li><div class="divaider mb-2"></div></li>
@@ -347,8 +346,7 @@ function showAuthenticatedContainer() {
                                         </div>
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-end">
-                                    <!--  todo  -->
-                                        <!--  <li><a class="dropdown-item" href="/profile"><i class="fa-regular fa-address-card me-2"></i> Profile</a></li> -->
+                                        <li><a type="button" class="dropdown-item" onclick="showProfile()"><i class="fa-regular fa-address-card me-2"></i> Profile</a></li> 
                                         <li><a type="button" class="dropdown-item" onclick="logoutFunc()"><i class="fas fa-power-off me-2"></i> Log Out</a></li>
                                     </ul>
                                 </div>
@@ -378,7 +376,7 @@ function showAuthenticatedContainer() {
                     </div>
 
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-6" id="middlePanel">
                     <!-- {template "posts" .}} -->
                     <!-- this part is filled in script.js by fetchPosts -->
                     <div class="row" id="newPostContainer">
@@ -418,13 +416,12 @@ function showAuthenticatedContainer() {
                         <div class="text-center w-100 py-4">
                         ${loggedInUserProfilePhoto}
                         </div>
-                        <div class="text-center title-username">${loggedInUser.firstname}</div>
+                        <div class="text-center title-username">${loggedInUser.username}</div>
                         <div class="info-box-username">
                             <p> ${loggedInUser.email}</p>
                             <div class="info-box-logout">
-                            <!--  todo  -->
-                                <!-- <p style="margin-bottom: 1rem;"><a href="/profile"><i
-                                            class="fa-regular fa-address-card me-2"></i> Profile</a></p> -->
+                                <p style="margin-bottom: 1rem;"><a type="button" onclick="showProfile()"><i
+                                            class="fa-regular fa-address-card me-2"></i> Profile</a></p>
                                 <a type="button" onclick="logoutFunc()"><i class="fas fa-power-off me-2" style="color: #c44343;"></i> Log
                                     Out</a>
                             </div>
@@ -560,6 +557,98 @@ async function fetchCategoryPosts(category) {
     posts = res.data
 
     fillPostsInHtml(posts.Posts, category + ' posts');
+}
+
+async function showProfile() {
+    const middlePanel = document.getElementById('middlePanel');
+
+    const loggedInUserProfilePhoto = loggedInUser.profile_photo
+        ? `<img src="/uploads/${loggedInUser.profile_photo}" alt="user image" class="rounded-circle center" style="width: 150px; height: 150px; cursor: pointer;" >`
+        : `<i class="fa-solid fa-user" style="font-size: 3rem;"></i>`;
+
+    const genderMaleChecked = loggedInUser.gender == 'male'
+        ? `checked` : ``;
+    const genderFemaleChecked = loggedInUser.gender == 'female'
+        ? `checked` : ``;
+    const genderNeutralChecked = loggedInUser.gender == 'neutral'
+        ? `checked` : ``;
+
+    middlePanel.innerHTML = `
+    <div class="container-form">
+
+        <div class="mb-3" style="text-align: center;">
+            <div class="rounded-circle">
+                ${loggedInUserProfilePhoto}
+            </div>
+        </div>
+
+        <h4 class="text-center mb-4">Edit Profile</h4>
+        
+        <form id="profileForm" enctype="multipart/form-data" method="post">
+            
+            <div class="mb-3">
+                <label for="firstname">First Name:</label>
+                <input type="text" class="form-control" placeholder="First Name" name="firstname" value="${loggedInUser.firstname}">
+            </div>
+            <div class="mb-3">
+                <label for="lastname">Last Name:</label>
+                <input type="text" class="form-control" placeholder="Last Name" name="lastname" value="${loggedInUser.lastname}">
+            </div>
+            <div class="mb-3">
+                <label for="gender">Gender:</label>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="gender" id="genderMale" value="male" ${genderMaleChecked}>
+                    <label class="form-check-label" for="genderMale">
+                        Male
+                        <i class='bx bx-male'></i>
+                    </label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="gender" id="genderFemale" value="female" ${genderFemaleChecked}>
+                    <label class="form-check-label" for="genderFemale">
+                        Female
+                        <i class='bx bx-female'></i>
+                    </label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="gender" id="genderNeutral" value="neutral" ${genderNeutralChecked}>
+                    <label class="form-check-label" for="genderNeutral">
+                        Neutral
+                        <i class='bx bx-body'></i>
+                    </label>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label for="age">Age:</label>
+                <input type="number" class="form-control" placeholder="Age" name="age" value="${loggedInUser.age}">
+            </div>
+            <label for="profile_photo">Profile photo:</label>
+            <div class="mb-3 text-center border p-3 rounded">
+                <p class="text-muted">Attach an image (optional)</p>
+                <input type="file" class="form-control" name="profile_photo">
+            </div>
+            <button type="submit" onclick="updateUser()" class="btn btn-success w-100">Edit user</button>
+        </form>
+    </div>
+    `
+}
+
+async function updateUser() {
+    const form = document.getElementById('profileForm');
+    form.addEventListener('submit', (event) => {
+        event.preventDefault();
+    });
+    
+    const response = await fetch('/api/updateUser', {
+        method: 'POST',
+        body: new FormData(form),
+    });
+    res = await response.json();
+    showToast(res);
+
+    if (res.success) {
+        await checkSessionActive()
+    }
 }
 
 async function submitPost() {
@@ -779,8 +868,46 @@ async function logoutFunc() {
 
 function fillPostsInHtml(posts, actionSubject = '') {
     // load posts for home page
+    const middlePanel = document.getElementById('middlePanel');
+    middlePanel.innerHTML = `
+    <div class="row" id="newPostContainer"></div>
+    <div class="row" id="postsContainer"></div>
+    `;
+    const newPostContainer = document.getElementById('newPostContainer');
     const postsContainer = document.getElementById('postsContainer');
 
+    newPostContainer.innerHTML = `
+    <div class="row" id="newPostContainer">
+        <div class="col-sm-12 col-md-12 mb-3">
+            <div class="post-card">
+                <h4 class="text-center mb-4">New Post</h4>
+                <form id="newPostForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <div class="mt-3">
+                            <select id="categories" name="categories" required
+                                class="form-control multiSelect" multiple="multiple"
+                                data-placeholder="Select categories">
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <input type="text" class="form-control" placeholder="Title" required
+                            name="title">
+                    </div>
+                    <div class="mb-3">
+                        <textarea class="form-control" placeholder="Description" required rows="4"
+                            name="description"></textarea>
+                    </div>
+                    <div class="mb-3 text-center border p-3 rounded">
+                        <p class="text-muted">Attach an image or video (optional)</p>
+                        <input type="file" class="form-control" name="postFiles" multiple>
+                    </div>
+                    <button onclick="submitPost()" class="btn btn-success w-100">Post</button>
+                </form>
+            </div>
+        </div>
+    </div>
+   `;
     postsContainer.innerHTML = `
     <div class='col-md-12 text-center'>
         <h4 class='text-muted'>${actionSubject}</h4>
@@ -969,6 +1096,7 @@ function fillPostsInHtml(posts, actionSubject = '') {
 
     postsContainer.innerHTML += '</div>'; //close the accordion
     
+    $('.multiSelect').select2();
 }
 
 function updatePostHtml(post, comments, postId) {

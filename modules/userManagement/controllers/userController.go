@@ -388,10 +388,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
-	if loginStatus {
-		fmt.Println("logged in userid is: ", loginUser.ID)
-		// return
-	} else {
+	if !loginStatus {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
 		return
 	}
@@ -403,49 +400,106 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	firstname := utils.SanitizeInput(r.FormValue("firstname"))
 	lastname := utils.SanitizeInput(r.FormValue("lastname"))
+	age := utils.SanitizeInput(r.FormValue("age"))
+	gender := utils.SanitizeInput(r.FormValue("gender"))
 
-	if len(firstname) == 0 || len(lastname) == 0 {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
+	if len(firstname) == 0 || len(lastname) == 0 || len(age) == 0 || len(gender) == 0 {
+		res := utils.Result{
+			Success:    false,
+			Message:    "firstname, lastname, gender and age are required.",
+			HttpStatus: http.StatusOK,
+			Data:       nil,
+		}
+		utils.ReturnJson(w, res)
+		return
+	}
+
+	ageInt, err := strconv.Atoi(age)
+	if err != nil {
+		// renderAuthPage(w, "Invalid age format!")
+		res := utils.Result{
+			Success:    false,
+			Message:    "Invalid age format!",
+			HttpStatus: http.StatusOK,
+			Data:       nil,
+		}
+		utils.ReturnJson(w, res)
 		return
 	}
 
 	profile_photo_file, handler, err := r.FormFile("profile_photo")
 	if err != nil {
-		// "File is too large or missing"
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
+		// "File is missing"
+
+		user := &userManagementModels.User{
+			ID:           loginUser.ID,
+			Firstname:    firstname,
+			Lastname:     lastname,
+			Gender:       gender,
+			Age:          ageInt,
+			ProfilePhoto: "",
+		}
+
+		// Update a record while checking duplicates
+		updateError := userManagementModels.UpdateUser(user)
+		if updateError != nil {
+			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+			return
+		}
+
+		res := utils.Result{
+			Success: true,
+			Message: "Profile updated successfully",
+			Data:    nil,
+		}
+		utils.ReturnJson(w, res)
+		return
+	} else {
+		defer profile_photo_file.Close()
+
+		profile_photo := ""
+		if handler.Size != 0 {
+			// Extra safety: check file size from the header
+			if handler.Size > maxUploadSize {
+				// "File is too large or missing"
+				fmt.Println("Error is here2:", handler.Size)
+				errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
+				return
+			}
+
+			// Call your file upload function
+			profile_photo, err = utils.FileUpload(profile_photo_file, handler)
+			if err != nil {
+				errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+				return
+			}
+		}
+
+		user := &userManagementModels.User{
+			ID:           loginUser.ID,
+			Firstname:    firstname,
+			Lastname:     lastname,
+			Gender:       gender,
+			Age:          ageInt,
+			ProfilePhoto: profile_photo,
+		}
+
+		// Update a record while checking duplicates
+		updateError := userManagementModels.UpdateUser(user)
+		if updateError != nil {
+			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+			return
+		}
+
+		res := utils.Result{
+			Success: true,
+			Message: "Profile updated successfully",
+			Data:    nil,
+		}
+		utils.ReturnJson(w, res)
 		return
 	}
-	defer profile_photo_file.Close()
 
-	// Extra safety: check file size from the header
-	if handler.Size > maxUploadSize {
-		// "File is too large or missing"
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
-		return
-	}
-
-	// Call your file upload function
-	profile_photo, err := utils.FileUpload(profile_photo_file, handler)
-	if err != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
-
-	user := &userManagementModels.User{
-		ID:           loginUser.ID,
-		Firstname:    firstname,
-		Lastname:     lastname,
-		ProfilePhoto: profile_photo,
-	}
-
-	// Update a record while checking duplicates
-	updateError := userManagementModels.UpdateUser(user)
-	if updateError != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
-
-	RedirectToIndex(w, r)
 }
 
 func RedirectToIndex(w http.ResponseWriter, r *http.Request) {

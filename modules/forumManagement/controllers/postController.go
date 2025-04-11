@@ -440,7 +440,6 @@ func ReadPost(w http.ResponseWriter, r *http.Request) {
 // }
 
 func SubmitPost(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(r.Method)
 	if r.Method != http.MethodPost {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
 		return
