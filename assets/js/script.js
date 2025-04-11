@@ -72,95 +72,99 @@ function showNotAuthenticatedContainer() {
     <!-- Modal -->
     <div class="modal fade bd-example-modal-xl" id="authModal" tabindex="-1" aria-labelledby="editPostModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl">
-            <div class="modal-content">
+            <div class="modal-content" style="background-color: rgba(0, 0, 0, 0);border-color: rgba(0, 0, 0, 0)">
+                <!--
                 <div class="modal-header">
                     <h1 class="modal-title fs-5" id="editPostModalLabel">Login/Register</h1>
                     <a type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></a>
                 </div>
                 <div class="modal-body">
-                    <div class="containerAuth">
-                        <div class="form-box login">
-                            <form method="post" id="loginForm">
-                                <h1>Login</h1>
-                                <div class="input-box">
-                                    <input type="text" placeholder="Username Or Email" name="username" required>
-                                    <i class='bx bxs-user'></i>
-                                </div>
-                                <div class="input-box">
-                                    <input id="login-password" type="password" placeholder="Password" name="password" required>
-                                    <i id="toggle-login-password-icon" class='bx bxs-show' style="cursor: pointer;" ></i>
-                                </div>
-                                <!-- <div class="forgot-link">
-                                    <a href="#">Forgot Password?</a>
-                                </div> -->
-                                <button type="submit" onclick="loginFunc()" class="btnAuth">Login</button>
-                            </form>
+                    
+                </div>
+                -->
+
+                <div class="containerAuth">
+                    <div class="form-box login">
+                        <form method="post" id="loginForm">
+                            <h1>Login</h1>
+                            <div class="input-box">
+                                <input type="text" placeholder="Username Or Email" name="username" required>
+                                <i class='bx bxs-user'></i>
+                            </div>
+                            <div class="input-box">
+                                <input id="login-password" type="password" placeholder="Password" name="password" required>
+                                <i id="toggle-login-password-icon" class='bx bxs-show' style="cursor: pointer;" ></i>
+                            </div>
+                            <!-- <div class="forgot-link">
+                                <a href="#">Forgot Password?</a>
+                            </div> -->
+                            <button type="submit" onclick="loginFunc()" class="btnAuth">Login</button>
+                        </form>
+                    </div>
+
+                    <div class="form-box register">
+                        <form method="post" id="registerForm">
+                            <h1>Registration</h1>
+                            <div class="input-box">
+                                <input type="text" name="username" placeholder="Nick Name" required>
+                                <i class='bx bxs-user'></i>
+                            </div>
+                            <div class="input-box">
+                                <input type="text" name="firstname" placeholder="First Name" required>
+                                <i class='bx bxs-user'></i>
+                            </div>
+                            <div class="input-box">
+                                <input type="text" name="lastname" placeholder="Last Name" required>
+                                <i class='bx bxs-user'></i>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="gender" id="genderMale" value="male">
+                                <label class="form-check-label" for="genderMale">
+                                    Male
+                                    <i class='bx bx-male'></i>
+                                </label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="gender" id="genderFemale" value="female">
+                                <label class="form-check-label" for="genderFemale">
+                                    Female
+                                    <i class='bx bx-female'></i>
+                                </label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="gender" id="genderNeutral" value="neutral" checked>
+                                <label class="form-check-label" for="genderNeutral">
+                                    Neutral
+                                    <i class='bx bx-body'></i>
+                                </label>
+                            </div>
+                            <div class="input-box">
+                                <input type="number" name="age" placeholder="Age" required>
+                                <i class='bx bxs-calendar'></i>
+                            </div>
+                            <div class="input-box">
+                                <input type="email" name="email" placeholder="Email" required>
+                                <i class='bx bxs-envelope' ></i>
+                            </div>
+                            <div class="input-box">
+                                <input id="register-password" type="password" placeholder="Password" name="password" required>
+                                <i id="toggle-register-password-icon" class='bx bxs-show'  style="cursor: pointer;" ></i>
+                            </div>
+                            <button type="submit" onclick="registerFunc()" class="btnAuth">Register</button>
+                        </form>
+                    </div>
+
+                    <div class="toggle-box">
+                        <div class="toggle-panel toggle-left">
+                            <h1 style="color: #fff;">Hello, Welcome!</h1>
+                            <p>Don't have an account?</p>
+                            <button class="btnAuth register-btn">Register</button>
                         </div>
 
-                        <div class="form-box register">
-                            <form method="post" id="registerForm">
-                                <h1>Registration</h1>
-                                <div class="input-box">
-                                    <input type="text" name="username" placeholder="Nick Name" required>
-                                    <i class='bx bxs-user'></i>
-                                </div>
-                                <div class="input-box">
-                                    <input type="text" name="firstname" placeholder="First Name" required>
-                                    <i class='bx bxs-user'></i>
-                                </div>
-                                <div class="input-box">
-                                    <input type="text" name="lastname" placeholder="Last Name" required>
-                                    <i class='bx bxs-user'></i>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="gender" id="genderMale" value="male">
-                                    <label class="form-check-label" for="genderMale">
-                                        Male
-                                        <i class='bx bx-male'></i>
-                                    </label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="gender" id="genderFemale" value="female">
-                                    <label class="form-check-label" for="genderFemale">
-                                        Female
-                                        <i class='bx bx-female'></i>
-                                    </label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="gender" id="genderNeutral" value="neutral" checked>
-                                    <label class="form-check-label" for="genderNeutral">
-                                        Neutral
-                                        <i class='bx bx-body'></i>
-                                    </label>
-                                </div>
-                                <div class="input-box">
-                                    <input type="number" name="age" placeholder="Age" required>
-                                    <i class='bx bxs-calendar'></i>
-                                </div>
-                                <div class="input-box">
-                                    <input type="email" name="email" placeholder="Email" required>
-                                    <i class='bx bxs-envelope' ></i>
-                                </div>
-                                <div class="input-box">
-                                    <input id="register-password" type="password" placeholder="Password" name="password" required>
-                                    <i id="toggle-register-password-icon" class='bx bxs-show'  style="cursor: pointer;" ></i>
-                                </div>
-                                <button type="submit" onclick="registerFunc()" class="btnAuth">Register</button>
-                            </form>
-                        </div>
-
-                        <div class="toggle-box">
-                            <div class="toggle-panel toggle-left">
-                                <h1 style="color: #fff;">Hello, Welcome!</h1>
-                                <p>Don't have an account?</p>
-                                <button class="btnAuth register-btn">Register</button>
-                            </div>
-
-                            <div class="toggle-panel toggle-right">
-                                <h1 style="color: #fff;">Welcome Back!</h1>
-                                <p>Already have an account?</p>
-                                <button class="btnAuth login-btn">Login</button>
-                            </div>
+                        <div class="toggle-panel toggle-right">
+                            <h1 style="color: #fff;">Welcome Back!</h1>
+                            <p>Already have an account?</p>
+                            <button class="btnAuth login-btn">Login</button>
                         </div>
                     </div>
                 </div>
@@ -1436,10 +1440,10 @@ addEventListener("DOMContentLoaded", async function () {
     // Add this in your script.js file
     document.addEventListener('shown.bs.modal', async function (event) {
         const modal = event.target; // The modal that was opened
-        console.log(`Modal with ID ${modal.id} is fully opened`);
+        
         if (modal.id.startsWith('updatePostModal-')) {
             const postId = modal.id.split('-')[1]; // Extract the post ID from the modal ID
-            console.log(`Post ID: ${postId}`);
+            
             // Fetch and populate the form with post data here
             const postElement = document.getElementById(`post-${postId}`);
             const title = postElement.querySelector('.post-title').textContent.trim();
@@ -1455,10 +1459,15 @@ addEventListener("DOMContentLoaded", async function () {
             form.querySelector('input[name="title"]').value = title;
             form.querySelector('textarea[name="description"]').value = description;
             const categoriesSelect = form.querySelector('select[name="update_post_categories"]');
-            $(categoriesSelect).select2(); // Initialize select2
-            const allCategories = Array.from(document.querySelectorAll('#categories option')).map(option => option.value);
-            console.log('All categories:', allCategories);
-            $(categoriesSelect).val(allCategories).trigger('change'); // Set all values
+            // laod categories in select for new post
+            const categoryOptions = categories.map(category =>
+                `<option value="${category.id}">${category.name}</option>`
+            ).join('');
+            categoriesSelect.innerHTML = categoryOptions;    
+
+            $(categoriesSelect).select2({
+                // dropdownParent: $(`#updatePostModal-${postId}`)
+            }); // Initialize select2
             if (selectedCategories && selectedCategories.length > 0) {
                 $(categoriesSelect).val(selectedCategories).trigger('change'); // Set values if selectedCategories are populated
             } else {
