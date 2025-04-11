@@ -451,7 +451,13 @@ function showAuthenticatedContainer() {
     `;
 
 
-    $('.multiSelect').select2();
+    // laod categories in select for new post
+    const selectCategoriesContainer = document.getElementById('categories');
+    const categoryOptions = categories.map(category =>
+        `<option value="${category.id}">${category.name}</option>`
+    ).join('');
+    selectCategoriesContainer.innerHTML = categoryOptions;
+    $('#categories').select2();
 }
 
 async function fetchCategories() {
@@ -1095,7 +1101,13 @@ function fillPostsInHtml(posts, actionSubject = '') {
 
     postsContainer.innerHTML += '</div>'; //close the accordion
     
-    $('.multiSelect').select2();
+    // laod categories in select for new post
+    const selectCategoriesContainer = document.getElementById('categories');
+    const categoryOptions = categories.map(category =>
+        `<option value="${category.id}">${category.name}</option>`
+    ).join('');
+    selectCategoriesContainer.innerHTML = categoryOptions;
+    $('#categories').select2();
 }
 
 function updatePostHtml(post, comments, postId) {

@@ -108,12 +108,14 @@ func UpdatePost(post *Post, categories []int, uploadedFiles map[string]string, u
 		return deletePostCategoriesErr
 	}
 
-	deletePostFilesErr := UpdateStatusPostFiles(post.ID, user_id, "delete", tx)
-	if deletePostFilesErr != nil {
-		tx.Rollback() // Rollback on error
-		return deletePostFilesErr
+	if len(uploadedFiles) != 0 {
+		deletePostFilesErr := UpdateStatusPostFiles(post.ID, user_id, "delete", tx)
+		if deletePostFilesErr != nil {
+			tx.Rollback() // Rollback on error
+			return deletePostFilesErr
+		}
 	}
-
+	
 	insertPostCategoriesErr := InsertPostCategories(post.ID, categories, user_id, tx)
 	if insertPostCategoriesErr != nil {
 		tx.Rollback() // Rollback on error

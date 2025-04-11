@@ -2,8 +2,9 @@ package controller
 
 import (
 	"encoding/json"
-	"fmt"
 	errorManagementControllers "forum/modules/errorManagement/controllers"
+
+	//forumManagementControllers "forum/modules/forumManagement/controllers"
 	userManagementModels "forum/modules/userManagement/models"
 	"forum/utils"
 	"net/http"
@@ -325,6 +326,18 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	deleteCookie(w, "session_token") // Deleting a cookie named "session_token"
+
+	// delete ws conn
+	//for client := range forumManagementControllers.OnlineUsers {
+	//if loggedInUser.Username == client {
+	//}
+	//fmt.Println(client)
+	/* forumManagementControllers.Mutex.Lock()
+	delete(forumManagementControllers.OnlineUsers, forumManagementControllers.conn)
+	forumManagementControllers.UpdateOnlineUsers() */
+	//}
+	//forumManagementControllers.Mutex.Unlock()
+
 	// RedirectToIndex(w, r)
 	res := utils.Result{
 		Success: true,
@@ -345,10 +358,7 @@ func EditUser(w http.ResponseWriter, r *http.Request) {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
-	if loginStatus {
-		fmt.Println("logged in userid is: ", loginUser.ID)
-		// return
-	} else {
+	if !loginStatus {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
 		return
 	}
