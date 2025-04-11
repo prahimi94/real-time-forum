@@ -5,6 +5,7 @@ import (
 	"fmt"
 	errorManagementControllers "forum/modules/errorManagement/controllers"
 	forumManagementModels "forum/modules/forumManagement/models"
+	userManagementControllers "forum/modules/userManagement/controllers"
 	userManagementModels "forum/modules/userManagement/models"
 	"forum/utils"
 	"net/http"
@@ -21,9 +22,8 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-var OnlineUsers = make(map[*websocket.Conn]string) // Map of online users (connected to WS) to usernames
-var Broadcast = make(chan []byte)                  // Broadcast channel
-var Mutex = &sync.Mutex{}                          // Protect OnlineUsers map
+var Broadcast = make(chan []byte) // Broadcast channel
+var Mutex = &sync.Mutex{}         // Protect OnlineUsers map
 
 func WsHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -35,98 +35,111 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 
 	// Get myUsername from userid related to session token
-	myUserID, myUsername, err := userManagementModels.GetUserIDFromCookie(r)
-	if err != nil {
-		fmt.Println("Error getting username:", err)
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
-
-	// Add the connection and username to the OnlineUsers map
-	Mutex.Lock()
-	OnlineUsers[conn] = myUsername
-	UpdateOnlineUsers()
-	Mutex.Unlock()
-
-	var chatID int // Declare chatID outside the loop
-
-	for {
-		_, message, err := conn.ReadMessage()
+	cookie, err := r.Cookie("session_token")
+	if err == nil && cookie != nil && cookie.Value != "" {
+		myUserID, myUsername, err := userManagementModels.GetUserIDFromCookie(r)
 		if err != nil {
-			// Remove the connection from the clients map on disconnect
-			Mutex.Lock()
-			delete(OnlineUsers, conn)
-			UpdateOnlineUsers()
-			Mutex.Unlock()
-			break
+			fmt.Println("Error getting username:", err)
+			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+			return
 		}
 
-		// Parse incoming message as JSON
-		var msgData map[string]string
-		if err := json.Unmarshal(message, &msgData); err != nil {
-			fmt.Printf("Invalid message format: %s | Error: %v\n", string(message), err)
-			continue
-		}
+		// Add the connection and username to the OnlineUsers map
+		Mutex.Lock()
+		userManagementControllers.OnlineUsers[conn] = myUsername
+		userManagementControllers.UpdateOnlineUsers()
+		Mutex.Unlock()
 
-		// Handle "private_chat" message type
-		if msgData["type"] == "private_chat" {
-			recipientUsername := msgData["recipient"]
+		var chatID int // Declare chatID outside the loop
 
-			// Get recipient user ID
-			recipientUserID, err := userManagementModels.GetUserIDByUsername(recipientUsername)
+		for {
+
+			cookie, err := r.Cookie("session_token")
+			if err != nil || (cookie != nil && cookie.Value == "") {
+				Mutex.Lock()
+				delete(userManagementControllers.OnlineUsers, conn)
+				userManagementControllers.UpdateOnlineUsers()
+				Mutex.Unlock()
+				break
+			}
+
+			_, message, err := conn.ReadMessage()
 			if err != nil {
-				fmt.Println("Error getting recipient user ID:", err)
-				errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+				// Remove the connection from the clients map on disconnect
+				Mutex.Lock()
+				delete(userManagementControllers.OnlineUsers, conn)
+				userManagementControllers.UpdateOnlineUsers()
+				Mutex.Unlock()
+				break
+			}
+
+			// Parse incoming message as JSON
+			var msgData map[string]string
+			if err := json.Unmarshal(message, &msgData); err != nil {
+				fmt.Printf("Invalid message format: %s | Error: %v\n", string(message), err)
 				continue
 			}
 
-			// Check if chat exists, if not create it and add chat members
-			chatID, err = forumManagementModels.CheckChatExists(myUserID, recipientUserID)
-			if err != nil {
-				fmt.Println("Error checking chat existence:", err)
-				errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-				continue
-			}
-			// If no chatID exists (0), InsertChat
-			if chatID == 0 {
-				chat := &forumManagementModels.Chat{ID: chatID, Type: "private"}
-				chatID, err = forumManagementModels.InsertChat(chat, myUserID, recipientUserID, nil)
+			// Handle "private_chat" message type
+			if msgData["type"] == "private_chat" {
+				recipientUsername := msgData["recipient"]
+
+				// Get recipient user ID
+				recipientUserID, err := userManagementModels.GetUserIDByUsername(recipientUsername)
 				if err != nil {
-					fmt.Println("Error creating or retrieving chat:", err)
+					fmt.Println("Error getting recipient user ID:", err)
+					errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+					continue
+				}
+
+				// Check if chat exists, if not create it and add chat members
+				chatID, err = forumManagementModels.CheckChatExists(myUserID, recipientUserID)
+				if err != nil {
+					fmt.Println("Error checking chat existence:", err)
+					errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+					continue
+				}
+				// If no chatID exists (0), InsertChat
+				if chatID == 0 {
+					chat := &forumManagementModels.Chat{ID: chatID, Type: "private"}
+					chatID, err = forumManagementModels.InsertChat(chat, myUserID, recipientUserID, nil)
+					if err != nil {
+						fmt.Println("Error creating or retrieving chat:", err)
+						errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+						continue
+					}
+				}
+
+				fmt.Printf("Chat initialized between %s and %s (Chat ID: %d)\n", myUsername, recipientUsername, chatID)
+				continue
+			}
+
+			sanitizedMsg := utils.SanitizeInput(string(message))
+			// Ignore empty messages
+			if sanitizedMsg == "" {
+				continue
+			}
+
+			// If chatID exists, go directly to InsertMsg
+			if chatID != 0 {
+				msg := &forumManagementModels.Message{
+					ChatID:    chatID, // Use the chat ID from the "private_chat" logic
+					Content:   sanitizedMsg,
+					Status:    "enable",
+					CreatedBy: myUserID,
+					CreatedAt: time.Now(), // Ensure CreatedAt is set
+					UpdatedBy: &myUserID,
+				}
+				_, err = forumManagementModels.InsertMsg(msg, nil)
+				if err != nil {
+					fmt.Println("Error inserting message into database:", msg, err)
 					errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 					continue
 				}
 			}
 
-			fmt.Printf("Chat initialized between %s and %s (Chat ID: %d)\n", myUsername, recipientUsername, chatID)
-			continue
+			Broadcast <- []byte(sanitizedMsg)
 		}
-
-		sanitizedMsg := utils.SanitizeInput(string(message))
-		// Ignore empty messages
-		if sanitizedMsg == "" {
-			continue
-		}
-
-		// If chatID exists, go directly to InsertMsg
-		if chatID != 0 {
-			msg := &forumManagementModels.Message{
-				ChatID:    chatID, // Use the chat ID from the "private_chat" logic
-				Content:   sanitizedMsg,
-				Status:    "enable",
-				CreatedBy: myUserID,
-				CreatedAt: time.Now(), // Ensure CreatedAt is set
-				UpdatedBy: &myUserID,
-			}
-			_, err = forumManagementModels.InsertMsg(msg, nil)
-			if err != nil {
-				fmt.Println("Error inserting message into database:", msg, err)
-				errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-				continue
-			}
-		}
-
-		Broadcast <- []byte(sanitizedMsg)
 	}
 }
 
@@ -137,40 +150,16 @@ func HandleMessages() {
 
 		// Send the message to all online users
 		Mutex.Lock()
-		
-		for client := range OnlineUsers {
+
+		for client := range userManagementControllers.OnlineUsers {
 			err := client.WriteMessage(websocket.TextMessage, message)
 			if err != nil {
 				client.Close()
-				delete(OnlineUsers, client)
-				UpdateOnlineUsers()
+				delete(userManagementControllers.OnlineUsers, client)
+				userManagementControllers.UpdateOnlineUsers()
 			}
 		}
 		Mutex.Unlock()
-	}
-}
-
-// Helper function to broadcast the list of online users
-func UpdateOnlineUsers() {
-	usernames := make([]string, 0, len(OnlineUsers))
-	for _, username := range OnlineUsers {
-		usernames = append(usernames, username)
-	}
-
-	// Encode the list of usernames as JSON
-	userListJSON, err := json.Marshal(usernames)
-	if err != nil {
-		fmt.Println("Error encoding online users:", err)
-		return
-	}
-
-	// Send the list to all online clients
-	for client := range OnlineUsers {
-		err := client.WriteMessage(websocket.TextMessage, userListJSON)
-		if err != nil {
-			client.Close()
-			delete(OnlineUsers, client)
-		}
 	}
 }
 
@@ -179,8 +168,8 @@ func OnlineUsersHandler(w http.ResponseWriter, r *http.Request) {
 	defer Mutex.Unlock()
 
 	// Collect usernames of online users
-	usernames := make([]string, 0, len(OnlineUsers))
-	for _, username := range OnlineUsers {
+	usernames := make([]string, 0, len(userManagementControllers.OnlineUsers))
+	for _, username := range userManagementControllers.OnlineUsers {
 		usernames = append(usernames, username)
 	}
 

@@ -22,10 +22,6 @@ async function fetchOnlineUsers() {
 async function fetchAllChatUsers() {
   try {
     const response = await fetch("/api/users");
-    if (!response.ok) {
-      console.error("Failed to fetch all users");
-      return;
-    }
 
     allUserData = await response.json();
     const chatUsersList = document.getElementById("chat-users-list");
@@ -297,6 +293,7 @@ async function getChatIDForUsers(senderUsername, recipientUsername) {
 }
 
 function sendMessage(senderUsername, recipientUsername) {
+  isProcessingMessages = false;
   let input = document.getElementById("messageInput");
   let message = input.value.trim(); // Remove leading/trailing whitespace
   if (message.length === 0) return; // Do not accept empty messages

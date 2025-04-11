@@ -2,9 +2,9 @@ package controller
 
 import (
 	"encoding/json"
+	"fmt"
 	errorManagementControllers "forum/modules/errorManagement/controllers"
 
-	//forumManagementControllers "forum/modules/forumManagement/controllers"
 	userManagementModels "forum/modules/userManagement/models"
 	"forum/utils"
 	"net/http"
@@ -13,12 +13,15 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/gorilla/websocket"
 	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/crypto/bcrypt"
 )
 
 const publicUrl = "modules/userManagement/views/"
 const forumPublicUrl = "modules/forumManagement/views/"
+
+var OnlineUsers = make(map[*websocket.Conn]string) // Map of online users (connected to WS) to usernames
 
 //var u1 = uuid.Must(uuid.NewV4())
 
@@ -302,7 +305,7 @@ func CheckLogin(w http.ResponseWriter, r *http.Request) (bool, userManagementMod
 }
 
 func Logout(w http.ResponseWriter, r *http.Request) {
-	loginStatus, _, sessionToken, checkLoginError := CheckLogin(w, r)
+	loginStatus, loggedInUser, sessionToken, checkLoginError := CheckLogin(w, r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
@@ -326,7 +329,7 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	deleteCookie(w, "session_token") // Deleting a cookie named "session_token"
-
+	SocketLogoutHandler(w, r, loggedInUser.Username)
 	// delete ws conn
 	//for client := range forumManagementControllers.OnlineUsers {
 	//if loggedInUser.Username == client {
@@ -585,4 +588,43 @@ func GetAllChatUsersHandler(w http.ResponseWriter, r *http.Request) {
 	// Return the users as JSON
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(users)
+}
+
+// Helper function to broadcast the list of online users
+func UpdateOnlineUsers() {
+	usernames := make([]string, 0, len(OnlineUsers))
+	for _, username := range OnlineUsers {
+		usernames = append(usernames, username)
+	}
+
+	// Encode the list of usernames as JSON
+	userListJSON, err := json.Marshal(usernames)
+	if err != nil {
+		fmt.Println("Error encoding online users:", err)
+		return
+	}
+
+	// Send the list to all online clients
+	for client := range OnlineUsers {
+		err := client.WriteMessage(websocket.TextMessage, userListJSON)
+		if err != nil {
+			client.Close()
+			fmt.Print("deleted in UpdateOnlineUsers")
+			delete(OnlineUsers, client)
+		}
+	}
+}
+
+func SocketLogoutHandler(w http.ResponseWriter, r *http.Request, userName string) {
+	for clientConn, clientUserName := range OnlineUsers {
+		if clientUserName == userName {
+			delete(OnlineUsers, clientConn)
+			UpdateOnlineUsers()
+		}
+		clientConn.WriteJSON(map[string]string{
+			"type":    "logout",
+			"message": "You have been logged out.",
+		})
+		clientConn.Close() // close their websocket
+	}
 }
