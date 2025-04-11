@@ -22,7 +22,10 @@ CREATE TABLE IF NOT EXISTS "users" (
   "id" INTEGER PRIMARY KEY,
   "uuid" TEXT NOT NULL UNIQUE,
   "type" TEXT NOT NULL CHECK ("type" IN ('admin', 'normal_user', 'test_user')) DEFAULT 'normal_user',
-  "name" TEXT,
+  "firstname" TEXT NOT NULL,
+  "lastname" TEXT NOT NULL,
+  "gender" TEXT NOT NULL CHECK ("gender" IN ('male', 'female', 'neutral')) DEFAULT 'neutral',
+  "age" INTEGER NOT NULL,
   "username" TEXT UNIQUE,
   "email" TEXT UNIQUE,
   "profile_photo" TEXT NULL,
@@ -33,11 +36,11 @@ CREATE TABLE IF NOT EXISTS "users" (
   "updated_by" INTEGER,
   FOREIGN KEY (updated_by) REFERENCES "users" ("id")
 );
-INSERT INTO users VALUES(1,'67921bdd-8458-800e-b9d4-065a43242cd3','admin','admin','admin','admin@admin',NULL,'$2a$10$DN.v/NkfQjmPaTTz15x0E.u8l2R9.HnB12DpDVMdRPeQZDfMwovSa','enable','2025-02-09 12:49:34',NULL,NULL);
-INSERT INTO users VALUES(2,'2dba1545-db5c-451b-857b-b76228f2f704','normal_user','parisa','parisa','parisa_rahimy@yahoo.com',NULL,'$2a$10$DN.v/NkfQjmPaTTz15x0E.u8l2R9.HnB12DpDVMdRPeQZDfMwovSa','enable','2025-02-09 12:54:52',NULL,NULL);
-INSERT INTO users VALUES(3,'7e5389a6-6c90-464b-8204-388baa8661fb','normal_user','jedi1','jedi1','jedi1@jedi.com',NULL,'$2a$10$8ytQ3vWiyWMGBn0Tax7BFuAdhb.ootES5B1KYGqVIv6Bl7fQIJab2','enable','2025-03-27 17:12:25',NULL,NULL);
-INSERT INTO users VALUES(4,'7bd1cef7-750d-4ebb-92e6-a0757cd87dc4','normal_user','jedi2','jedi2','jedi2@jedi.com',NULL,'$2a$10$AXcCGXvjJmWYYte.lJW0EuWxmItFrN63Z1KzQwGsclC//gdwZdyTK','enable','2025-03-27 17:13:37',NULL,NULL);
-INSERT INTO users VALUES(5,'7329dc4e-54ed-4e3c-88a8-b63e7ba0c665','normal_user','parisaNew','parisaNew','parisa.rahimi@gmail.com',NULL,'$2a$10$SXUSRK0J90V7eM5J6mky3OadiRubFPqy6mIBn8nWQPcu7SRvTaK1K','enable','2025-03-28 09:08:23',NULL,NULL);
+INSERT INTO users VALUES(1,'67921bdd-8458-800e-b9d4-065a43242cd3','admin','admin','admin','female',35,'admin','admin@admin',NULL,'$2a$10$DN.v/NkfQjmPaTTz15x0E.u8l2R9.HnB12DpDVMdRPeQZDfMwovSa','enable','2025-02-09 12:49:34',NULL,NULL);
+INSERT INTO users VALUES(2,'2dba1545-db5c-451b-857b-b76228f2f704','normal_user','parisa','parisaFamily','female',30,'parisa','parisa_rahimy@yahoo.com',NULL,'$2a$10$DN.v/NkfQjmPaTTz15x0E.u8l2R9.HnB12DpDVMdRPeQZDfMwovSa','enable','2025-02-09 12:54:52',NULL,NULL);
+INSERT INTO users VALUES(3,'7e5389a6-6c90-464b-8204-388baa8661fb','normal_user','jedi1','jedi1Family','female',25,'jedi1','jedi1@jedi.com',NULL,'$2a$10$8ytQ3vWiyWMGBn0Tax7BFuAdhb.ootES5B1KYGqVIv6Bl7fQIJab2','enable','2025-03-27 17:12:25',NULL,NULL);
+INSERT INTO users VALUES(4,'7bd1cef7-750d-4ebb-92e6-a0757cd87dc4','normal_user','jedi2','jedi2Family','female',22,'jedi2','jedi2@jedi.com',NULL,'$2a$10$AXcCGXvjJmWYYte.lJW0EuWxmItFrN63Z1KzQwGsclC//gdwZdyTK','enable','2025-03-27 17:13:37',NULL,NULL);
+INSERT INTO users VALUES(5,'7329dc4e-54ed-4e3c-88a8-b63e7ba0c665','normal_user','parisaNew','parisaNewFamily','female',40,'parisaNew','parisa.rahimi@gmail.com',NULL,'$2a$10$SXUSRK0J90V7eM5J6mky3OadiRubFPqy6mIBn8nWQPcu7SRvTaK1K','enable','2025-03-28 09:08:23',NULL,NULL);
 CREATE TABLE IF NOT EXISTS "friends" (
   "id" INTEGER PRIMARY KEY,
   "first_user_id" INTEGER NOT NULL,

@@ -50,7 +50,7 @@ function showNotAuthenticatedContainer() {
                     <div class="offcanvas-body">
                         <ul class="navbar-nav justify-content-end flex-grow-1 pe-3">
                             <li class="nav-item">
-                                <a class="btn btn-success singIn-btn" href="/auth/"><i class="fa-solid fa-user pe-2"></i> Sign in</a>
+                                <a type="button" class="btn btn-success singIn-btn" data-bs-toggle="modal" data-bs-target="#authModal"><i class="fa-solid fa-user pe-2"></i> Sign in</a>
                             </li>
                         </ul>
                         
@@ -62,12 +62,117 @@ function showNotAuthenticatedContainer() {
                     
                 </div>
                 <div class="d-lg-flex col-sm-12 col-lg-2 justify-content-lg-end">
-                    <a class="btn btn-success singIn-btn" href="/auth/"><i class="fa-solid fa-user pe-2"></i> Sign in</a>
+                    <a type="button" class="btn btn-success singIn-btn"data-bs-toggle="modal" data-bs-target="#authModal"><i class="fa-solid fa-user pe-2"></i> Sign in</a>
                 </div>
             </div>
             </div>
         </nav>
     </header>
+
+    <!-- Modal -->
+    <div class="modal fade bd-example-modal-xl" id="authModal" tabindex="-1" aria-labelledby="editPostModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content" style="background-color: rgba(0, 0, 0, 0);border-color: rgba(0, 0, 0, 0)">
+                <!--
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="editPostModalLabel">Login/Register</h1>
+                    <a type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></a>
+                </div>
+                <div class="modal-body">
+                    
+                </div>
+                -->
+
+                <div class="containerAuth">
+                    <div class="form-box login">
+                        <form method="post" id="loginForm">
+                            <h1>Login</h1>
+                            <div class="input-box">
+                                <input type="text" placeholder="Username Or Email" name="username" required>
+                                <i class='bx bxs-user'></i>
+                            </div>
+                            <div class="input-box">
+                                <input id="login-password" type="password" placeholder="Password" name="password" required>
+                                <i id="toggle-login-password-icon" class='bx bxs-show' style="cursor: pointer;" ></i>
+                            </div>
+                            <!-- <div class="forgot-link">
+                                <a href="#">Forgot Password?</a>
+                            </div> -->
+                            <button type="submit" onclick="loginFunc()" class="btnAuth">Login</button>
+                        </form>
+                    </div>
+
+                    <div class="form-box register">
+                        <form method="post" id="registerForm">
+                            <h1>Registration</h1>
+                            <div class="input-box">
+                                <input type="text" name="username" placeholder="Nick Name" required>
+                                <i class='bx bxs-user'></i>
+                            </div>
+                            <div class="input-box">
+                                <input type="text" name="firstname" placeholder="First Name" required>
+                                <i class='bx bxs-user'></i>
+                            </div>
+                            <div class="input-box">
+                                <input type="text" name="lastname" placeholder="Last Name" required>
+                                <i class='bx bxs-user'></i>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="gender" id="genderMale" value="male">
+                                <label class="form-check-label" for="genderMale">
+                                    Male
+                                    <i class='bx bx-male'></i>
+                                </label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="gender" id="genderFemale" value="female">
+                                <label class="form-check-label" for="genderFemale">
+                                    Female
+                                    <i class='bx bx-female'></i>
+                                </label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="gender" id="genderNeutral" value="neutral" checked>
+                                <label class="form-check-label" for="genderNeutral">
+                                    Neutral
+                                    <i class='bx bx-body'></i>
+                                </label>
+                            </div>
+                            <div class="input-box">
+                                <input type="number" name="age" placeholder="Age" required>
+                                <i class='bx bxs-calendar'></i>
+                            </div>
+                            <div class="input-box">
+                                <input type="email" name="email" placeholder="Email" required>
+                                <i class='bx bxs-envelope' ></i>
+                            </div>
+                            <div class="input-box">
+                                <input id="register-password" type="password" placeholder="Password" name="password" required>
+                                <i id="toggle-register-password-icon" class='bx bxs-show'  style="cursor: pointer;" ></i>
+                            </div>
+                            <button type="submit" onclick="registerFunc()" class="btnAuth">Register</button>
+                        </form>
+                    </div>
+
+                    <div class="toggle-box">
+                        <div class="toggle-panel toggle-left">
+                            <h1 style="color: #fff;">Hello, Welcome!</h1>
+                            <p>Don't have an account?</p>
+                            <button class="btnAuth register-btn">Register</button>
+                        </div>
+
+                        <div class="toggle-panel toggle-right">
+                            <h1 style="color: #fff;">Welcome Back!</h1>
+                            <p>Already have an account?</p>
+                            <button class="btnAuth login-btn">Login</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <header class="hero">
         <div class="container">
             <div class="row align-items-center">
@@ -92,70 +197,51 @@ function showNotAuthenticatedContainer() {
         </div>
     </header>
     `;
-}
 
-function showAuthContainer() {
-    const authContainer = document.getElementsByTagName('main')[0];
-    authContainer.innerHTML = `
-    <header>
-        <nav class="navbar navbar-expand-lg navbar-light py-10" aria-label="Thirteenth navbar example">
-            <div class="container-fluid">
-                <a class="navbar-brand" href="/">
-                    <img src="/img/logo.png" alt="Forum" class="me-2" style="height: 60px;">
-                </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasNavbar" aria-labelledby="offcanvasNavbarLabel">
-                    <div class="offcanvas-header">
-                        <h5 class="offcanvas-title" id="offcanvasNavbarLabel"><img src="/img/logo.png" alt="Forum" class="me-2" style="height: 50px;"></h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-                    </div>
-                    <div class="offcanvas-body">
-                        <ul class="navbar-nav justify-content-end flex-grow-1 pe-3">
-                            <li class="nav-item">
-                                <a class="btn btn-success singIn-btn" href="/auth/"><i class="fa-solid fa-user pe-2"></i> Sign in</a>
-                            </li>
-                        </ul>
-                        
-                    </div>
-                </div>
 
-            <div class="collapse navbar-collapse" id="navbarsExample11">
-                <div class="navbar-nav col-sm-12 col-lg-10 justify-content-lg-center">
-                    
-                </div>
-                <div class="d-lg-flex col-sm-12 col-lg-2 justify-content-lg-end">
-                    <a class="btn btn-success singIn-btn" href="/auth/"><i class="fa-solid fa-user pe-2"></i> Sign in</a>
-                </div>
-            </div>
-            </div>
-        </nav>
-    </header>
-    <header class="hero">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-6 text-content">
-                    <h1 class="text-header">Welcome To <br/> Future Lab!</h1>
-                    <p style="color: #7c7e82;">Discover a thriving online community where ideas come to life! Our forum is the perfect place to connect with like-minded individuals, share your thoughts, ask questions, and explore engaging discussions across a variety of topics. Join us today and be part of something bigger!</p>
-                    <!-- <a class="btn btn-success" href="/auth/">Join Now</a> -->
-                </div>
-                <div class="col-md-6">
-                    <!-- <img src="/img/background.png" class="img-fluid" alt="Background Image"> -->
-                    <!-- https://lottie.host/e4c9739c-85ef-441d-8064-2b6fc1c7ad60/rrBxdg5bgH.lottie -->
-                    <dotlottie-player
-                    src="/img/Animation-1739026245825.lottie"
-                    background="transparent"
-                    speed="1"
-                    style="width: 100%;"
-                    loop
-                    autoplay
-                    ></dotlottie-player>
-                </div>
-            </div>
-        </div>
-    </header>
-    `;
+    const container = document.querySelector('.containerAuth');
+    const registerBtn = document.querySelector('.register-btn');
+    const loginBtn = document.querySelector('.login-btn');
+
+    registerBtn.addEventListener('click', () => {
+        container.classList.add('active');
+    })
+
+    loginBtn.addEventListener('click', () => {
+        container.classList.remove('active');
+    })
+
+    const toggleLoginPasswordIcon = document.getElementById('toggle-login-password-icon');
+    const loginPasswordInput = document.getElementById('login-password');
+
+    toggleLoginPasswordIcon.addEventListener('click', function() {
+        // Toggle password visibility
+        if (loginPasswordInput.type === 'password') {
+            loginPasswordInput.type = 'text'; // Show password
+            toggleLoginPasswordIcon.classList.remove('bxs-show'); // Remove eye icon
+            toggleLoginPasswordIcon.classList.add('bxs-hide');
+        } else {
+            loginPasswordInput.type = 'password'; // Hide password
+            toggleLoginPasswordIcon.classList.remove('bxs-hide'); // Remove eye icon
+            toggleLoginPasswordIcon.classList.add('bxs-show');
+        }
+    });
+
+    const toggleRegisterPasswordIcon = document.getElementById('toggle-register-password-icon');
+    const loginRegisterInput = document.getElementById('register-password');
+
+    toggleRegisterPasswordIcon.addEventListener('click', function() {
+        // Toggle password visibility
+        if (loginRegisterInput.type === 'password') {
+            loginRegisterInput.type = 'text'; // Show password
+            toggleRegisterPasswordIcon.classList.remove('bxs-show'); // Remove eye icon
+            toggleRegisterPasswordIcon.classList.add('bxs-hide');
+        } else {
+            loginRegisterInput.type = 'password'; // Hide password
+            toggleRegisterPasswordIcon.classList.remove('bxs-hide'); // Remove eye icon
+            toggleRegisterPasswordIcon.classList.add('bxs-show');
+        }
+    });
 }
 
 function showAuthenticatedContainer() {
@@ -192,14 +278,15 @@ function showAuthenticatedContainer() {
                                     </div>
                                 </li>
                                 <li class="nav-item text-center pt-3">                                    
-                                    <span class="me-3">Welcome, ${loggedInUser.name}</span>
+                                    <span class="me-3">Welcome, ${loggedInUser.firstname}</span>
                                 </li>
                                 <li class="nav-item text-center pb-2 pt-2">
                                     span class="me-3">${loggedInUser.email}</span>
                                 </li>
                                 <li class="nav-item text-center pb-3">
-                                <a class="btn btn-outline-secondary" href="/profile"><i class="fa-regular fa-address-card"></i></a>
-                                    <a class="btn btn-danger" href="/logout/"><i class="fas fa-power-off"></i></a>
+                                
+                                  <a type="button" class="btn btn-outline-secondary" onclick="showProfile()"><i class="fa-regular fa-address-card"></i></a>
+                                    <a type="button" class="btn btn-danger" onclick="logoutFunc()"><i class="fas fa-power-off"></i></a>
                                 </li>
                                 <li><div class="divaider mb-2"></div></li>
                                     <li class="nav-item">
@@ -213,7 +300,8 @@ function showAuthenticatedContainer() {
                                     <a class="nav-link" href="/">Home</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link" href="/newPost/">Create Post</a>
+                                    <!-- todo -->
+                                    <!-- <a class="nav-link" href="/newPost/">Create Post</a> -->
                                     <!-- <a class="nav-link" href="/newPost/"><i class="fa-solid fa-plus pe-2"></i> Create Post</a> -->
                                 </li>
                                 <li class="nav-item dropdown">
@@ -262,8 +350,8 @@ function showAuthenticatedContainer() {
                                         </div>
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-end">
-                                        <li><a class="dropdown-item" href="/profile"><i class="fa-regular fa-address-card me-2"></i> Profile</a></li>
-                                        <li><a class="dropdown-item" href="/logout/"><i class="fas fa-power-off me-2"></i> Log Out</a></li>
+                                        <li><a type="button" class="dropdown-item" onclick="showProfile()"><i class="fa-regular fa-address-card me-2"></i> Profile</a></li> 
+                                        <li><a type="button" class="dropdown-item" onclick="logoutFunc()"><i class="fas fa-power-off me-2"></i> Log Out</a></li>
                                     </ul>
                                 </div>
                             </div>
@@ -292,7 +380,7 @@ function showAuthenticatedContainer() {
                     </div>
 
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-6" id="middlePanel">
                     <!-- {template "posts" .}} -->
                     <!-- this part is filled in script.js by fetchPosts -->
                     <div class="row" id="newPostContainer">
@@ -332,13 +420,13 @@ function showAuthenticatedContainer() {
                         <div class="text-center w-100 py-4">
                         ${loggedInUserProfilePhoto}
                         </div>
-                        <div class="text-center title-username">${loggedInUser.name}</div>
+                        <div class="text-center title-username">${loggedInUser.username}</div>
                         <div class="info-box-username">
                             <p> ${loggedInUser.email}</p>
                             <div class="info-box-logout">
-                                <p style="margin-bottom: 1rem;"><a href="/profile"><i
+                                <p style="margin-bottom: 1rem;"><a type="button" onclick="showProfile()"><i
                                             class="fa-regular fa-address-card me-2"></i> Profile</a></p>
-                                <a href="/logout/"><i class="fas fa-power-off me-2" style="color: #c44343;"></i> Log
+                                <a type="button" onclick="logoutFunc()"><i class="fas fa-power-off me-2" style="color: #c44343;"></i> Log
                                     Out</a>
                             </div>
                         </div>
@@ -475,6 +563,98 @@ async function fetchCategoryPosts(category) {
     fillPostsInHtml(posts.Posts, category + ' posts');
 }
 
+async function showProfile() {
+    const middlePanel = document.getElementById('middlePanel');
+
+    const loggedInUserProfilePhoto = loggedInUser.profile_photo
+        ? `<img src="/uploads/${loggedInUser.profile_photo}" alt="user image" class="rounded-circle center" style="width: 150px; height: 150px; cursor: pointer;" >`
+        : `<i class="fa-solid fa-user" style="font-size: 3rem;"></i>`;
+
+    const genderMaleChecked = loggedInUser.gender == 'male'
+        ? `checked` : ``;
+    const genderFemaleChecked = loggedInUser.gender == 'female'
+        ? `checked` : ``;
+    const genderNeutralChecked = loggedInUser.gender == 'neutral'
+        ? `checked` : ``;
+
+    middlePanel.innerHTML = `
+    <div class="container-form">
+
+        <div class="mb-3" style="text-align: center;">
+            <div class="rounded-circle">
+                ${loggedInUserProfilePhoto}
+            </div>
+        </div>
+
+        <h4 class="text-center mb-4">Edit Profile</h4>
+        
+        <form id="profileForm" enctype="multipart/form-data" method="post">
+            
+            <div class="mb-3">
+                <label for="firstname">First Name:</label>
+                <input type="text" class="form-control" placeholder="First Name" name="firstname" value="${loggedInUser.firstname}">
+            </div>
+            <div class="mb-3">
+                <label for="lastname">Last Name:</label>
+                <input type="text" class="form-control" placeholder="Last Name" name="lastname" value="${loggedInUser.lastname}">
+            </div>
+            <div class="mb-3">
+                <label for="gender">Gender:</label>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="gender" id="genderMale" value="male" ${genderMaleChecked}>
+                    <label class="form-check-label" for="genderMale">
+                        Male
+                        <i class='bx bx-male'></i>
+                    </label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="gender" id="genderFemale" value="female" ${genderFemaleChecked}>
+                    <label class="form-check-label" for="genderFemale">
+                        Female
+                        <i class='bx bx-female'></i>
+                    </label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="gender" id="genderNeutral" value="neutral" ${genderNeutralChecked}>
+                    <label class="form-check-label" for="genderNeutral">
+                        Neutral
+                        <i class='bx bx-body'></i>
+                    </label>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label for="age">Age:</label>
+                <input type="number" class="form-control" placeholder="Age" name="age" value="${loggedInUser.age}">
+            </div>
+            <label for="profile_photo">Profile photo:</label>
+            <div class="mb-3 text-center border p-3 rounded">
+                <p class="text-muted">Attach an image (optional)</p>
+                <input type="file" class="form-control" name="profile_photo">
+            </div>
+            <button type="submit" onclick="updateUser()" class="btn btn-success w-100">Edit user</button>
+        </form>
+    </div>
+    `
+}
+
+async function updateUser() {
+    const form = document.getElementById('profileForm');
+    form.addEventListener('submit', (event) => {
+        event.preventDefault();
+    });
+    
+    const response = await fetch('/api/updateUser', {
+        method: 'POST',
+        body: new FormData(form),
+    });
+    res = await response.json();
+    showToast(res);
+
+    if (res.success) {
+        await checkSessionActive()
+    }
+}
+
 async function submitPost() {
     const form = document.getElementById('newPostForm');
     form.addEventListener('submit', (event) => {
@@ -514,10 +694,224 @@ async function likePost(id, uuid, actionType) {
     fetchPost(id, uuid);
 }
 
+async function updatePost(id, uuid) {
+    const form = document.getElementById('updatePostForm-' + id);
+    form.addEventListener('submit', (event) => {
+        event.preventDefault();
+    });
+    
+    const response = await fetch('/api/updatePost', {
+        method: 'POST',
+        body: new FormData(form),
+    });
+    res = await response.json();
+    showToast(res);
+
+    form.reset();
+    const updatePostModal = document.getElementById('updatePostModal-' + id);
+    const modalInstance = bootstrap.Modal.getInstance(updatePostModal);
+    modalInstance.hide();
+    fetchPost(id, uuid);   
+}
+
+async function deletePost(id, uuid) {
+    const form = document.getElementById('deletePostForm-' + id);
+    form.addEventListener('submit', (event) => {
+        event.preventDefault();
+    });
+    
+    const response = await fetch('/api/deletePost', {
+        method: 'POST',
+        body: new FormData(form),
+    });
+    res = await response.json();
+    showToast(res);
+
+    form.reset();
+    const deletePostModal = document.getElementById('deletPostModal-' + id);
+    const modalInstance = bootstrap.Modal.getInstance(deletePostModal);
+    modalInstance.hide();
+    removePostHtml(id);
+}
+
+async function sumbitComment(id, uuid) {
+    console.log(1)
+    const form = document.getElementById('commentForm-' + id);
+    form.addEventListener('submit', (event) => {
+        event.preventDefault();
+    });
+    console.log(2)
+    
+    const response = await fetch('/api/submitComment', {
+        method: 'POST',
+        body: new FormData(form),
+    });
+    res = await response.json();
+    showToast(res);
+
+    console.log(3)
+    form.reset();
+    fetchPost(id, uuid);
+}
+
+async function likeComment(comment_id, id, uuid, actionType) {
+    const form = document.getElementById('likeCommentForm-' + comment_id);
+    form.addEventListener('submit', (event) => {
+        event.preventDefault();
+    });
+    
+    const formData = new FormData();
+    formData.append('comment_id', comment_id);
+    formData.append('actionType', actionType);
+
+    const response = await fetch('/api/likeComment', {
+        method: 'POST',
+        body: formData,
+    });
+    res = await response.json();
+    showToast(res);
+
+    form.reset();
+    fetchPost(id, uuid);
+}
+
+async function updateComment(comment_id, id, uuid) {
+    const form = document.getElementById('updateCommentForm-' + comment_id);
+    form.addEventListener('submit', (event) => {
+        event.preventDefault();
+    });
+    
+    const response = await fetch('/api/updateComment', {
+        method: 'POST',
+        body: new FormData(form),
+    });
+    res = await response.json();
+    showToast(res);
+
+    form.reset();
+    const updateCommentModal = document.getElementById('updateCommentModal-' + comment_id);
+    const modalInstance = bootstrap.Modal.getInstance(updateCommentModal);
+    modalInstance.hide();
+    fetchPost(id, uuid);   
+}
+
+async function deleteComment(comment_id, id, uuid) {
+    const form = document.getElementById('deleteCommentForm-' + comment_id);
+    form.addEventListener('submit', (event) => {
+        event.preventDefault();
+    });
+    
+    const response = await fetch('/api/deleteComment', {
+        method: 'POST',
+        body: new FormData(form),
+    });
+    res = await response.json();
+    showToast(res);
+
+    form.reset();
+    const deleteCommentModal = document.getElementById('deletCommentModal-' + comment_id);
+    const modalInstance = bootstrap.Modal.getInstance(deleteCommentModal);
+    modalInstance.hide();
+    fetchPost(id, uuid);   
+}
+
+async function loginFunc() {
+    const form = document.getElementById('loginForm');
+    form.addEventListener('submit', (event) => {
+        event.preventDefault();
+    });
+    
+    const response = await fetch('/api/login', {
+        method: 'POST',
+        body: new FormData(form),
+    });
+    res = await response.json();
+    showToast(res);
+
+    if(res.success) {
+        form.reset();
+        const authModal = document.getElementById('authModal');
+        const modalInstance = bootstrap.Modal.getInstance(authModal);
+        modalInstance.hide();
+        await checkSession();
+    }
+}
+
+async function registerFunc() {
+    const form = document.getElementById('registerForm');
+    form.addEventListener('submit', (event) => {
+        event.preventDefault();
+    });
+    
+    const response = await fetch('/api/register', {
+        method: 'POST',
+        body: new FormData(form),
+    });
+    res = await response.json();
+    showToast(res);
+
+    if(res.success) {
+        form.reset();
+        const authModal = document.getElementById('authModal');
+        const modalInstance = bootstrap.Modal.getInstance(authModal);
+        modalInstance.hide();
+        await checkSession();
+    }
+}
+
+async function logoutFunc() {
+    const response = await fetch('/api/logout', {
+        method: 'GET',
+        credentials: 'include',
+    });
+    res = await response.json();
+    showToast(res);
+
+    await checkSession();
+}
+
 function fillPostsInHtml(posts, actionSubject = '') {
     // load posts for home page
+    const middlePanel = document.getElementById('middlePanel');
+    middlePanel.innerHTML = `
+    <div class="row" id="newPostContainer"></div>
+    <div class="row" id="postsContainer"></div>
+    `;
+    const newPostContainer = document.getElementById('newPostContainer');
     const postsContainer = document.getElementById('postsContainer');
 
+    newPostContainer.innerHTML = `
+    <div class="row" id="newPostContainer">
+        <div class="col-sm-12 col-md-12 mb-3">
+            <div class="post-card">
+                <h4 class="text-center mb-4">New Post</h4>
+                <form id="newPostForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <div class="mt-3">
+                            <select id="categories" name="categories" required
+                                class="form-control multiSelect" multiple="multiple"
+                                data-placeholder="Select categories">
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <input type="text" class="form-control" placeholder="Title" required
+                            name="title">
+                    </div>
+                    <div class="mb-3">
+                        <textarea class="form-control" placeholder="Description" required rows="4"
+                            name="description"></textarea>
+                    </div>
+                    <div class="mb-3 text-center border p-3 rounded">
+                        <p class="text-muted">Attach an image or video (optional)</p>
+                        <input type="file" class="form-control" name="postFiles" multiple>
+                    </div>
+                    <button onclick="submitPost()" class="btn btn-success w-100">Post</button>
+                </form>
+            </div>
+        </div>
+    </div>
+   `;
     postsContainer.innerHTML = `
     <div class='col-md-12 text-center'>
         <h4 class='text-muted'>${actionSubject}</h4>
@@ -537,7 +931,7 @@ function fillPostsInHtml(posts, actionSubject = '') {
             : `<div style="padding: 7px;"><i class="fa-solid fa-user" style="font-size: 2rem;"></i></div>`;
 
         const postCategories = post.categories.map(category =>
-            `<span class="badge-p text-dark"><a href="/posts/${category.name}">${category.name}</a></span>`
+            `<span class="badge-p text-dark"><a href="javascript:fetchCategoryPosts('${category.name}')">${category.name}</a></span>`
         ).join('');
 
         const postFiles = post.post_files.map(post_file =>
@@ -559,22 +953,63 @@ function fillPostsInHtml(posts, actionSubject = '') {
                                     </a>
                                     <ul class="dropdown-menu dropdown-menu-end" style="border: 1px solid #c2c2c270;">
                                         <li>
-                                            <a id="editPost" class="dropdown-item" href="/editPost/${post.uuid}"><i class="fas fa-edit me-2"></i>Edit Post</a>
+                                                <a type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#updatePostModal-${post.id}">
+                                                    <i class="fas fa-edit me-2"></i>Edit Post
+                                                </a>                                        
                                         </li>
                                         <li>
-                                            <a type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#deletPostModal"><i class="fa-solid fa-trash me-2"></i>Delete Post</a> 
+                                            <a type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#deletPostModal-${post.id}"><i class="fa-solid fa-trash me-2"></i>Delete Post</a> 
                                         </li>
                                     </ul>
                                 </div>
                             </div>
                         </div>
-                        <div class="modal fade" id="deletPostModal" tabindex="-1" aria-labelledby="deletPostModalLabel" aria-hidden="true">
-                            <form action="/deletePost" method="post">
+                        <!-- Modal -->
+                        <div class="modal fade bd-example-modal-lg" id="updatePostModal-${post.id}" tabindex="-1" aria-labelledby="editPostModalLabel" aria-hidden="true">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                    <h1 class="modal-title fs-5" id="editPostModalLabel">Edit post</h1>
+                                    <a type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></a>
+                                    </div>
+                                    <form id="updatePostForm-${post.id}" method="post">
+                                    <div class="modal-body">
+                                            <input type="hidden" name="post_uuid" value="${post.uuid}">
+                                            <input type="hidden" name="post_id" value="${post.id}">
+                                            <div class="mt-3">
+                                                <select id="update_post_categories" name="update_post_categories" required
+                                                    class="form-control multiSelect" multiple="multiple"
+                                                    data-placeholder="Select categories">
+                                                </select>
+                                            </div>
+                                            <div class="mt-3">
+                                                <input type="text" class="form-control" placeholder="Title" required
+                                                    name="title">
+                                            </div>
+                                            <div class="mt-3">
+                                                <textarea class="form-control" placeholder="Description" required rows="4"
+                                                    name="description"></textarea>
+                                            </div>
+                                            <div class="mt-3 text-center border p-3 rounded">
+                                                <p class="text-muted">Attach an image or video (optional)</p>
+                                                <input type="file" class="form-control" name="postFiles" multiple>
+                                            </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                    <a type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</a>
+                                    <a onclick="updatePost(${post.id}, '${post.uuid}')" class="btn btn-success">Save changes</a>
+                                </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal fade" id="deletPostModal-${post.id}" tabindex="-1" aria-labelledby="deletPostModalLabel-${post.id}" aria-hidden="true">
+                            <form id="deletePostForm-${post.id}" method="post">
                                 <input type="hidden" name="id" value="${post.id}">
                                 <div class="modal-dialog modal-dialog-centered">
                                     <div class="modal-content">
                                         <div class="modal-header bg-danger text-white">
-                                            <h5 class="modal-title" id="deletPostModalLabel">Confirm Deletion</h5>
+                                            <h5 class="modal-title" id="deletPostModalLabel-${post.id}">Confirm Deletion</h5>
                                             <a type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></a>
                                         </div>
                                         <div class="modal-body">
@@ -582,7 +1017,7 @@ function fillPostsInHtml(posts, actionSubject = '') {
                                         </div>
                                         <div class="modal-footer">
                                             <a type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</a>
-                                            <a type="submit" class="btn btn-danger" id="confirmDelete">Delete</a>
+                                            <a onclick="deletePost(${post.id}, '${post.uuid}')" class="btn btn-danger" id="confirmDelete">Delete</a>
                                         </div>
                                     </div>
                                 </div>
@@ -602,9 +1037,11 @@ function fillPostsInHtml(posts, actionSubject = '') {
         const postHTML = `
             <div class="accordion-item">
                 <h2 class="accordion-header" id="flush-heading-${post.id}">
-                    <button onclick="fetchPost(${post.id}, '${post.uuid}')" class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse-${post.id}" aria-expanded="false" aria-controls="flush-collapseOne">
-                        <div class="col-sm-12 col-md-12 mb-3">
-                            <div class="post-card" id="post-${post.id}">
+                    <div class="col-sm-12 col-md-12 mb-3">
+                        <div class="post-card" id="post-${post.id}">
+                            <button onclick="fetchPost(${post.id}, '${post.uuid}')" class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse-${post.id}" aria-expanded="false" aria-controls="flush-collapseOne">
+
+                            <div class="d-flex flex-column justify-content-between">
                                 <h5 class="mt-2 post-title">
                                     ${post.title}
                                 </h5>
@@ -622,35 +1059,37 @@ function fillPostsInHtml(posts, actionSubject = '') {
                                 </div>
                                 <p class="post-description">${post.description}</p>
                                 ${postFiles}
-                                
-
-                                <div class="mt-4">
-                                    <span class="like-inpost"><i class="fa-solid fa-thumbs-up"></i> ${post.number_of_likes}</span>
-                                    <span class="dislike-inpost"><i class="fa-solid fa-thumbs-down"></i> ${post.number_of_dislikes}</span>
-                                    
-                                    ${postButtons}
-
-                                    <div style="float: right;margin-top: -16px;">
-                                        <div class="row py-3">
-                                            <form id="likePostForm-${post.id}">
-                                                <input type="hidden" id="post_id" name="post_id" value="${post.iD}">
-
-                                                ${postLikeElement}
-                                            
-
-                                                ${postDislikeElement}
-                                            </form>
-                                        </div>
-                                    </div>
-
-                                </div>
                             </div>
-                        </div>
-                    </button>
+
+                            </button>
+
+
+                            <div class="mt-4">
+                                <span class="like-inpost"><i class="fa-solid fa-thumbs-up"></i> ${post.number_of_likes}</span>
+                                <span class="dislike-inpost"><i class="fa-solid fa-thumbs-down"></i> ${post.number_of_dislikes}</span>
+                                
+                                ${postButtons}
+
+                                <div style="float: right;margin-top: -16px;">
+                                    <div class="row py-3">
+                                        <form id="likePostForm-${post.id}">
+                                            <input type="hidden" id="post_id" name="post_id" value="${post.iD}">
+
+                                            ${postLikeElement}
+                                        
+
+                                            ${postDislikeElement}
+                                        </form>
+                                    </div>
+                                </div>
+
+                            </div> <!-- mt-4 -->
+                        </div> <!-- post-card -->
+                    </div> <!-- col-sm-12 col-md-12 mb-3 -->
                 </h2>
 
                 <div id="flush-collapse-${post.id}" class="accordion-collapse collapse" aria-labelledby="flush-heading-${post.id}" data-bs-parent="#accordionFlushExample">
-                    <div class="accordion-body" id="post-comments-${post.id}">
+                    <div class="accordion-body post-card bg-border-box" id="post-comments-${post.id}">
                     </div>
                 </div>
             </div>
@@ -661,6 +1100,7 @@ function fillPostsInHtml(posts, actionSubject = '') {
 
     postsContainer.innerHTML += '</div>'; //close the accordion
     
+    $('.multiSelect').select2();
 }
 
 function updatePostHtml(post, comments, postId) {
@@ -669,7 +1109,7 @@ function updatePostHtml(post, comments, postId) {
             : `<div style="padding: 7px;"><i class="fa-solid fa-user" style="font-size: 2rem;"></i></div>`;
 
     const postCategories = post.categories.map(category =>
-        `<span class="badge-p text-dark"><a href="/posts/${category.name}">${category.name}</a></span>`
+        `<span class="badge-p text-dark"><a href="javascript:fetchCategoryPosts('${category.name}')">${category.name}</a></span>`
     ).join('');
 
     const postFiles = post.post_files.map(post_file =>
@@ -691,7 +1131,9 @@ function updatePostHtml(post, comments, postId) {
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end" style="border: 1px solid #c2c2c270;">
                                     <li>
-                                        <a id="editPost" class="dropdown-item" href="/editPost/${post.uuid}"><i class="fas fa-edit me-2"></i>Edit Post</a>
+                                            <a type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#updatePostModal-${post.id}">
+                                                <i class="fas fa-edit me-2"></i>Edit Post
+                                            </a>                                        
                                     </li>
                                     <li>
                                         <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#deletPostModal"><i class="fa-solid fa-trash me-2"></i>Delete Post</button> 
@@ -700,13 +1142,52 @@ function updatePostHtml(post, comments, postId) {
                             </div>
                         </div>
                     </div>
-                    <div class="modal fade" id="deletPostModal" tabindex="-1" aria-labelledby="deletPostModalLabel" aria-hidden="true">
-                        <form action="/deletePost" method="post">
+                    <!-- Modal -->
+                    <div class="modal fade bd-example-modal-lg" id="updatePostModal-${post.id}" tabindex="-1" aria-labelledby="editPostModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                <h1 class="modal-title fs-5" id="editPostModalLabel">Edit post</h1>
+                                <a type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></a>
+                                </div>
+                                <form id="updatePostForm-${post.id}" method="post">
+                                <div class="modal-body">
+                                        <input type="hidden" name="post_uuid" value="${post.uuid}">
+                                        <input type="hidden" name="post_id" value="${post.id}">
+                                        <div class="mt-3">
+                                            <select id="update_post_categories" name="update_post_categories" required
+                                                class="form-control multiSelect" multiple="multiple"
+                                                data-placeholder="Select categories">
+                                            </select>
+                                        </div>
+                                        <div class="mt-3">
+                                            <input type="text" class="form-control" placeholder="Title" required
+                                                name="title">
+                                        </div>
+                                        <div class="mt-3">
+                                            <textarea class="form-control" placeholder="Description" required rows="4"
+                                                name="description"></textarea>
+                                        </div>
+                                        <div class="mt-3 text-center border p-3 rounded">
+                                            <p class="text-muted">Attach an image or video (optional)</p>
+                                            <input type="file" class="form-control" name="postFiles" multiple>
+                                        </div>
+                                </div>
+                                <div class="modal-footer">
+                                <a type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</a>
+                                <a onclick="updatePost(${post.id}, '${post.uuid}')" class="btn btn-success">Save changes</a>
+                            </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal fade" id="deletPostModal-${post.id}" tabindex="-1" aria-labelledby="deletPostModalLabel-${post.id}" aria-hidden="true">
+                        <form id="deletePostForm-${post.id}" method="post">
                             <input type="hidden" name="id" value="${post.id}">
                             <div class="modal-dialog modal-dialog-centered">
                                 <div class="modal-content">
                                     <div class="modal-header bg-danger text-white">
-                                        <h5 class="modal-title" id="deletPostModalLabel">Confirm Deletion</h5>
+                                        <h5 class="modal-title" id="deletPostModalLabel-${post.id}">Confirm Deletion</h5>
                                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                                     </div>
                                     <div class="modal-body">
@@ -714,7 +1195,7 @@ function updatePostHtml(post, comments, postId) {
                                     </div>
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                        <button type="submit" class="btn btn-danger" id="confirmDelete">Delete</button>
+                                        <button onclick="deletePost(${post.id}, '${post.uuid}')" class="btn btn-danger" id="confirmDelete">Delete</button>
                                     </div>
                                 </div>
                             </div>
@@ -736,23 +1217,28 @@ function updatePostHtml(post, comments, postId) {
     const postCommentsElement = document.getElementById('post-comments-' + postId);
     if (postElement) {
         postElement.innerHTML = `
-            <h5 class="mt-2 post-title">
-                ${post.title}
-            </h5>
-            <div>
-                <div class="d-flex text-body-secondary pt-3 m-posts">
-                    ${postImage}
-                    <div class="pb-3 mb-0 small lh-sm w-100 mb-3 ms-2 mt-1">
-                        <div class="d-flex justify-content-between mb-1 m-posts-userInfo">
-                            <span class="post-user">${post.user.username}</span>
-                            <span class="text-right m-posts-ctg">${postCategories}</span>
+        <button onclick="fetchPost(${post.id}, '${post.uuid}')" class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse-${post.id}" aria-expanded="false" aria-controls="flush-collapseOne">
+            <div class="d-flex flex-column justify-content-between">
+                <h5 class="mt-2 post-title">
+                    ${post.title}
+                </h5>
+                <div>
+                    <div class="d-flex text-body-secondary pt-3 m-posts">
+                        ${postImage}
+                        <div class="pb-3 mb-0 small lh-sm w-100 mb-3 ms-2 mt-1">
+                            <div class="d-flex justify-content-between mb-1 m-posts-userInfo">
+                                <span class="post-user">${post.user.username}</span>
+                                <span class="text-right m-posts-ctg">${postCategories}</span>
+                            </div>
+                            <span class="d-block post-dateTime">${formattedDateTime}</span>
                         </div>
-                        <span class="d-block post-dateTime">${formattedDateTime}</span>
                     </div>
                 </div>
+                <p class="post-description">${post.description}</p>
+                ${postFiles}
             </div>
-            <p class="post-description">${post.description}</p>
-            ${postFiles}
+
+            </button>
             
 
             <div class="mt-4">
@@ -785,123 +1271,149 @@ function updatePostHtml(post, comments, postId) {
                                 </div>`;
 
         if(!comments || comments.length === 0) {
-            postCommentsElement.innerHTML = postCommentsHtml + '<div class="col-md-12 text-center">No comments found!</div>';
-            return;
-        }
-        comments.forEach(comment => {
-            const commentDateTime = comment.created_at.replace('T', ' ').replace('Z', '');
-
-            const postButtons = 
-            comment.user_id === loggedInUser.id
-                ? `<div style="float: right;margin-top: -16px;">
-                            <div class="row py-3 ms-2">
-                                <div class="btn-group">
-                                    <a type="button" class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="fa-solid fa-ellipsis"></i>
-                                    </a>
-                                    <ul class="dropdown-menu dropdown-menu-end" style="border: 1px solid #c2c2c270;">
-                                        <li>
-                                            <!-- Button trigger modal -->
-                                            <a type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#editCommentModal">
-                                                <i class="fas fa-edit me-2"></i>Edit Comment
-                                            </a>
-                                            
-                                        </li>
-                                        <li>
-                                            <a type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#deletCommentModal"><i class="fa-solid fa-trash me-2"></i>Delete Comment</a> 
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Modal -->
-                        <div class="modal fade" id="editCommentModal" tabindex="-1" aria-labelledby="editCommentModalLabel" aria-hidden="true">
-                            <div class="modal-dialog">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                <h1 class="modal-title fs-5" id="editCommentModalLabel">Edit comment</h1>
-                                <a type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></a>
-                                </div>
-                                <form method="post" action="/updateComment">
-                                <div class="modal-body">
-                                        <input type="hidden" name="post_uuid" value="${post.uuid}">
-                                        <input type="hidden" name="comment_id" value="${comment.id}}">
-                                        <div class="mb-3">
-                                        <label for="description-text" class="col-form-label">Comment:</label>
-                                        <textarea class="form-control" id="description-text" name="description">${comment.description}</textarea>
-                                        </div>
-                                </div>
-                                <div class="modal-footer">
-                                <a type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</a>
-                                <a type="submit" class="btn btn-success">Save changes</a>
-                            </form>
-                                </div>
-                            </div>
-                            </div>
-                        </div>
-                        <div class="modal fade" id="deletCommentModal" tabindex="-1" aria-labelledby="deletCommentModalLabel" aria-hidden="true">
-                            <form action="/deleteComment" method="post">
-                                <input type="hidden" name="post_uuid" value="${post.uuid}">
-                                <input type="hidden" name="comment_id" value="${comment.id}}">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <div class="modal-content">
-                                        <div class="modal-header bg-danger text-white">
-                                            <h5 class="modal-title" id="deletCommentModalLabel">Confirm Deletion</h5>
-                                            <a type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></a>
-                                        </div>
-                                        <div class="modal-body">
-                                            <p class="mb-0">Are you sure you want to delete this item? This action cannot be undone.</p>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <a type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</a>
-                                            <a type="submit" class="btn btn-danger" id="confirmDelete">Delete</a>
-                                        </div>
+            postCommentsHtml += '<div class="col-md-12 text-center">No comments found!</div>';
+        } else {
+            comments.forEach(comment => {
+                const commentDateTime = comment.created_at.replace('T', ' ').replace('Z', '');
+    
+                const commentButtons = 
+                comment.user_id === loggedInUser.id
+                    ? `<div style="float: right;margin-top: -16px;">
+                                <div class="row py-3 ms-2">
+                                    <div class="btn-group">
+                                        <a type="button" class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="fa-solid fa-ellipsis"></i>
+                                        </a>
+                                        <ul class="dropdown-menu dropdown-menu-end" style="border: 1px solid #c2c2c270;">
+                                            <li>
+                                                <!-- Button trigger modal -->
+                                                <a type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#updateCommentModal-${comment.id}">
+                                                    <i class="fas fa-edit me-2"></i>Edit Comment
+                                                </a>
+                                                
+                                            </li>
+                                            <li>
+                                                <a type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#deletCommentModal-${comment.id}"><i class="fa-solid fa-trash me-2"></i>Delete Comment</a> 
+                                            </li>
+                                        </ul>
                                     </div>
                                 </div>
-                            </form>
-                        </div>`
-                : ``;
-
-            const commentLikeElement = comment.liked
-                ? `<a type="submit" name="like" value="like" class="btn btn-success"><i class="fa-solid fa-thumbs-up"></i></a>`
-                : `<a type="submit" name="like" value="like" class="btn btn-outline-success"><i class="fa-regular fa-thumbs-up"></i></a>`
-
-
-            const commentDisikeElement = comment.liked
-                ? `<a type="submit" name="dislike" value="dislike" class="btn btn-danger"><i class="fa-solid fa-thumbs-down"></i></a>`
-                : `<a type="submit" name="dislike" value="dislike" class="btn btn-outline-danger"><i class="fa-regular fa-thumbs-down"></i></a>`
-
-            postCommentsHtml += `
-                <div class="post-card bg-border-box">
-                    <div class="row">
-                        <h5 class="mt-2 post-user">${comment.user.username}</h5>
-                        <p class="post-dateTime">${commentDateTime}</p>
-                        <p class="post-description">${comment.description}</p>
-                    </div>
-                    <div class="mt-4">
-                        <span class="like-inpost"><i class="fa-solid fa-thumbs-up"></i> ${comment.number_of_likes}</span>
-                        <span class="dislike-inpost"><i class="fa-solid fa-thumbs-down"></i> ${comment.number_of_dislikes}</span>
-
-                        ${postButtons}
-
-                        <div style="float: right;margin-top: -16px;">
-                            <div class="row py-3 ms-2">
-                                <form method="post" action="/likeComment">
-                                    <input type="hidden" name="comment_id" value="${comment.id}">
-                                
-                                    ${commentLikeElement}
-
-                                    ${commentDisikeElement}
-                                
+                            </div>
+                            <!-- Modal -->
+                            <div class="modal fade" id="updateCommentModal-${comment.id}" tabindex="-1" aria-labelledby="editCommentModalLabel" aria-hidden="true">
+                                <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                    <h1 class="modal-title fs-5" id="editCommentModalLabel">Edit comment</h1>
+                                    <a type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></a>
+                                    </div>
+                                    <form id="updateCommentForm-${comment.id}" method="post">
+                                    <div class="modal-body">
+                                            <input type="hidden" name="post_uuid" value="${post.uuid}">
+                                            <input type="hidden" name="comment_id" value="${comment.id}">
+                                            <div class="mb-3">
+                                            <label for="description-text" class="col-form-label">Comment:</label>
+                                            <textarea class="form-control" id="description-text" name="description">${comment.description}</textarea>
+                                            </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                    <a type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</a>
+                                    <a onclick="updateComment(${comment.id}, ${post.id}, '${post.uuid}')" class="btn btn-success">Save changes</a>
                                 </form>
+                                    </div>
+                                </div>
+                                </div>
+                            </div>
+                            <div class="modal fade" id="deletCommentModal-${comment.id}" tabindex="-1" aria-labelledby="deletCommentModalLabel" aria-hidden="true">
+                                <form id="deleteCommentForm-${comment.id}" method="post">
+                                    <input type="hidden" name="post_uuid" value="${post.uuid}">
+                                    <input type="hidden" name="comment_id" value="${comment.id}">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content">
+                                            <div class="modal-header bg-danger text-white">
+                                                <h5 class="modal-title" id="deletCommentModalLabel">Confirm Deletion</h5>
+                                                <a type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></a>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p class="mb-0">Are you sure you want to delete this item? This action cannot be undone.</p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <a type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</a>
+                                                <a onclick="deleteComment(${comment.id}, ${post.id}, '${post.uuid}')" class="btn btn-danger" id="confirmDelete">Delete</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>`
+                    : ``;
+    
+                const commentLikeElement = comment.liked
+                    ? `<a onclick="likeComment(${comment.id}, ${post.id}, '${post.uuid}','like')" name="like" value="like" class="btn btn-success"><i class="fa-solid fa-thumbs-up"></i></a>`
+                    : `<a onclick="likeComment(${comment.id}, ${post.id}, '${post.uuid}','like')" name="like" value="like" class="btn btn-outline-success"><i class="fa-regular fa-thumbs-up"></i></a>`
+    
+                const commentDislikeElement = comment.disliked
+                    ? `<a onclick="likeComment(${comment.id}, ${post.id}, '${post.uuid}','dislike')" name="dislike" value="dislike" class="btn btn-danger"><i class="fa-solid fa-thumbs-down"></i></a>`
+                    : `<a onclick="likeComment(${comment.id}, ${post.id}, '${post.uuid}','dislike')" name="dislike" value="dislike" class="btn btn-outline-danger"><i class="fa-regular fa-thumbs-down"></i></a>`
+    
+                postCommentsHtml += `
+                    <div class="post-card bg-border-box">
+                        <div class="row">
+                            <h5 class="mt-2 post-user">${comment.user.username}</h5>
+                            <p class="post-dateTime">${commentDateTime}</p>
+                            <p class="post-description">${comment.description}</p>
+                        </div>
+                        <div class="mt-4">
+                            <span class="like-inpost"><i class="fa-solid fa-thumbs-up"></i> ${comment.number_of_likes}</span>
+                            <span class="dislike-inpost"><i class="fa-solid fa-thumbs-down"></i> ${comment.number_of_dislikes}</span>
+    
+                            ${commentButtons}
+    
+                            <div style="float: right;margin-top: -16px;">
+                                <div class="row py-3 ms-2">
+                                    <form id="likeCommentForm-${comment.id}">
+                                        <input type="hidden" name="comment_id" value="${comment.id}">
+                                    
+                                        ${commentLikeElement}
+    
+                                        ${commentDislikeElement}
+                                    
+                                    </form>
+                                </div>
                             </div>
                         </div>
+                    </div>`;
+            })
+        }
+        
+
+        postCommentsHtml += `
+                <div class="container p-5">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h3>Your Comment</h3>
+                        <p class="text-secondary">You can share your ideas about this post here.</p>
+                        <form id="commentForm-${post.id}" method="post">
+                            <div class="mb-3">
+                                <input type="hidden" id="post_id" name="post_id" value="${post.id}">
+                            </div>
+
+                            <div class="mb-3">
+                                <textarea class="form-control" style="border-radius: 14px;" placeholder="Text" required rows="4" name="description"></textarea>
+                            </div>
+                            <button onclick="sumbitComment(${post.id}, '${post.uuid}')" class="btn btn-success w-100" style="border-radius: 14px;">Comment</button>
+                        </form>
                     </div>
-                </div>`;
-        })
+                </div>
+            </div>
+            `;
 
         postCommentsElement.innerHTML = postCommentsHtml
     }
+}
+
+function removePostHtml(postId) {
+    const postElement = document.getElementById('post-' + postId);
+    postElement.remove();
 }
 
 function showToast(res) {
@@ -925,6 +1437,50 @@ addEventListener("DOMContentLoaded", async function () {
     const toastLiveExample = document.getElementById('liveToast')
     toast = new bootstrap.Toast(toastLiveExample)
 
+    // Add this in your script.js file
+    document.addEventListener('shown.bs.modal', async function (event) {
+        const modal = event.target; // The modal that was opened
+        
+        if (modal.id.startsWith('updatePostModal-')) {
+            const postId = modal.id.split('-')[1]; // Extract the post ID from the modal ID
+            
+            // Fetch and populate the form with post data here
+            const postElement = document.getElementById(`post-${postId}`);
+            const title = postElement.querySelector('.post-title').textContent.trim();
+            const description = postElement.querySelector('.post-description').textContent.trim();
+            const selectedCategories = Array.from(postElement.querySelectorAll('.m-posts-ctg a')).map(category => {
+                const categoryName = category.textContent.trim();
+                const categoryObj = categories.find(cat => cat.name === categoryName);
+                return categoryObj ? categoryObj.id : null;
+            }).filter(id => id !== null);
+            console.log('Selected Categories:', selectedCategories);
+
+            const form = document.getElementById(`updatePostForm-${postId}`);
+            form.querySelector('input[name="title"]').value = title;
+            form.querySelector('textarea[name="description"]').value = description;
+            const categoriesSelect = form.querySelector('select[name="update_post_categories"]');
+            // laod categories in select for new post
+            const categoryOptions = categories.map(category =>
+                `<option value="${category.id}">${category.name}</option>`
+            ).join('');
+            categoriesSelect.innerHTML = categoryOptions;    
+
+            $(categoriesSelect).select2({
+                // dropdownParent: $(`#updatePostModal-${postId}`)
+            }); // Initialize select2
+            if (selectedCategories && selectedCategories.length > 0) {
+                $(categoriesSelect).val(selectedCategories).trigger('change'); // Set values if selectedCategories are populated
+            } else {
+                console.error('Categories array is empty or not populated.');
+            }
+        }
+            
+    });
+
+    await checkSession();
+});
+
+async function checkSession(){
     // Call the function to check session status
     const sessionActive = await checkSessionActive();
     if (sessionActive) {
@@ -937,4 +1493,4 @@ addEventListener("DOMContentLoaded", async function () {
         console.log('Session is NOT active'); 
         showNotAuthenticatedContainer();
     }
-});
+}
