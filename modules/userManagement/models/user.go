@@ -60,8 +60,6 @@ func InsertUser(user *User) (int, error) {
 	insertQuery := `INSERT INTO users (uuid, firstname, lastname, gender, age, username, email, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?);`
 	result, insertErr := db.Exec(insertQuery, user.UUID, user.Firstname, user.Lastname, user.Gender, user.Age, user.Username, user.Email, user.Password)
 	if insertErr != nil {
-		fmt.Println(insertErr)
-		fmt.Println(user.Gender)
 		// Check if the error is a SQLite constraint violation (duplicate entry)
 		if sqliteErr, ok := insertErr.(interface{ ErrorCode() int }); ok {
 			if sqliteErr.ErrorCode() == 19 { // 19 = UNIQUE constraint failed (SQLite error code)

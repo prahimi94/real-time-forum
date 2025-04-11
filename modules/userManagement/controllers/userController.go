@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	errorManagementControllers "forum/modules/errorManagement/controllers"
+
 	userManagementModels "forum/modules/userManagement/models"
 	"forum/utils"
 	"net/http"
@@ -12,12 +13,15 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/gorilla/websocket"
 	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/crypto/bcrypt"
 )
 
 const publicUrl = "modules/userManagement/views/"
 const forumPublicUrl = "modules/forumManagement/views/"
+
+var OnlineUsers = make(map[*websocket.Conn]string) // Map of online users (connected to WS) to usernames
 
 //var u1 = uuid.Must(uuid.NewV4())
 
@@ -268,7 +272,7 @@ func sessionGenerator(w http.ResponseWriter, r *http.Request, userId int) {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
-	SetCookie(w, session.SessionToken, session.ExpiresAt)
+	UserSetCookie(w, session.SessionToken, session.ExpiresAt)
 	// Set the session token in a cookie
 
 }
@@ -301,7 +305,7 @@ func CheckLogin(w http.ResponseWriter, r *http.Request) (bool, userManagementMod
 }
 
 func Logout(w http.ResponseWriter, r *http.Request) {
-	loginStatus, _, sessionToken, checkLoginError := CheckLogin(w, r)
+	loginStatus, loggedInUser, sessionToken, checkLoginError := CheckLogin(w, r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
@@ -325,6 +329,18 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	deleteCookie(w, "session_token") // Deleting a cookie named "session_token"
+	SocketLogoutHandler(w, r, loggedInUser.Username)
+	// delete ws conn
+	//for client := range forumManagementControllers.OnlineUsers {
+	//if loggedInUser.Username == client {
+	//}
+	//fmt.Println(client)
+	/* forumManagementControllers.Mutex.Lock()
+	delete(forumManagementControllers.OnlineUsers, forumManagementControllers.conn)
+	forumManagementControllers.UpdateOnlineUsers() */
+	//}
+	//forumManagementControllers.Mutex.Unlock()
+
 	// RedirectToIndex(w, r)
 	res := utils.Result{
 		Success: true,
@@ -345,10 +361,7 @@ func EditUser(w http.ResponseWriter, r *http.Request) {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
-	if loginStatus {
-		fmt.Println("logged in userid is: ", loginUser.ID)
-		// return
-	} else {
+	if !loginStatus {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
 		return
 	}
@@ -462,7 +475,6 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 			// Extra safety: check file size from the header
 			if handler.Size > maxUploadSize {
 				// "File is too large or missing"
-				fmt.Println("Error is here2:", handler.Size)
 				errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 				return
 			}
@@ -522,21 +534,24 @@ func RedirectToPrevPage(w http.ResponseWriter, r *http.Request) {
 
 func deleteCookie(w http.ResponseWriter, cookieName string) {
 	http.SetCookie(w, &http.Cookie{
-		Name:    cookieName,
-		Value:   "",              // Optional but recommended
-		Expires: time.Unix(0, 0), // Set expiration to a past date
-		MaxAge:  -1,              // Ensure immediate removal
-		Path:    "/",             // Must match the original cookie path
+		Name:     cookieName,
+		Value:    "",              // Optional but recommended
+		Expires:  time.Unix(0, 0), // Set expiration to a past date
+		MaxAge:   -1,              // Ensure immediate removal
+		Path:     "/",             // Must match the original cookie path
+		HttpOnly: true,
+		Secure:   false,
 	})
 }
 
-func SetCookie(w http.ResponseWriter, sessionToken string, expiresAt time.Time) {
+func UserSetCookie(w http.ResponseWriter, sessionToken string, expiresAt time.Time) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session_token",
 		Value:    sessionToken,
 		Expires:  expiresAt,
 		HttpOnly: true,
 		Secure:   false,
+		Path:     "/",
 	})
 }
 
@@ -573,4 +588,43 @@ func GetAllChatUsersHandler(w http.ResponseWriter, r *http.Request) {
 	// Return the users as JSON
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(users)
+}
+
+// Helper function to broadcast the list of online users
+func UpdateOnlineUsers() {
+	usernames := make([]string, 0, len(OnlineUsers))
+	for _, username := range OnlineUsers {
+		usernames = append(usernames, username)
+	}
+
+	// Encode the list of usernames as JSON
+	userListJSON, err := json.Marshal(usernames)
+	if err != nil {
+		fmt.Println("Error encoding online users:", err)
+		return
+	}
+
+	// Send the list to all online clients
+	for client := range OnlineUsers {
+		err := client.WriteMessage(websocket.TextMessage, userListJSON)
+		if err != nil {
+			client.Close()
+			fmt.Print("deleted in UpdateOnlineUsers")
+			delete(OnlineUsers, client)
+		}
+	}
+}
+
+func SocketLogoutHandler(w http.ResponseWriter, r *http.Request, userName string) {
+	for clientConn, clientUserName := range OnlineUsers {
+		if clientUserName == userName {
+			delete(OnlineUsers, clientConn)
+			UpdateOnlineUsers()
+		}
+		clientConn.WriteJSON(map[string]string{
+			"type":    "logout",
+			"message": "You have been logged out.",
+		})
+		clientConn.Close() // close their websocket
+	}
 }

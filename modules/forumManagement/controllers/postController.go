@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"fmt"
 	"forum/middlewares"
 	errorManagementControllers "forum/modules/errorManagement/controllers"
 	"forum/modules/forumManagement/models"
@@ -350,7 +349,6 @@ func ReadPost(w http.ResponseWriter, r *http.Request) {
 	if loginStatus {
 		comments, err := models.ReadAllCommentsForPostByUserID(post.ID, loginUser.ID)
 		if err != nil {
-			fmt.Println(2)
 			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 			return
 		}
@@ -466,7 +464,13 @@ func SubmitPost(w http.ResponseWriter, r *http.Request) {
 	description := utils.SanitizeInput(r.FormValue("description"))
 	categories := r.Form["categories"]
 	if len(title) == 0 || len(description) == 0 || len(categories) == 0 {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
+		res := utils.Result{
+			Success:    false,
+			Message:    "title, description and categories are required.",
+			HttpStatus: http.StatusOK,
+			Data:       nil,
+		}
+		utils.ReturnJson(w, res)
 		return
 	}
 
@@ -603,7 +607,6 @@ func UpdatePost(w http.ResponseWriter, r *http.Request) {
 	// Parse the multipart form with a max memory of 10MB
 	err := r.ParseMultipartForm(10 << 20) // 10 MB limit
 	if err != nil {
-		fmt.Println(1)
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 		return
 	}

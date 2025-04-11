@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"fmt"
 	errorManagementControllers "forum/modules/errorManagement/controllers"
 	"forum/modules/forumManagement/models"
 	"forum/utils"
@@ -107,10 +106,7 @@ func CreateComment(w http.ResponseWriter, r *http.Request) {
 }
 
 func SubmitComment(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("SubmitComment called")
-	fmt.Println(r.Method)
 	if r.Method != http.MethodPost {
-		fmt.Println("Method not allowed")
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
 		return
 	}
@@ -132,12 +128,15 @@ func SubmitComment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	post_id_str := r.FormValue("post_id")
-	fmt.Println("post_id_str:", post_id_str)
 	description := utils.SanitizeInput(r.FormValue("description"))
-	fmt.Println("description:", description)
 	if len(post_id_str) == 0 || len(description) == 0 {
-		fmt.Println("Error: post_id or description is empty")
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
+		res := utils.Result{
+			Success:    false,
+			Message:    "description is required.",
+			HttpStatus: http.StatusOK,
+			Data:       nil,
+		}
+		utils.ReturnJson(w, res)
 		return
 	}
 
@@ -276,7 +275,13 @@ func UpdateComment(w http.ResponseWriter, r *http.Request) {
 	description := utils.SanitizeInput(r.FormValue("description"))
 
 	if len(idStr) == 0 || len(post_uuid) == 0 || len(description) == 0 {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
+		res := utils.Result{
+			Success:    false,
+			Message:    "description is required.",
+			HttpStatus: http.StatusOK,
+			Data:       nil,
+		}
+		utils.ReturnJson(w, res)
 		return
 	}
 

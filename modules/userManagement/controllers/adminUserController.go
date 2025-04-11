@@ -24,7 +24,6 @@ func AdminReadAllUsers(w http.ResponseWriter, r *http.Request) {
 
 	users, err := models.ReadAllUsers()
 	if err != nil {
-		fmt.Println(3)
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
