@@ -2,6 +2,7 @@ let ws;
 let onlineUsernames = [];
 let allUserData = {};
 let isProcessingMessages = false;
+let anotherUserClicked = false;
 let chatboxOpen = false;
 
 async function fetchOnlineUsers() {
@@ -38,11 +39,15 @@ async function fetchAllChatUsers() {
           const link = document.createElement("a");
           link.href = `#chat-with-${user.name}`;
           link.onclick = (e) => {
+            isProcessingMessages = false;
+            anotherUserClicked = true;
+            document.getElementById("message-display").innerHTML = "";
             e.preventDefault(); // Prevent default link behavior
             if (chatboxOpen) {
               chatboxOpen = false;
               document.getElementById("chatbox").style.display = "none";
             } else if (!chatboxOpen) {
+              console.log("from close to open:", user.name)
               chatboxOpen = true;
               document.getElementById("chatbox").style.display = "block";
               handlePrivateChat(loggedInUser.name, user.name);
@@ -52,6 +57,39 @@ async function fetchAllChatUsers() {
           li.appendChild(link);
         } else {
           li.textContent = user.name;
+          li.onclick = async (e) => {
+            isProcessingMessages = false;
+            anotherUserClicked = true;
+            document.getElementById("message-display").innerHTML = "";
+
+            e.preventDefault
+            if (chatboxOpen) {
+              chatboxOpen = false;
+              document.getElementById("chatbox").style.display = "none";
+              document.getElementById("message-display").innerHTML = "";
+            } else if (!chatboxOpen) {
+              chatboxOpen = true;
+              document.getElementById("chatbox").style.display = "block";
+
+              document.getElementById("messages").style.display = "block";
+              document.getElementById("message-display").style.display = "block";
+              document.getElementById("message-display").innerHTML = "";
+              // Fetch the chat ID and load the chat messages
+              const chatID = await getChatIDForUsers(loggedInUser.name, user.name);
+              if (chatID) {
+
+                await fetchChatMessages(chatID, user.name);
+
+              } else if (chatID === 0 || !chatID) {
+                const chatHeader = document.getElementById("chat-header");
+                chatHeader.textContent = `Chat with ${user.name}`;
+                document.getElementById("message-display").innerHTML = "No chat history.";
+                console.error("No chatID")
+              } else {
+                console.error("Failed to retrieve chat ID");
+              }
+            }
+          }
         }
 
         chatUsersList.appendChild(li);
@@ -111,8 +149,6 @@ async function handlePrivateChat(senderUsername, recipientUsername) {
   const chatHeader = document.getElementById("chat-header");
   const messageInput = document.getElementById("messageInput");
   const sendButton = document.getElementById("send-btn");
-  messageInput.style.display = "block";
-  sendButton.style.display = "block";
 
   if (loggedInUser.name === senderUsername) {
     chatHeader.textContent = `Chat with ${recipientUsername}`;
@@ -142,14 +178,28 @@ async function handlePrivateChat(senderUsername, recipientUsername) {
       loggedInUser.name === senderUsername ||
       loggedInUser.name === recipientUsername
     ) {
-      fetchChatMessages(chatID);
+      await fetchChatMessages(chatID, recipientUsername);
+
+      messageInput.style.display = "block";
+      sendButton.style.display = "block";
     }
   } else {
     console.error("Failed to retrieve chat ID");
   }
 }
 
-async function fetchChatMessages(chatID) {
+async function fetchChatMessages(chatID, recipientUsername) {
+  const messageInput = document.getElementById("messageInput");
+  const sendButton = document.getElementById("send-btn");
+  const chatHeader = document.getElementById("chat-header");
+  const messageDisplay = document.getElementById("message-display");
+  
+    messageDisplay.innerHTML = ""
+    console.log(recipientUsername)
+  chatHeader.textContent = `Chat with ${recipientUsername}`;
+
+  messageInput.style.display = "none";
+  sendButton.style.display = "none";
   try {
     const response = await fetch(`/api/chat-messages/${chatID}`);
     if (!response.ok) {
@@ -158,59 +208,66 @@ async function fetchChatMessages(chatID) {
     }
 
     let messages = await response.json();
-    const messageDisplay = document.getElementById("message-display");
-    messageDisplay.textContent = ""
 
-    // Reverse the messages to show the latest ones at the bottom
-    messages.reverse();
 
-    isProcessingMessages = false;
+    if (messages && messages.length != 0) {
 
-    // Throttle to process msgs in batches of 10
-    const batchSize = 10;
-    let loadedMessages = []; // Keep track of already loaded messages
 
-    function processBatch() {
-      if (isProcessingMessages) return; // Prevent multiple triggers
-      isProcessingMessages = true;
-
-      const batch = messages.splice(0, batchSize); // Get the next batch of messages
-      loadedMessages = [...batch, ...loadedMessages]; // Add to the loaded messages
-
-      batch.forEach((message) => {
-        const parsedContent = JSON.parse(message.content);
-        const messageElement = document.createElement("p");
-        const details = document.createElement("div");
-        details.classList.add("details");
-        messageElement.classList.add("msg");
-        details.textContent = `${parsedContent.sender} (${parsedContent.timestamp})`;
-        messageElement.textContent = parsedContent.content;
-        messageDisplay.prepend(details);
-        messageDisplay.prepend(messageElement);
-        if (loggedInUser.name === parsedContent.sender) {
-          messageElement.classList.add("from-me");
-          details.classList.add("my-details");
-        }
-      });
+      // Reverse the messages to show the latest ones at the bottom
+      messages.reverse();
 
       isProcessingMessages = false;
-    }
+      anotherUserClicked = false;
 
-    // Initial batch load (latest 10 messages)
-    processBatch();
+      // Throttle to process msgs in batches of 10
+      const batchSize = 10;
+      let loadedMessages = []; // Keep track of already loaded messages
 
-    // Scroll to the bottom of the chatbox to show the latest messages
-    messageDisplay.scrollTop = messageDisplay.scrollHeight;
+      function processBatch() {
+        if (isProcessingMessages || anotherUserClicked) return; // Prevent multiple triggers
+        isProcessingMessages = true;
 
-    // Add scroll event listener to load more messages when scrolling near the top
-    messageDisplay.addEventListener("scroll", () => {
-      if (messageDisplay.scrollTop === 0 && messages.length > 0) {
-        const previousHeight = messageDisplay.scrollHeight; // Store the current height
-        processBatch();
-        // Maintain the scroll position after loading more messages
-        messageDisplay.scrollTop = messageDisplay.scrollHeight - previousHeight;
+        const batch = messages.splice(0, batchSize); // Get the next batch of messages
+        loadedMessages = [...batch, ...loadedMessages]; // Add to the loaded messages
+
+        batch.forEach((message) => {
+          if (anotherUserClicked) return;
+          const parsedContent = JSON.parse(message.content);
+          const messageElement = document.createElement("p");
+          const details = document.createElement("div");
+          details.classList.add("details");
+          messageElement.classList.add("msg");
+          details.textContent = `${parsedContent.sender} (${parsedContent.timestamp})`;
+          messageElement.textContent = parsedContent.content;
+          messageDisplay.prepend(details);
+          messageDisplay.prepend(messageElement);
+          if (loggedInUser.name === parsedContent.sender) {
+            messageElement.classList.add("from-me");
+            details.classList.add("my-details");
+          }
+        });
+
+        isProcessingMessages = false;
       }
-    });
+
+      // Initial batch load (latest 10 messages)
+      processBatch();
+
+      // Scroll to the bottom of the chatbox to show the latest messages
+      messageDisplay.scrollTop = messageDisplay.scrollHeight;
+
+      // Add scroll event listener to load more messages when scrolling near the top
+      messageDisplay.addEventListener("scroll", () => {
+        if (messageDisplay.scrollTop === 0 && messages.length > 0) {
+          const previousHeight = messageDisplay.scrollHeight; // Store the current height
+          processBatch();
+          // Maintain the scroll position after loading more messages
+          messageDisplay.scrollTop = messageDisplay.scrollHeight - previousHeight;
+        }
+      });
+    } else {
+      messageDisplay.textContent = "No messages.";
+    }
   } catch (error) {
     console.error("Error fetching chat messages:", error);
   }
