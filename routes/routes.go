@@ -32,9 +32,9 @@ func SetupRoutes() {
 
 	// http.HandleFunc("/home/", forumManagementControllers.HomePageHandler)
 	http.HandleFunc("/auth/", userManagementControllers.AuthHandler)
-	http.HandleFunc("/logout/", userManagementControllers.Logout)
-	http.HandleFunc("/register", userManagementControllers.RegisterHandler) /*post method*/
-	http.HandleFunc("/login", userManagementControllers.LoginHandler)       /*post method*/
+	http.HandleFunc("/api/logout/", userManagementControllers.Logout)
+	http.HandleFunc("/api/register", userManagementControllers.RegisterHandler) /*post method*/
+	http.HandleFunc("/api/login", userManagementControllers.LoginHandler)       /*post method*/
 
 	http.HandleFunc("/api/categories/", forumManagementControllers.ReadAllCategories)
 	http.HandleFunc("/api/allPosts/", forumManagementControllers.ReadAllPosts)
@@ -51,13 +51,15 @@ func SetupRoutes() {
 	http.HandleFunc("/api/likePost", forumManagementControllers.LikePost)
 	// protectedRoutes.HandleFunc("/editPost/{id}", forumManagementControllers.EditPost).Methods("GET")
 	http.HandleFunc("/editPost/", forumManagementControllers.EditPost)
-	http.HandleFunc("/updatePost", forumManagementControllers.UpdatePost) /*post method*/
-	http.HandleFunc("/deletePost", forumManagementControllers.DeletePost) /*post method*/
+	http.HandleFunc("/api/updatePost", forumManagementControllers.UpdatePost) /*post method*/
+	http.HandleFunc("/api/deletePost", forumManagementControllers.DeletePost) /*post method*/
 
-	http.HandleFunc("/likeComment", forumManagementControllers.LikeComment)
-	http.HandleFunc("/submitComment", forumManagementControllers.SubmitComment) /*post method*/
-	http.HandleFunc("/updateComment", forumManagementControllers.UpdateComment) /*post method*/
-	http.HandleFunc("/deleteComment", forumManagementControllers.DeleteComment) /*post method*/
+	http.HandleFunc("/api/likeComment", forumManagementControllers.LikeComment)
+	http.HandleFunc("/api/submitComment", forumManagementControllers.SubmitComment) /*post method*/
+	http.HandleFunc("/api/updateComment", forumManagementControllers.UpdateComment) /*post method*/
+	http.HandleFunc("/api/deleteComment", forumManagementControllers.DeleteComment) /*post method*/
+
+	http.HandleFunc("/api/updateUser", userManagementControllers.UpdateUser) /*post method*/
 
 	// // Protected routes (using middleware)
 	// protectedRoutes := router.PathPrefix("/").Subrouter()

@@ -638,3 +638,7 @@ body {
 .chatbox button:hover {
     background-color: #157347;
 }
+
+.select2-container {
+    z-index: 9999 !important; /* Ensure it appears above the modal */
+}

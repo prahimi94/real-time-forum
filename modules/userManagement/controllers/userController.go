@@ -7,6 +7,7 @@ import (
 	userManagementModels "forum/modules/userManagement/models"
 	"forum/utils"
 	"net/http"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -65,25 +66,52 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
+	// if loginStatus {
+	// 	RedirectToIndex(w, r)
+	// 	return
+	// }
 	if loginStatus {
-		RedirectToIndex(w, r)
-		return
+		res := utils.Result{
+			Success: true,
+			Message: "You are logged in",
+			Data:    nil,
+		}
+		utils.ReturnJson(w, res)
 	}
-	err := r.ParseForm()
+
+	err := r.ParseMultipartForm(0)
 	if err != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 		return
 	}
 	username := utils.SanitizeInput(r.FormValue("username"))
+	firstname := utils.SanitizeInput(r.FormValue("firstname"))
+	lastname := utils.SanitizeInput(r.FormValue("lastname"))
+	gender := utils.SanitizeInput(r.FormValue("gender"))
+	age := utils.SanitizeInput(r.FormValue("age"))
 	email := utils.SanitizeInput(r.FormValue("email"))
 	password := utils.SanitizeInput(r.FormValue("password"))
-	if len(username) == 0 || len(email) == 0 || len(password) == 0 {
+	if len(username) == 0 || len(firstname) == 0 || len(lastname) == 0 || len(gender) == 0 || len(age) == 0 || len(email) == 0 || len(password) == 0 {
 		// errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
-		renderAuthPage(w, "Username, email and password are required.")
+		// renderAuthPage(w, "Username, email and password are required.")
+		res := utils.Result{
+			Success:    false,
+			Message:    "Username, firstname, lastname, gender, age, email and password are required.",
+			HttpStatus: http.StatusOK,
+			Data:       nil,
+		}
+		utils.ReturnJson(w, res)
 		return
 	}
 	if !strings.Contains(email, "@") || !strings.Contains(email, ".") {
-		renderAuthPage(w, "Invalid email address!")
+		// renderAuthPage(w, "Invalid email address!")
+		res := utils.Result{
+			Success:    false,
+			Message:    "Invalid email address!",
+			HttpStatus: http.StatusOK,
+			Data:       nil,
+		}
+		utils.ReturnJson(w, res)
 		return
 	}
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -92,20 +120,51 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ageInt, err := strconv.Atoi(age)
+	if err != nil {
+		// renderAuthPage(w, "Invalid age format!")
+		res := utils.Result{
+			Success:    false,
+			Message:    "Invalid age format!",
+			HttpStatus: http.StatusOK,
+			Data:       nil,
+		}
+		utils.ReturnJson(w, res)
+		return
+	}
+
 	newUser := &userManagementModels.User{
-		Username: username,
-		Email:    email,
-		Password: string(hashedPassword),
+		Username:  username,
+		Firstname: firstname,
+		Lastname:  lastname,
+		Gender:    gender,
+		Age:       ageInt,
+		Email:     email,
+		Password:  string(hashedPassword),
 	}
 
 	// Insert a record while checking duplicates
 	userId, insertError := userManagementModels.InsertUser(newUser)
 	if insertError != nil {
 		if insertError.Error() == "duplicateEmail" {
-			renderAuthPage(w, "User with this email already exists!")
+			// renderAuthPage(w, "User with this email already exists!")
+			res := utils.Result{
+				Success:    false,
+				Message:    "User with this email already exists!",
+				HttpStatus: http.StatusOK,
+				Data:       nil,
+			}
+			utils.ReturnJson(w, res)
 			return
 		} else if insertError.Error() == "duplicateUsername" {
-			renderAuthPage(w, "User with this username already exists!")
+			// renderAuthPage(w, "User with this username already exists!")
+			res := utils.Result{
+				Success:    false,
+				Message:    "User with this username already exists!",
+				HttpStatus: http.StatusOK,
+				Data:       nil,
+			}
+			utils.ReturnJson(w, res)
 			return
 		} else {
 			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
@@ -115,7 +174,12 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 	sessionGenerator(w, r, userId)
 
-	RedirectToIndex(w, r)
+	res := utils.Result{
+		Success: true,
+		Message: "Logged in successfully",
+		Data:    nil,
+	}
+	utils.ReturnJson(w, res)
 }
 
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
@@ -129,12 +193,20 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
+	// if loginStatus {
+	// 	RedirectToIndex(w, r)
+	// 	return
+	// }
 	if loginStatus {
-		RedirectToIndex(w, r)
-		return
+		res := utils.Result{
+			Success: true,
+			Message: "You are logged in",
+			Data:    nil,
+		}
+		utils.ReturnJson(w, res)
 	}
 
-	err := r.ParseForm()
+	err := r.ParseMultipartForm(0)
 	if err != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 		return
@@ -144,8 +216,14 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	password := utils.SanitizeInput(r.FormValue("password"))
 	if len(username) == 0 || len(password) == 0 {
 		// errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
-		// return
-		renderAuthPage(w, "Username and password are required.")
+		// renderAuthPage(w, "Username and password are required.")
+		res := utils.Result{
+			Success:    false,
+			Message:    "Username and password are required.",
+			HttpStatus: http.StatusOK,
+			Data:       nil,
+		}
+		utils.ReturnJson(w, res)
 		return
 	}
 
@@ -153,14 +231,26 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	authStatus, userId, authError := userManagementModels.AuthenticateUser(username, password)
 	if authError != nil {
 		// errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		renderAuthPage(w, authError.Error())
+		// renderAuthPage(w, authError.Error())
+		res := utils.Result{
+			Success:    false,
+			Message:    authError.Error(),
+			HttpStatus: http.StatusOK,
+			Data:       nil,
+		}
+		utils.ReturnJson(w, res)
 		return
 	}
 	if authStatus {
 		sessionGenerator(w, r, userId)
 	}
 
-	RedirectToIndex(w, r)
+	res := utils.Result{
+		Success: true,
+		Message: "Logged in successfully",
+		Data:    nil,
+	}
+	utils.ReturnJson(w, res)
 }
 
 // Render the login page with an optional error message
@@ -218,7 +308,13 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !loginStatus {
-		RedirectToIndex(w, r)
+		// RedirectToIndex(w, r)
+		res := utils.Result{
+			Success: true,
+			Message: "You are not logged in",
+			Data:    nil,
+		}
+		utils.ReturnJson(w, res)
 		return
 	}
 
@@ -229,7 +325,13 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	deleteCookie(w, "session_token") // Deleting a cookie named "session_token"
-	RedirectToIndex(w, r)
+	// RedirectToIndex(w, r)
+	res := utils.Result{
+		Success: true,
+		Message: "Logged out successfully",
+		Data:    nil,
+	}
+	utils.ReturnJson(w, res)
 }
 
 func EditUser(w http.ResponseWriter, r *http.Request) {
@@ -286,10 +388,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
-	if loginStatus {
-		fmt.Println("logged in userid is: ", loginUser.ID)
-		// return
-	} else {
+	if !loginStatus {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
 		return
 	}
@@ -299,49 +398,108 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	// Limit the request body size
 	r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
 
-	name := utils.SanitizeInput(r.FormValue("name"))
+	firstname := utils.SanitizeInput(r.FormValue("firstname"))
+	lastname := utils.SanitizeInput(r.FormValue("lastname"))
+	age := utils.SanitizeInput(r.FormValue("age"))
+	gender := utils.SanitizeInput(r.FormValue("gender"))
 
-	if len(name) == 0 {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
+	if len(firstname) == 0 || len(lastname) == 0 || len(age) == 0 || len(gender) == 0 {
+		res := utils.Result{
+			Success:    false,
+			Message:    "firstname, lastname, gender and age are required.",
+			HttpStatus: http.StatusOK,
+			Data:       nil,
+		}
+		utils.ReturnJson(w, res)
+		return
+	}
+
+	ageInt, err := strconv.Atoi(age)
+	if err != nil {
+		// renderAuthPage(w, "Invalid age format!")
+		res := utils.Result{
+			Success:    false,
+			Message:    "Invalid age format!",
+			HttpStatus: http.StatusOK,
+			Data:       nil,
+		}
+		utils.ReturnJson(w, res)
 		return
 	}
 
 	profile_photo_file, handler, err := r.FormFile("profile_photo")
 	if err != nil {
-		// "File is too large or missing"
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
+		// "File is missing"
+
+		user := &userManagementModels.User{
+			ID:           loginUser.ID,
+			Firstname:    firstname,
+			Lastname:     lastname,
+			Gender:       gender,
+			Age:          ageInt,
+			ProfilePhoto: "",
+		}
+
+		// Update a record while checking duplicates
+		updateError := userManagementModels.UpdateUser(user)
+		if updateError != nil {
+			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+			return
+		}
+
+		res := utils.Result{
+			Success: true,
+			Message: "Profile updated successfully",
+			Data:    nil,
+		}
+		utils.ReturnJson(w, res)
+		return
+	} else {
+		defer profile_photo_file.Close()
+
+		profile_photo := ""
+		if handler.Size != 0 {
+			// Extra safety: check file size from the header
+			if handler.Size > maxUploadSize {
+				// "File is too large or missing"
+				fmt.Println("Error is here2:", handler.Size)
+				errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
+				return
+			}
+
+			// Call your file upload function
+			profile_photo, err = utils.FileUpload(profile_photo_file, handler)
+			if err != nil {
+				errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+				return
+			}
+		}
+
+		user := &userManagementModels.User{
+			ID:           loginUser.ID,
+			Firstname:    firstname,
+			Lastname:     lastname,
+			Gender:       gender,
+			Age:          ageInt,
+			ProfilePhoto: profile_photo,
+		}
+
+		// Update a record while checking duplicates
+		updateError := userManagementModels.UpdateUser(user)
+		if updateError != nil {
+			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+			return
+		}
+
+		res := utils.Result{
+			Success: true,
+			Message: "Profile updated successfully",
+			Data:    nil,
+		}
+		utils.ReturnJson(w, res)
 		return
 	}
-	defer profile_photo_file.Close()
 
-	// Extra safety: check file size from the header
-	if handler.Size > maxUploadSize {
-		// "File is too large or missing"
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
-		return
-	}
-
-	// Call your file upload function
-	profile_photo, err := utils.FileUpload(profile_photo_file, handler)
-	if err != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
-
-	user := &userManagementModels.User{
-		ID:           loginUser.ID,
-		Name:         name,
-		ProfilePhoto: profile_photo,
-	}
-
-	// Update a record while checking duplicates
-	updateError := userManagementModels.UpdateUser(user)
-	if updateError != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
-
-	RedirectToIndex(w, r)
 }
 
 func RedirectToIndex(w http.ResponseWriter, r *http.Request) {

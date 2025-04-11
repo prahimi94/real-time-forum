@@ -440,7 +440,6 @@ func ReadPost(w http.ResponseWriter, r *http.Request) {
 // }
 
 func SubmitPost(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(r.Method)
 	if r.Method != http.MethodPost {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
 		return
@@ -591,8 +590,12 @@ func UpdatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginUser, ok := r.Context().Value(middlewares.UserContextKey).(userManagementModels.User)
-	if !ok {
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
+	if checkLoginError != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+	if !loginStatus {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
 		return
 	}
@@ -600,18 +603,25 @@ func UpdatePost(w http.ResponseWriter, r *http.Request) {
 	// Parse the multipart form with a max memory of 10MB
 	err := r.ParseMultipartForm(10 << 20) // 10 MB limit
 	if err != nil {
+		fmt.Println(1)
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 		return
 	}
 
-	idStr := r.FormValue("id")
-	uuid := utils.SanitizeInput(r.FormValue("uuid"))
+	idStr := r.FormValue("post_id")
+	// uuid := utils.SanitizeInput(r.FormValue("uuid"))
 	title := utils.SanitizeInput(r.FormValue("title"))
 	description := utils.SanitizeInput(r.FormValue("description"))
-	categories := r.Form["categories"]
+	categories := r.Form["update_post_categories"]
 
 	if len(idStr) == 0 || len(title) == 0 || len(description) == 0 || len(categories) == 0 {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
+		res := utils.Result{
+			Success:    false,
+			Message:    "title, description and categories are required.",
+			HttpStatus: http.StatusOK,
+			Data:       nil,
+		}
+		utils.ReturnJson(w, res)
 		return
 	}
 
@@ -670,7 +680,12 @@ func UpdatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/post/"+uuid, http.StatusFound)
+	res := utils.Result{
+		Success: true,
+		Message: "Post updated successfully",
+		Data:    nil,
+	}
+	utils.ReturnJson(w, res)
 }
 
 func DeletePost(w http.ResponseWriter, r *http.Request) {
@@ -679,13 +694,17 @@ func DeletePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginUser, ok := r.Context().Value(middlewares.UserContextKey).(userManagementModels.User)
-	if !ok {
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
+	if checkLoginError != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+	if !loginStatus {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
 		return
 	}
 
-	err := r.ParseForm()
+	err := r.ParseMultipartForm(0)
 	if err != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 		return
@@ -711,7 +730,12 @@ func DeletePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userManagementControllers.RedirectToIndex(w, r)
+	res := utils.Result{
+		Success: true,
+		Message: "Post removed successfully",
+		Data:    nil,
+	}
+	utils.ReturnJson(w, res)
 }
 
 func AdminDeletePost(w http.ResponseWriter, r *http.Request) {
@@ -777,7 +801,7 @@ func LikePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// err := r.ParseForm()
-	err := r.ParseMultipartForm(10 << 20) // 10 MB limit
+	err := r.ParseMultipartForm(0)
 	if err != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 		return
