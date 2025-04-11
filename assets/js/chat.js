@@ -32,12 +32,12 @@ async function fetchAllChatUsers() {
     chatUsersList.textContent = ""; // Clear the current list
 
     allUserData.forEach((user) => {
-      if (user.name !== loggedInUser.name) {
+      if (user.username !== loggedInUser.username) {
         const li = document.createElement("li");
 
-        if (onlineUsernames.includes(user.name)) {
+        if (onlineUsernames.includes(user.username)) {
           const link = document.createElement("a");
-          link.href = `#chat-with-${user.name}`;
+          link.href = `#chat-with-${user.username}`;
           link.onclick = (e) => {
             isProcessingMessages = false;
             anotherUserClicked = true;
@@ -47,16 +47,16 @@ async function fetchAllChatUsers() {
               chatboxOpen = false;
               document.getElementById("chatbox").style.display = "none";
             } else if (!chatboxOpen) {
-              console.log("from close to open:", user.name)
+              console.log("from close to open:", user.username)
               chatboxOpen = true;
               document.getElementById("chatbox").style.display = "block";
-              handlePrivateChat(loggedInUser.name, user.name);
+              handlePrivateChat(loggedInUser.username, user.username);
             }
           };
-          link.textContent = `${user.name} (Online)`;
+          link.textContent = `${user.username} (Online)`;
           li.appendChild(link);
         } else {
-          li.textContent = user.name;
+          li.textContent = user.username;
           li.onclick = async (e) => {
             isProcessingMessages = false;
             anotherUserClicked = true;
@@ -75,14 +75,14 @@ async function fetchAllChatUsers() {
               document.getElementById("message-display").style.display = "block";
               document.getElementById("message-display").innerHTML = "";
               // Fetch the chat ID and load the chat messages
-              const chatID = await getChatIDForUsers(loggedInUser.name, user.name);
+              const chatID = await getChatIDForUsers(loggedInUser.username, user.username);
               if (chatID) {
 
-                await fetchChatMessages(chatID, user.name);
+                await fetchChatMessages(chatID, user.username);
 
               } else if (chatID === 0 || !chatID) {
                 const chatHeader = document.getElementById("chat-header");
-                chatHeader.textContent = `Chat with ${user.name}`;
+                chatHeader.textContent = `Chat with ${user.username}`;
                 document.getElementById("message-display").innerHTML = "No chat history.";
                 console.error("No chatID")
               } else {
@@ -115,7 +115,7 @@ function connect() {
 
       if (message.type === "message_content") {
         handlePrivateChat(message.sender, message.recipient);
-        if (message.recipient === loggedInUser.name) {
+        if (message.recipient === loggedInUser.username) {
           const res = {
             success: true,
             message: `You have a new message from ${message.sender}`,
@@ -150,11 +150,11 @@ async function handlePrivateChat(senderUsername, recipientUsername) {
   const messageInput = document.getElementById("messageInput");
   const sendButton = document.getElementById("send-btn");
 
-  if (loggedInUser.name === senderUsername) {
+  if (loggedInUser.username === senderUsername) {
     chatHeader.textContent = `Chat with ${recipientUsername}`;
     messageInput.placeholder = `Type a message to ${recipientUsername}`;
     sendButton.onclick = () => sendMessage(senderUsername, recipientUsername);
-  } else if (loggedInUser.name === recipientUsername) {
+  } else if (loggedInUser.username === recipientUsername) {
     chatHeader.textContent = `Chat with ${senderUsername}`;
     messageInput.placeholder = `Type a message to ${senderUsername}`;
     sendButton.onclick = () => sendMessage(recipientUsername, senderUsername);
@@ -175,8 +175,8 @@ async function handlePrivateChat(senderUsername, recipientUsername) {
   const chatID = await getChatIDForUsers(senderUsername, recipientUsername);
   if (chatID) {
     if (
-      loggedInUser.name === senderUsername ||
-      loggedInUser.name === recipientUsername
+      loggedInUser.username === senderUsername ||
+      loggedInUser.username === recipientUsername
     ) {
       await fetchChatMessages(chatID, recipientUsername);
 
@@ -241,7 +241,7 @@ async function fetchChatMessages(chatID, recipientUsername) {
           messageElement.textContent = parsedContent.content;
           messageDisplay.prepend(details);
           messageDisplay.prepend(messageElement);
-          if (loggedInUser.name === parsedContent.sender) {
+          if (loggedInUser.username === parsedContent.sender) {
             messageElement.classList.add("from-me");
             details.classList.add("my-details");
           }
