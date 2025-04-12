@@ -611,14 +611,14 @@ body {
     color: #8E76D8 !important;
 }
 
-.chat-users-container a {
+.chat-users-container .isOnline {
     color: #198754;
     text-decoration: none;
     cursor: pointer;
     font-weight: bold;
 }
 
-.chat-users-container a:hover {
+.chat-users-container .isOnline:hover {
     color: #157347;
 }
 
