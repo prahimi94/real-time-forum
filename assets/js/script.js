@@ -280,7 +280,7 @@ function showAuthenticatedContainer() {
                                     <span class="me-3">Welcome, ${loggedInUser.firstname}</span>
                                 </li>
                                 <li class="nav-item text-center pb-2 pt-2">
-                                    span class="me-3">${loggedInUser.email}</span>
+                                    <span class="me-3">${loggedInUser.email}</span>
                                 </li>
                                 <li class="nav-item text-center pb-3">
                                 
