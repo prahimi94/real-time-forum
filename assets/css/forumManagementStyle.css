@@ -541,7 +541,6 @@ body {
 .chatbox {
     border-left: .13rem solid #e7e7e7;
     height: auto;
-    padding-left: 15px;
     background: #fff;
     padding: 1.8rem 1.2rem;
     border-radius: 18px;
@@ -552,9 +551,10 @@ body {
     text-align: left;
 }
 
-.chatbox {
+#message-display {
     height: 500px;
     overflow-y: scroll;
+    margin-bottom: 10px;
 }
 
 .chat-users-container h3,
@@ -570,44 +570,61 @@ body {
 .chatbox .msg {
     text-align: left;
     text-decoration: none;
-    padding: 4px 15px;
+    padding: 8px 12px;
     border-radius: 9px;
-    margin: 8px;
+    margin: 10px 20% 10px 0; /* top | right | bottom | left */
+    width: 80%;
     background: #F2F2F2;
     border: 1px solid #EDEDED;
+    word-wrap: break-word;
+    white-space: normal;
+    display: inline-block;
 }
 
 .chatbox .from-me {
     text-align: right;
     color: #8E76D8 !important;
     text-decoration: none;
-    padding: 4px 15px;
+    padding: 8px 12px;
+    border-radius: 9px;
+    margin: 10px 0 10px 20%;
+    width: 80%;
     background: #EEE7FF;
     border: 1px solid #8E76D8;
-    border-radius: 9px;
-    margin: 8px;
+    word-wrap: break-word;
+    white-space: normal;
+    display: inline-block;
+    object-position: right;
+    justify-self: end;
 }
 
-.message-display #sender, .message-display #time {
+.details {
     color: #c7c7c7;
     font-size: 22px;
     font-family: "Dongle", serif;
     line-height: 15px;
+    margin-bottom: 20px;
 }
 
-.chat-users-container a {
+.my-details {
+    text-align: right;
+    color: #8E76D8 !important;
+}
+
+.chat-users-container .isOnline {
     color: #198754;
     text-decoration: none;
     cursor: pointer;
     font-weight: bold;
 }
 
-.chat-users-container a:hover {
+.chat-users-container .isOnline:hover {
     color: #157347;
 }
 
 .chat-users-container ul {
     list-style-type: none;
+    cursor: pointer;
     padding: 0;
     margin: 0;
 }
@@ -619,11 +636,9 @@ body {
     border-color: #dee2e6;
     border-radius: 0.375rem;
     padding: 0.75rem 0.375rem;
-    resize: vertical;
-    margin: 4px;
 }
 
-.chatbox button {
+.chatbox #send-btn {
     cursor: pointer;
     background-color: #198754;
     color: white;
@@ -633,12 +648,25 @@ body {
     border-radius: 0.375rem;
     border: none;
     padding: 0.5rem 0.5rem;
+    margin: 2px 0 2px 75%;
+    width: 25%;
 }
 
-.chatbox button:hover {
+.chatbox #send-btn:hover {
     background-color: #157347;
 }
 
-.select2-container {
-    z-index: 9999 !important; /* Ensure it appears above the modal */
+.modal .select2-container {
+    z-index: 1055 !important; /* Higher than the modal's z-index */
+    position: relative; /* Ensure it respects the z-index */
+}
+
+.modal .select2-container .select2-dropdown, .modal .select2-container .select2-selection, .modal p{
+    font-size: 1rem; /* Adjust this value as needed */
+    padding: .250rem .50rem;
+}
+
+.modal input[type="file"]{
+    font-size: 1rem; /* Reset font size */
+    padding: 0.5rem; /* Reset padding */
 }

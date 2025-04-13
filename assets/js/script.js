@@ -1466,7 +1466,7 @@ addEventListener("DOMContentLoaded", async function () {
             categoriesSelect.innerHTML = categoryOptions;    
 
             $(categoriesSelect).select2({
-                // dropdownParent: $(`#updatePostModal-${postId}`)
+                dropdownParent: $(`#updatePostModal-${postId}`)
             }); // Initialize select2
             if (selectedCategories && selectedCategories.length > 0) {
                 $(categoriesSelect).val(selectedCategories).trigger('change'); // Set values if selectedCategories are populated
