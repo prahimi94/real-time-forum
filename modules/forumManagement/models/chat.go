@@ -190,7 +190,6 @@ func InsertMsg(msg *Message, uploadedFiles map[string]string) (int, error) {
 		return -1, err
 	}
 
-	log.Printf("Message inserted successfully with ID: %d", lastInsertID)
 	return int(lastInsertID), nil
 }
 

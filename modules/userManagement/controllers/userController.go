@@ -609,7 +609,6 @@ func UpdateOnlineUsers() {
 		err := client.WriteMessage(websocket.TextMessage, userListJSON)
 		if err != nil {
 			client.Close()
-			fmt.Print("deleted in UpdateOnlineUsers")
 			delete(OnlineUsers, client)
 		}
 	}

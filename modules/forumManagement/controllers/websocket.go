@@ -110,7 +110,6 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 					}
 				}
 
-				fmt.Printf("Chat initialized between %s and %s (Chat ID: %d)\n", myUsername, recipientUsername, chatID)
 				continue
 			}
 
