@@ -656,6 +656,17 @@ body {
     background-color: #157347;
 }
 
-.select2-container {
-    z-index: 9999 !important; /* Ensure it appears above the modal */
+.modal .select2-container {
+    z-index: 1055 !important; /* Higher than the modal's z-index */
+    position: relative; /* Ensure it respects the z-index */
+}
+
+.modal .select2-container .select2-dropdown, .modal .select2-container .select2-selection, .modal p{
+    font-size: 1rem; /* Adjust this value as needed */
+    padding: .250rem .50rem;
+}
+
+.modal input[type="file"]{
+    font-size: 1rem; /* Reset font size */
+    padding: 0.5rem; /* Reset padding */
 }
