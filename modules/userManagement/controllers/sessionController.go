@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"fmt"
 	errorManagementControllers "forum/modules/errorManagement/controllers"
 	"forum/utils"
 
@@ -30,9 +29,7 @@ func CheckSessionHandler(w http.ResponseWriter, r *http.Request) {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
-	if loginStatus {
-		fmt.Println("logged in userid is: ", loginUser.ID)
-	} else {
+	if !loginStatus {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
 		return
 	}

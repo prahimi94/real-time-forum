@@ -2,7 +2,6 @@ package models
 
 import (
 	"database/sql"
-	"fmt"
 	"forum/db"
 	"forum/utils"
 	"log"
@@ -72,7 +71,7 @@ func CheckChatExists(user1ID, user2ID int) (int, error) {
 		return 0, nil // No chat exists
 	} else if err != nil {
 		// Unexpected error
-		return 0, fmt.Errorf("failed to check for existing chat: %w", err)
+		return 0, err
 	}
 
 	return chatID, nil
@@ -132,7 +131,7 @@ func InsertChatMember(chatID, userID int, tx *sql.Tx) error {
 	insertChatMemberQuery := `INSERT INTO chat_members (chat_id, user_id) VALUES (?, ?);`
 	_, err := tx.Exec(insertChatMemberQuery, chatID, userID)
 	if err != nil {
-		return fmt.Errorf("failed to insert chat member: %w", err)
+		return err
 	}
 	return nil
 }
@@ -191,7 +190,6 @@ func InsertMsg(msg *Message, uploadedFiles map[string]string) (int, error) {
 		return -1, err
 	}
 
-	log.Printf("Message inserted successfully with ID: %d", lastInsertID)
 	return int(lastInsertID), nil
 }
 
@@ -236,7 +234,7 @@ func ReadAllMsgs(chatID, userID int) ([]Message, error) {
     `
 	rows, err := db.Query(query, chatID, userID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read messages: %w", err)
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -252,7 +250,7 @@ func ReadAllMsgs(chatID, userID int) ([]Message, error) {
 			&message.UpdatedAt,
 			&message.UpdatedBy,
 		); err != nil {
-			return nil, fmt.Errorf("failed to scan message: %w", err)
+			return nil, err
 		}
 		messages = append(messages, message)
 	}
