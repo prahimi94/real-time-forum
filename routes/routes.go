@@ -38,6 +38,7 @@ func SetupRoutes() {
 
 	http.HandleFunc("/api/categories/", forumManagementControllers.ReadAllCategories)
 	http.HandleFunc("/api/allPosts/", forumManagementControllers.ReadAllPosts)
+	http.HandleFunc("/api/bunchOfPosts/", forumManagementControllers.ReadBunchOfPosts)
 	// http.HandleFunc("/newPost/", forumManagementControllers.CreatePost)
 	http.HandleFunc("/api/submitPost", forumManagementControllers.SubmitPost) /*post method*/
 	http.HandleFunc("/api/myCreatedPosts/", forumManagementControllers.ReadMyCreatedPosts)

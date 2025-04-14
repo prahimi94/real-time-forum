@@ -45,6 +45,47 @@ func ReadAllPosts(w http.ResponseWriter, r *http.Request) {
 	utils.ReturnJson(w, res)
 }
 
+func ReadBunchOfPosts(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
+		return
+	}
+
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
+	if checkLoginError != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+	if !loginStatus {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
+		return
+	}
+
+	pageNumber, errUrl := utils.ExtractUUIDFromUrl(r.URL.Path, "api/bunchOfPosts")
+	if errUrl == "not found" {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.NotFoundError)
+		return
+	}
+	pageNumberInt, err := strconv.Atoi(pageNumber)
+	if err != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+
+	posts, err := models.ReadBunchOfPosts(loginUser.ID, pageNumberInt)
+	if err != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+
+	res := utils.Result{
+		Success: true,
+		Message: "Posts fetched successfully",
+		Data:    posts,
+	}
+	utils.ReturnJson(w, res)
+}
+
 func AdminReadAllPosts(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)

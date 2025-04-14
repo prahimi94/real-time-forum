@@ -115,7 +115,7 @@ func UpdatePost(post *Post, categories []int, uploadedFiles map[string]string, u
 			return deletePostFilesErr
 		}
 	}
-	
+
 	insertPostCategoriesErr := InsertPostCategories(post.ID, categories, user_id, tx)
 	if insertPostCategoriesErr != nil {
 		tx.Rollback() // Rollback on error
@@ -214,6 +214,127 @@ func ReadAllPosts(checkLikeForUser int) ([]Post, error) {
 			AND u.status != 'delete'
 		ORDER BY p.id desc;
     `, checkLikeForUser, checkLikeForUser)
+	if selectError != nil {
+		return nil, selectError
+	}
+	defer rows.Close()
+
+	var posts []Post
+	// Map to track posts by their ID to avoid duplicates
+	postMap := make(map[int]*Post)
+
+	for rows.Next() {
+		var post Post
+		var user userManagementModels.User
+		var category Category
+		var postFile PostFile
+
+		// Scan the post and user data
+		err := rows.Scan(
+			&post.ID, &post.UUID, &post.Title, &post.Description, &post.Status,
+			&post.CreatedAt, &post.UpdatedAt, &post.UpdatedBy,
+			&post.NumberOfLikes, &post.NumberOfDislikes,
+			&post.UserId, &user.Firstname, &user.Lastname, &user.Username, &user.Email, &user.ProfilePhoto,
+			&category.ID, &category.Name, &category.Color, &category.Icon,
+			&postFile.ID, &postFile.FileUploadedName, &postFile.FileRealName,
+			&post.IsLikedByUser, &post.IsDislikedByUser,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("error scanning row: %v", err)
+		}
+
+		// Check if the post already exists in the map
+		existingPost, found := postMap[post.ID]
+		if !found {
+			post.User = user
+			post.Categories = []Category{}
+			post.PostFiles = []PostFile{}
+			postMap[post.ID] = &post
+			existingPost = &post
+		}
+
+		// Ensure unique categories
+		isCategoryAdded := false
+		for _, c := range existingPost.Categories {
+			if c.ID == category.ID {
+				isCategoryAdded = true
+				break
+			}
+		}
+		if !isCategoryAdded && category.ID != 0 {
+			existingPost.Categories = append(existingPost.Categories, category)
+		}
+
+		// Ensure unique post files
+		isFileAdded := false
+		for _, f := range existingPost.PostFiles {
+			if f.ID == postFile.ID {
+				isFileAdded = true
+				break
+			}
+		}
+		if !isFileAdded && postFile.ID != 0 {
+			existingPost.PostFiles = append(existingPost.PostFiles, postFile)
+		}
+	}
+
+	// Check for any errors during row iteration
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("row iteration error: %v", err)
+	}
+
+	// Convert the map of posts into a slice
+	for _, post := range postMap {
+		posts = append(posts, *post)
+	}
+
+	sort.Slice(posts, func(i, j int) bool {
+		return posts[i].ID > posts[j].ID
+	})
+
+	return posts, nil
+}
+
+func ReadBunchOfPosts(checkLikeForUser int, pageNumber int) ([]Post, error) {
+	db := db.OpenDBConnection()
+	defer db.Close() // Close the connection after the function finishes
+
+	limit := 10
+	offset := (pageNumber - 1) * limit
+
+	// Query the records
+	rows, selectError := db.Query(`
+        SELECT p.id as post_id, p.uuid as post_uuid, p.title as post_title, p.description as post_description, p.status as post_status, p.created_at as post_created_at, p.updated_at as post_updated_at, p.updated_by as post_updated_by,
+			(SELECT COUNT(DISTINCT id) from post_likes WHERE post_id = p.id AND status != 'delete' AND type = 'like') AS number_of_likes,
+			(SELECT COUNT(DISTINCT id) from post_likes WHERE post_id = p.id AND status != 'delete' AND type = 'dislike') AS number_of_dislikes,
+			u.id as user_id, u.firstname as user_firstname, u.lastname as user_lastname, u.username as user_username, u.email as user_email, IFNULL(u.profile_photo, '') as user_profile_photo,
+			c.id as category_id, c.name as category_name, c.color as category_color, c.icon as category_icon,
+			IFNULL(pf.id, 0) as post_file_id, pf.file_uploaded_name, pf.file_real_name,
+			CASE 
+                WHEN EXISTS (SELECT 1 FROM post_likes WHERE post_id = p.id AND status != 'delete' AND type = 'like' AND user_id = ?) THEN 1
+                ELSE 0
+            END AS is_liked_by_user,
+            CASE 
+                WHEN EXISTS (SELECT 1 FROM post_likes WHERE post_id = p.id AND status != 'delete' AND type = 'dislike' AND user_id = ?) THEN 1
+                ELSE 0
+            END AS is_disliked_by_user
+		FROM posts p
+			INNER JOIN users u
+				ON p.user_id = u.id
+			LEFT JOIN post_files pf
+				ON p.id = pf.post_id
+				AND pf.status = 'enable'
+			LEFT JOIN post_categories pc
+				ON p.id = pc.post_id
+				AND pc.status = 'enable'
+			LEFT JOIN categories c
+				ON pc.category_id = c.id
+				AND c.status = 'enable'
+		WHERE p.status != 'delete'
+			AND u.status != 'delete'
+		ORDER BY p.id desc
+		LIMIT ? OFFSET ?;
+    `, checkLikeForUser, checkLikeForUser, limit, offset)
 	if selectError != nil {
 		return nil, selectError
 	}
