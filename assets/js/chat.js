@@ -18,20 +18,30 @@ async function fetchOnlineUsers() {
     console.error("Error fetching online users:", error);
   }
 }
-
-async function fetchAllChatUsers() {
+function fetchAllChatUsers(){
+  fetch("/api/users", {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+})
+    .then(res => res.json().catch(() => ({ success: false, message: "Invalid JSON response" }))) // Prevent JSON parse errors
+    .then(data => {
+        if (data.success) {
+          console.log("hello")
+        }
+    });
+  // do more things and hdle errors
+}
+async function ShowAllChatUsers(allUserData) {
   try {
-    const response = await fetch("/api/users");
-
-    allUserData = await response.json();
+    
     const chatUsersList = document.getElementById("chat-users-list");
     chatUsersList.textContent = ""; // Clear the current list
 
     allUserData.forEach((user) => {
       if (user.username !== loggedInUser.username) {
         const li = document.createElement("li");
-
-        if (onlineUsernames.includes(user.username)) {
+        console.log(user.isOnline)
+        if (user.isOnline) {
           const link = document.createElement("a");
           link.href = `#chat-with-${user.username}`;
           link.onclick = (e) => {
@@ -111,6 +121,7 @@ function connect() {
       const message = JSON.parse(event.data);
 
       if (message.type === "message_content") {
+        console.log("the msg that you are reciveing or sending is:", message.content)
         handlePrivateChat(message.sender, message.recipient);
         if (message.recipient === loggedInUser.username) {
           const res = {
@@ -121,19 +132,22 @@ function connect() {
           showToast(res);
         }
         chatboxOpen = true;
+      } else if ((message.type === "show_all_users")){
+        ShowAllChatUsers(message.users);
+      } else if(message.type === "fetch_all_users" ){
+        fetchAllChatUsers()
       }
 
-      fetchOnlineUsers();
-      fetchAllChatUsers();
+      //fetchOnlineUsers();
     } catch (error) {
       console.error("Failed to parse WebSocket message:", event.data, error);
     }
   };
 
-  ws.onclose = function () {
+/*   ws.onclose = function () {
     console.log("Offline: WebSocket connection closed, retrying...");
     setTimeout(connect, 1000); // Reconnect after 1 second
-  };
+  }; */
 
   ws.onerror = function (error) {
     console.error("Offline: WebSocket error:", error);

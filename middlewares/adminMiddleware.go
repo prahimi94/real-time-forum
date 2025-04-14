@@ -2,8 +2,9 @@ package middlewares
 
 import (
 	"context"
-	errorManagementControllers "forum/modules/errorManagement/controllers"
 	userManagementControllers "forum/modules/userManagement/controllers"
+	errorManagementControllers "forum/modules/errorManagement/controllers"
+
 	"net/http"
 )
 

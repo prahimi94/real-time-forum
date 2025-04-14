@@ -1,13 +1,14 @@
 package controller
 
 import (
+	userManagementControllers "forum/modules/userManagement/controllers"
 	errorManagementControllers "forum/modules/errorManagement/controllers"
 	"forum/modules/forumManagement/models"
 	"forum/utils"
 	"net/http"
 	"strconv"
 
-	userManagementControllers "forum/modules/userManagement/controllers"
+
 
 	_ "github.com/mattn/go-sqlite3"
 )
