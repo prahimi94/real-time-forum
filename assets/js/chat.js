@@ -29,7 +29,7 @@ function fetchAllChatUsers() {
         .json()
         .catch(() => ({ success: false, message: "Invalid JSON response" }))
     ) // Prevent JSON parse errors
-    .then((data) => {});
+    .then((data) => { });
   // do more things and hdle errors
 }
 
@@ -81,6 +81,7 @@ async function ShowAllChatUsers(allUserData) {
 
         if (chatboxOpen || (chatboxOpen && openChat[1] === user.username)) {
           chatboxOpen = false;
+          openChat = [null, null];
           chatbox.style.display = "none";
         } else if (
           !chatboxOpen ||
@@ -169,7 +170,6 @@ function connect() {
       await showAllChatUsers(); */
 
       const message = JSON.parse(event.data);
-      console.log("Received message:", message);
 
       const messageDisplay = document.getElementById("message-display");
       const messageElement = document.createElement("p");
@@ -226,6 +226,12 @@ function connect() {
           messageInput.addEventListener("input", (event) =>
             handleTyping(event, message.sender, message.recipient)
           ); */
+        } else {
+          chatboxOpen = false;
+          openChat = [null, null];
+          chatbox.style.display = "none";
+          messageInput.style.display = "none";
+          sendButton.style.display = "none";
         }
       } else if (message.type === "show_all_users") {
         await ShowAllChatUsers(message.users);
@@ -251,7 +257,6 @@ function connect() {
 
   ws.onclose = function (event) {
     console.log("Offline: WebSocket connection closed on event:", event);
-    //setTimeout(connect, 1000); // Reconnect after 1 second
   };
 
   ws.onerror = function (error) {
@@ -313,7 +318,6 @@ async function showMessages(chatID, recipientUsername) {
     messageDisplay.textContent = "Chat started but no messages yet.";
     return;
   }
-  console.log("func showMessages:", messages);
 
   // Reverse the messages to show the latest ones at the bottom
   messages.reverse();
@@ -334,7 +338,7 @@ async function showMessages(chatID, recipientUsername) {
 
     batch.forEach((message) => {
       if (anotherUserClicked) return;
-      console.log("message:", message);
+      
       const messageElement = document.createElement("p");
       const details = document.createElement("div");
       details.classList.add("details");
@@ -390,16 +394,18 @@ function sendMessage(senderUsername, recipientUsername) {
   if (message.length === 0) return; // Do not accept empty messages
 
   if (recipientUsername && ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(
-      JSON.stringify({
-        type: "message_content",
-        sender: senderUsername,
-        recipient: recipientUsername,
-        content: message,
-        //timestamp: new Date().toLocaleString(),
-        timestamp: new Date().toISOString(), // Use ISO 8601 format
-      })
-    );
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(
+        JSON.stringify({
+          type: "message_content",
+          sender: senderUsername,
+          recipient: recipientUsername,
+          content: message,
+          //timestamp: new Date().toLocaleString(),
+          timestamp: new Date().toISOString(), // Use ISO 8601 format
+        })
+      );
+    }
   }
   input.value = "";
 }

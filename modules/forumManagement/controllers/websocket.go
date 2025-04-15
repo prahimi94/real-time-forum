@@ -32,14 +32,11 @@ type WebsocketMsg struct {
 }
 
 var Broadcast = make(chan WebsocketMsg) // Broadcast channel
-
-// var Broadcast = make(chan []byte) // Broadcast channel
 var Mutex = &sync.Mutex{} // Protect OnlineUsers map
 
 func WsHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		fmt.Println("Error upgrading:", err)
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
@@ -50,7 +47,6 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 	if err == nil && cookie != nil && cookie.Value != "" {
 		myUserID, myUsername, err := userManagementModels.GetUserIDFromCookie(r)
 		if err != nil {
-			fmt.Println("Error getting username:", err)
 			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 			return
 		}
@@ -70,11 +66,12 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 			cookie, err := r.Cookie("session_token")
 			if err != nil || (cookie != nil && cookie.Value == "") {
 				Mutex.Lock()
+				defer Mutex.Unlock()
+				conn.Close()
 				delete(userManagementControllers.OnlineUsers, conn)
+				userManagementControllers.UpdateOnlineUsers()
 				socketmsg.Type = "fetch_all_users"
 				Broadcast <- socketmsg
-				userManagementControllers.UpdateOnlineUsers()
-				Mutex.Unlock()
 				break
 			}
 
@@ -87,16 +84,23 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			err = conn.ReadJSON(&msgData)
-			fmt.Printf("Received msgData: %+v, Type: %T\n", msgData, msgData)
 			if err != nil {
-				fmt.Println("Error reading JSON for msgData:", err)
-				// Remove the connection from the clients map on disconnect
+				// Lock the mutex to safely modify the OnlineUsers map
 				Mutex.Lock()
+
+				// Close the WebSocket connection
+				conn.Close()
+
+				// Remove the connection from the OnlineUsers map
 				delete(userManagementControllers.OnlineUsers, conn)
 				userManagementControllers.UpdateOnlineUsers()
+				Mutex.Unlock()
+
+				// Broadcast the updated user list to all clients
 				socketmsg.Type = "fetch_all_users"
 				Broadcast <- socketmsg
-				Mutex.Unlock()
+
+				// Exit the loop to stop processing messages for this connection
 				break
 			}
 
@@ -118,7 +122,6 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 				// Get recipient user ID
 				recipientUserID, err := userManagementModels.GetUserIDByUsername(recipientUsername)
 				if err != nil {
-					fmt.Println("Error getting recipient user ID:", err)
 					errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 					continue
 				}
@@ -126,7 +129,6 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 				// Check if chat exists, if not create it and add chat members
 				chatID, err = forumManagementModels.CheckChatExists(myUserID, recipientUserID)
 				if err != nil {
-					fmt.Println("Error checking chat existence:", err)
 					errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 					continue
 				}
@@ -135,7 +137,6 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 					chat := &forumManagementModels.Chat{ID: chatID, Type: "private"}
 					chatID, err = forumManagementModels.InsertChat(chat, myUserID, recipientUserID, nil)
 					if err != nil {
-						fmt.Println("Error creating or retrieving chat:", err)
 						errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 						continue
 					}
@@ -156,17 +157,16 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 			// If chatID exists, go directly to InsertMsg
 			if chatID != 0 {
 				msg := &forumManagementModels.Message{
-					ChatID:    chatID, // Use the chat ID from the "private_chat" logic
-					Content:   sanitizedMsg,
-					Status:    "enable",
-					CreatedBy: myUserID,
-					CreatedAt: time.Now(), // Ensure CreatedAt is set
-					UpdatedBy: &myUserID,
+					ChatID:            chatID, // Use the chat ID from the "private_chat" logic
+					Content:           sanitizedMsg,
+					Status:            "enable",
+					CreatedBy:         myUserID,
+					CreatedAt:         time.Now(), // Ensure CreatedAt is set
+					UpdatedBy:         &myUserID,
 					CreatedByUsername: myUsername,
 				}
 				_, err = forumManagementModels.InsertMsg(msg, nil)
 				if err != nil {
-					fmt.Println("Error inserting message into database:", msg, err)
 					errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 					continue
 				}

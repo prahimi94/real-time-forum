@@ -331,18 +331,10 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	deleteCookie(w, "session_token") // Deleting a cookie named "session_token"
+	Mutex.Lock()
+	defer Mutex.Unlock()
 	SocketLogoutHandler(w, r, loggedInUser.Username)
-	// delete ws conn
-	//for client := range forumManagementControllers.OnlineUsers {
-	//if loggedInUser.Username == client {
-	//}
-	//fmt.Println(client)
-	/* forumManagementControllers.Mutex.Lock()
-	delete(forumManagementControllers.OnlineUsers, forumManagementControllers.conn)
-	forumManagementControllers.UpdateOnlineUsers() */
-	//}
-	//forumManagementControllers.Mutex.Unlock()
-
+	
 	// RedirectToIndex(w, r)
 	res := utils.Result{
 		Success: true,
@@ -586,8 +578,11 @@ func UpdateOnlineUsers() {
 	for client := range OnlineUsers {
 		err := client.WriteMessage(websocket.TextMessage, userListJSON)
 		if err != nil {
+			Mutex.Lock()
+			defer Mutex.Unlock()
 			client.Close()
 			delete(OnlineUsers, client)
+
 		}
 	}
 }
@@ -595,7 +590,9 @@ func UpdateOnlineUsers() {
 func SocketLogoutHandler(w http.ResponseWriter, r *http.Request, userName string) {
 	for clientConn, clientUserName := range OnlineUsers {
 		if clientUserName == userName {
-			Mutex.Lock()
+			fmt.Println("User logged out:", clientUserName)
+			//Mutex.Lock()
+			defer clientConn.Close() // close their websocket
 			delete(OnlineUsers, clientConn)
 			UpdateOnlineUsers()
 		}
@@ -603,8 +600,7 @@ func SocketLogoutHandler(w http.ResponseWriter, r *http.Request, userName string
 			"type":    "logout",
 			"message": "You have been logged out.",
 		})
-		Mutex.Unlock()
-		clientConn.Close() // close their websocket
+		//Mutex.Unlock()
 		//break
 	}
 }
