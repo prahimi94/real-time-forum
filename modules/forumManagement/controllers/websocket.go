@@ -22,8 +22,19 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-var Broadcast = make(chan []byte) // Broadcast channel
-var Mutex = &sync.Mutex{}         // Protect OnlineUsers map
+type WebsocketMsg struct {
+	Type      string                        `json:"type"`
+	Message   forumManagementModels.Message `json:"message"`
+	Sender    string                        `json:"sender"`
+	Recipient string                        `json:"recipient"`
+	Users     []userManagementModels.User   `json:"users"`
+	Typing    bool                          `json:"typing"` // New field for typing status
+}
+
+var Broadcast = make(chan WebsocketMsg) // Broadcast channel
+
+// var Broadcast = make(chan []byte) // Broadcast channel
+var Mutex = &sync.Mutex{} // Protect OnlineUsers map
 
 func WsHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -54,35 +65,49 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 
 		for {
 
+			var socketmsg WebsocketMsg
+
 			cookie, err := r.Cookie("session_token")
 			if err != nil || (cookie != nil && cookie.Value == "") {
 				Mutex.Lock()
 				delete(userManagementControllers.OnlineUsers, conn)
+				socketmsg.Type = "fetch_all_users"
+				Broadcast <- socketmsg
 				userManagementControllers.UpdateOnlineUsers()
 				Mutex.Unlock()
 				break
 			}
 
-			_, message, err := conn.ReadMessage()
+			var msgData struct {
+				Type      string    `json:"type"`
+				Content   string    `json:"content"`
+				Sender    string    `json:"sender"`
+				Recipient string    `json:"recipient"`
+				Timestamp time.Time `json:"timestamp"`
+			}
+
+			err = conn.ReadJSON(&msgData)
 			if err != nil {
 				// Remove the connection from the clients map on disconnect
 				Mutex.Lock()
 				delete(userManagementControllers.OnlineUsers, conn)
 				userManagementControllers.UpdateOnlineUsers()
+				socketmsg.Type = "fetch_all_users"
+				Broadcast <- socketmsg
 				Mutex.Unlock()
 				break
 			}
 
-			// Parse incoming message as JSON
-			var msgData map[string]string
-			if err := json.Unmarshal(message, &msgData); err != nil {
-				fmt.Printf("Invalid message format: %s | Error: %v\n", string(message), err)
+			// Handle "typing" message type
+			if socketmsg.Type == "typing" {
+				socketmsg.Typing = true
+				Broadcast <- socketmsg // Notify the recipient about typing status
 				continue
 			}
 
 			// Handle "private_chat" message type
-			if msgData["type"] == "private_chat" {
-				recipientUsername := msgData["recipient"]
+			if msgData.Type == "private_chat" {
+				recipientUsername := msgData.Recipient
 
 				// Get recipient user ID
 				recipientUserID, err := userManagementModels.GetUserIDByUsername(recipientUsername)
@@ -113,7 +138,7 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			sanitizedMsg := utils.SanitizeInput(string(message))
+			sanitizedMsg := utils.SanitizeInput(msgData.Content)
 			// Ignore empty messages
 			if sanitizedMsg == "" {
 				continue
@@ -136,8 +161,12 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 					continue
 				}
 			}
-
-			Broadcast <- []byte(sanitizedMsg)
+			socketmsg.Recipient = msgData.Recipient
+			socketmsg.Sender = msgData.Sender
+			socketmsg.Message.Content = sanitizedMsg
+			socketmsg.Message.CreatedAt = msgData.Timestamp
+			socketmsg.Type = "message_content"
+			Broadcast <- socketmsg
 		}
 	}
 }
@@ -147,15 +176,30 @@ func HandleMessages() {
 		// Grab the next message from the Broadcast channel
 		message := <-Broadcast
 
-		// Send the message to all online users
 		Mutex.Lock()
 
-		for client := range userManagementControllers.OnlineUsers {
-			err := client.WriteMessage(websocket.TextMessage, message)
-			if err != nil {
-				client.Close()
-				delete(userManagementControllers.OnlineUsers, client)
-				userManagementControllers.UpdateOnlineUsers()
+		if message.Type == "typing" {
+			// Send typing notification to the recipient only
+			for client, username := range userManagementControllers.OnlineUsers {
+				if username == message.Recipient {
+					err := client.WriteJSON(message)
+					if err != nil {
+						client.Close()
+						delete(userManagementControllers.OnlineUsers, client)
+					}
+				}
+			}
+		} else {
+			for client := range userManagementControllers.OnlineUsers {
+				err := client.WriteJSON(message)
+				if err != nil {
+					client.Close()
+					delete(userManagementControllers.OnlineUsers, client)
+					//userManagementControllers.UpdateOnlineUsers()
+					var socketmsg WebsocketMsg
+					socketmsg.Type = "fetch_all_users"
+					Broadcast <- socketmsg
+				}
 			}
 		}
 		Mutex.Unlock()
@@ -248,4 +292,41 @@ func GetChatIDHandler(w http.ResponseWriter, r *http.Request) {
 	// Respond with the chat ID
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]int{"chatID": chatID})
+}
+
+func GetAllChatUsersHandler(w http.ResponseWriter, r *http.Request) {
+	// Retrieve the logged-in user's information
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
+	if checkLoginError != nil {
+		http.Error(w, "Failed to check login status", http.StatusInternalServerError)
+		return
+	}
+	if !loginStatus {
+		http.Error(w, "Unauthorized access", http.StatusUnauthorized)
+		return
+	}
+
+	// Pass the logged-in user's ID to ReadAllChatUsers
+	users, err := userManagementModels.ReadAllChatUsers(loginUser.ID)
+	if err != nil {
+		http.Error(w, "Failed to fetch users", http.StatusInternalServerError)
+		return
+	}
+
+	for i, user := range users {
+		for _, username := range userManagementControllers.OnlineUsers {
+			if username == user.Username {
+				users[i].IsOnline = true
+				continue
+			}
+		}
+	}
+
+	// Return the users as JSON
+	w.Header().Set("Content-Type", "application/json")
+	var socketmsg WebsocketMsg
+	socketmsg.Type = "show_all_users"
+	socketmsg.Users = users
+	Broadcast <- socketmsg
+	json.NewEncoder(w).Encode(map[string]bool{"success": true})
 }
