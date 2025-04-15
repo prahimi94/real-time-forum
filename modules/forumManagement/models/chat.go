@@ -29,14 +29,15 @@ type ChatMember struct {
 
 // Message represents the "messages" table
 type Message struct {
-	ID        int        `json:"id"`
-	ChatID    int        `json:"chat_id"`
-	Content   string     `json:"content"`
-	Status    string     `json:"status"`
-	CreatedAt time.Time  `json:"created_at"`
-	CreatedBy int        `json:"created_by"`
-	UpdatedAt *time.Time `json:"updated_at"`
-	UpdatedBy *int       `json:"updated_by"`
+	ID                int        `json:"id"`
+	ChatID            int        `json:"chat_id"`
+	Content           string     `json:"content"`
+	Status            string     `json:"status"`
+	CreatedAt         time.Time  `json:"created_at"`
+	CreatedBy         int        `json:"created_by"`
+	UpdatedAt         *time.Time `json:"updated_at"`
+	UpdatedBy         *int       `json:"updated_by"`
+	CreatedByUsername string     `json:"created_by_username"`
 }
 
 // MessageFile represents the "message_files" table

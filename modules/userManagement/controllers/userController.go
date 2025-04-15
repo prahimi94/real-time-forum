@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	errorManagementControllers "forum/modules/errorManagement/controllers"
+	"sync"
 
 	userManagementModels "forum/modules/userManagement/models"
 	"forum/utils"
@@ -22,6 +23,7 @@ const publicUrl = "modules/userManagement/views/"
 const forumPublicUrl = "modules/forumManagement/views/"
 
 var OnlineUsers = make(map[*websocket.Conn]string) // Map of online users (connected to WS) to usernames
+var Mutex = &sync.Mutex{}                          // Mutex to handle concurrent access to OnlineUsers
 
 //var u1 = uuid.Must(uuid.NewV4())
 
@@ -593,6 +595,7 @@ func UpdateOnlineUsers() {
 func SocketLogoutHandler(w http.ResponseWriter, r *http.Request, userName string) {
 	for clientConn, clientUserName := range OnlineUsers {
 		if clientUserName == userName {
+			Mutex.Lock()
 			delete(OnlineUsers, clientConn)
 			UpdateOnlineUsers()
 		}
@@ -600,6 +603,8 @@ func SocketLogoutHandler(w http.ResponseWriter, r *http.Request, userName string
 			"type":    "logout",
 			"message": "You have been logged out.",
 		})
+		Mutex.Unlock()
 		clientConn.Close() // close their websocket
+		//break
 	}
 }

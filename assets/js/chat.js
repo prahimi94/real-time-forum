@@ -60,17 +60,18 @@ async function ShowAllChatUsers(allUserData) {
         sendButton.style.display = "block";
 
         // Listen to input events (typing) in the messageInput field
-        document
-          .getElementById("messageInput")
-          .addEventListener("input", (event) =>
-            handleTyping(event, loggedInUser.username, user.username)
-          );
+        /* messageInput.removeEventListener("input", (event) =>
+          handleTyping(event, loggedInUser.username, user.username)
+        ); // Remove previous event listener to avoid duplicates
+        messageInput.addEventListener("input", (event) =>
+          handleTyping(event, loggedInUser.username, user.username)
+        ); */
       } else {
         li.textContent = user.username;
         messageInput.style.display = "none";
         sendButton.style.display = "none";
       }
-
+      li.onclick = null; // Clear previous handler
       li.onclick = async (e) => {
         e.preventDefault();
 
@@ -101,11 +102,12 @@ async function ShowAllChatUsers(allUserData) {
               sendButton.style.display = "block";
 
               // Listen to input events (typing) in the messageInput field
-              document
-                .getElementById("messageInput")
-                .addEventListener("input", (event) =>
-                  handleTyping(event, loggedInUser.username, user.username)
-                );
+              /*     messageInput.removeEventListener("input", (event) =>
+                handleTyping(event, loggedInUser.username, user.username)
+              ); // Remove previous event listener to avoid duplicates
+              messageInput.addEventListener("input", (event) =>
+                handleTyping(event, loggedInUser.username, user.username)
+              ); */
             } else if (chatID === 0 || !chatID) {
               openChat = [null, null];
               messageInput.style.display = "none";
@@ -155,7 +157,7 @@ async function ShowAllChatUsers(allUserData) {
 function connect() {
   ws = new WebSocket("ws://localhost:8080/ws");
 
-  ws.onopen = async function () {
+  ws.onopen = function () {
     console.log("Online: Connected to WebSocket server");
     fetchAllChatUsers(); // Fetch all users to populate the list
   };
@@ -167,10 +169,17 @@ function connect() {
       await showAllChatUsers(); */
 
       const message = JSON.parse(event.data);
+      console.log("Received message:", message);
 
       const messageDisplay = document.getElementById("message-display");
+      const messageElement = document.createElement("p");
+      const details = document.createElement("div");
+      const messageInput = document.getElementById("messageInput");
+      const sendButton = document.getElementById("send-btn");
 
       if (message.type === "message_content") {
+        //await handlePrivateChat(message.sender, message.recipient);
+
         // Show notification only to the recipient
         if (loggedInUser.username === message.recipient) {
           const res = {
@@ -186,16 +195,17 @@ function connect() {
           chatID &&
           openChat[0] === chatID &&
           (openChat[1] === message.recipient ||
-            openChat[1] === message.sender) &&
-          onlineUsernames.includes(message.sender) &&
-          onlineUsernames.includes(message.recipient)
+            openChat[1] === message.sender) /*  &&
+        message.users.includes(message.sender) &&
+          message.users.includes(message.recipient) */
         ) {
-          const messageElement = document.createElement("p");
-          const details = document.createElement("div");
+          chatboxOpen = true;
+          openChat = [chatID, message.recipient];
+
           details.classList.add("details");
           messageElement.classList.add("msg");
           details.textContent = `${message.sender} (${message.timestamp})`;
-          messageElement.textContent = message.content;
+          messageElement.textContent = message.message.content;
 
           if (loggedInUser.username === message.sender) {
             messageElement.classList.add("from-me");
@@ -206,19 +216,20 @@ function connect() {
           messageDisplay.appendChild(details);
           messageDisplay.scrollTop = messageDisplay.scrollHeight;
 
-          document.getElementById("messageInput").style.display = "block";
-          document.getElementById("send-btn").style.display = "block";
+          messageInput.style.display = "block";
+          sendButton.style.display = "block";
 
           // Listen to input events (typing) in the messageInput field
-          document
-            .getElementById("messageInput")
-            .addEventListener("input", (event) =>
-              handleTyping(event, message.sender, message.recipient)
-            );
+          /*     messageInput.removeEventListener("input", (event) =>
+            handleTyping(event, loggedInUser.username, user.username)
+          ); // Remove previous event listener to avoid duplicates
+          messageInput.addEventListener("input", (event) =>
+            handleTyping(event, message.sender, message.recipient)
+          ); */
         }
       } else if (message.type === "show_all_users") {
         await ShowAllChatUsers(message.users);
-      } else if (message.type === "typing") {
+      } /* else if (message.type === "typing") {
         // Process incoming typing notifications and display the typing indicator in the chat UI
         const typingIndicator = document.getElementById("typing");
 
@@ -230,7 +241,7 @@ function connect() {
           // Hide typing indicator when typing stops
           typingIndicator.style.display = "none";
         }
-      } else if (message.type === "fetch_all_users") {
+      } */ else if (message.type === "fetch_all_users") {
         fetchAllChatUsers();
       }
     } catch (error) {
@@ -238,8 +249,8 @@ function connect() {
     }
   };
 
-  ws.onclose = function () {
-    console.log("Offline: WebSocket connection closed, retrying...");
+  ws.onclose = function (event) {
+    console.log("Offline: WebSocket connection closed on event:", event);
     //setTimeout(connect, 1000); // Reconnect after 1 second
   };
 
@@ -249,12 +260,6 @@ function connect() {
 }
 
 async function handlePrivateChat(senderUsername, recipientUsername) {
-  if (
-    !onlineUsernames.includes(recipientUsername) ||
-    !onlineUsernames.includes(senderUsername)
-  )
-    return;
-
   document.getElementById("chatbox").style.display = "block";
   document.getElementById("messages").style.display = "block";
   const chatHeader = document.getElementById("chat-header");
@@ -264,19 +269,22 @@ async function handlePrivateChat(senderUsername, recipientUsername) {
   messageInput.style.display = "block";
   sendButton.style.display = "block";
   // Listen to input events (typing) in the messageInput field
-  document
-    .getElementById("messageInput")
-    .addEventListener("input", (event) =>
-      handleTyping(event, senderUsername, recipientUsername)
-    );
+  /*  messageInput.removeEventListener("input", (event) =>
+    handleTyping(event, loggedInUser.username, user.username)
+  ); // Remove previous event listener to avoid duplicates
+  messageInput.addEventListener("input", (event) =>
+    handleTyping(event, senderUsername, recipientUsername)
+  ); */
 
   if (loggedInUser.username === senderUsername) {
     chatHeader.textContent = `Chat with ${recipientUsername}`;
     messageInput.placeholder = `Type a message to ${recipientUsername}`;
+    sendButton.onclick = null; // Clear previous handler
     sendButton.onclick = () => sendMessage(senderUsername, recipientUsername);
   } else if (loggedInUser.username === recipientUsername) {
     chatHeader.textContent = `Chat with ${senderUsername}`;
     messageInput.placeholder = `Type a message to ${senderUsername}`;
+    sendButton.onclick = null; // Clear previous handler
     sendButton.onclick = () => sendMessage(recipientUsername, senderUsername);
   }
 
@@ -293,8 +301,8 @@ async function handlePrivateChat(senderUsername, recipientUsername) {
 }
 
 async function showMessages(chatID, recipientUsername) {
-  const messageInput = document.getElementById("messageInput");
-  const sendButton = document.getElementById("send-btn");
+  /*  const messageInput = document.getElementById("messageInput");
+  const sendButton = document.getElementById("send-btn"); */
   const chatHeader = document.getElementById("chat-header");
   const messageDisplay = document.getElementById("message-display");
 
@@ -305,6 +313,7 @@ async function showMessages(chatID, recipientUsername) {
     messageDisplay.textContent = "Chat started but no messages yet.";
     return;
   }
+  console.log("func showMessages:", messages);
 
   // Reverse the messages to show the latest ones at the bottom
   messages.reverse();
@@ -325,16 +334,15 @@ async function showMessages(chatID, recipientUsername) {
 
     batch.forEach((message) => {
       if (anotherUserClicked) return;
-
-      const msg = JSON.parse(message.content);
+      console.log("message:", message);
       const messageElement = document.createElement("p");
       const details = document.createElement("div");
       details.classList.add("details");
       messageElement.classList.add("msg");
-      details.textContent = `${msg.sender} (${msg.timestamp})`;
-      messageElement.textContent = msg.content;
+      details.textContent = `${message.created_by_username} (${message.created_at})`;
+      messageElement.textContent = message.content;
 
-      if (loggedInUser.username === msg.sender) {
+      if (loggedInUser.username === message.created_by_username) {
         messageElement.classList.add("from-me");
         details.classList.add("my-details");
       }
@@ -362,10 +370,10 @@ async function showMessages(chatID, recipientUsername) {
     }
   });
 
-  if (!onlineUsernames.includes(recipientUsername)) {
+  /*   if (!message.users.includes(recipientUsername)) {
     messageInput.style.display = "none";
     sendButton.style.display = "none";
-  }
+  } */
 }
 
 async function getChatID(senderUsername, recipientUsername) {
@@ -378,35 +386,32 @@ async function getChatID(senderUsername, recipientUsername) {
 function sendMessage(senderUsername, recipientUsername) {
   isProcessingMessages = false;
   let input = document.getElementById("messageInput");
-  const sendButton = document.getElementById("send-btn");
   let message = input.value.trim(); // Remove leading/trailing whitespace
   if (message.length === 0) return; // Do not accept empty messages
 
-  sendButton.disabled = true; // Prevent spam sending
-
-  if (recipientUsername) {
+  if (recipientUsername && ws && ws.readyState === WebSocket.OPEN) {
     ws.send(
       JSON.stringify({
         type: "message_content",
         sender: senderUsername,
         recipient: recipientUsername,
         content: message,
-        timestamp: new Date().toLocaleString(),
+        //timestamp: new Date().toLocaleString(),
+        timestamp: new Date().toISOString(), // Use ISO 8601 format
       })
     );
   }
   input.value = "";
-  sendButton.disabled = false; // Re-enable
 }
 
 /* TYPING */
 
-let typingTimeout;
+/* let typingTimeout;
 let isTyping = false;
 const TYPING_DELAY = 1000;
 
 function handleTyping(event, senderUsername, recipientUsername) {
-  if (!recipient) return; // Ensure a chat is active
+  if (!recipientUsername) return; // Ensure a chat is active
 
   if (!isTyping) {
     isTyping = true;
@@ -423,12 +428,15 @@ function handleTyping(event, senderUsername, recipientUsername) {
 function sendTypingStatus(isTyping, senderUsername, recipientUsername) {
   if (!senderUsername || !recipientUsername) return; // Ensure sender and recipient are provided
 
-  ws.send(
-    JSON.stringify({
-      type: "typing",
-      sender: senderUsername,
-      recipient: recipientUsername,
-      typing: isTyping,
-    })
-  );
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(
+      JSON.stringify({
+        type: "typing",
+        sender: senderUsername,
+        recipient: recipientUsername,
+        typing: isTyping,
+      })
+    );
+  }
 }
+ */
