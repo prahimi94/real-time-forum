@@ -32,7 +32,7 @@ type WebsocketMsg struct {
 }
 
 var Broadcast = make(chan WebsocketMsg) // Broadcast channel
-var Mutex = &sync.Mutex{} // Protect OnlineUsers map
+var Mutex = &sync.Mutex{}               // Protect OnlineUsers map
 
 func WsHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -81,6 +81,7 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 				Sender    string    `json:"sender"`
 				Recipient string    `json:"recipient"`
 				Timestamp time.Time `json:"timestamp"`
+				Typing    bool      `json:"typing"` // New field for typing status
 			}
 
 			err = conn.ReadJSON(&msgData)
@@ -105,15 +106,15 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			// Handle "typing" message type
-			/* 			if msgData.Type == "typing" {
+			if msgData.Type == "typing" {
 				fmt.Println("Typing message received: ", msgData)
 				socketmsg.Type = "typing"
 				socketmsg.Sender = msgData.Sender
 				socketmsg.Recipient = msgData.Recipient
-				socketmsg.Typing = true
+				socketmsg.Typing = msgData.Typing
 				Broadcast <- socketmsg // Notify the recipient about typing status
 				continue
-			} */
+			}
 
 			// Handle "private_chat" message type
 			if msgData.Type == "private_chat" {
@@ -188,7 +189,7 @@ func HandleMessages() {
 
 		Mutex.Lock()
 
-		/* if message.Type == "typing" {
+		if message.Type == "typing" {
 			for client, username := range userManagementControllers.OnlineUsers {
 				if username == message.Recipient {
 					err := client.WriteJSON(message)
@@ -198,20 +199,20 @@ func HandleMessages() {
 					}
 				}
 			}
-		} else { */
-		for client := range userManagementControllers.OnlineUsers {
-			err := client.WriteJSON(message)
-			if err != nil {
-				fmt.Println("Client disconnected:", client)
-				client.Close()
-				delete(userManagementControllers.OnlineUsers, client)
-				userManagementControllers.UpdateOnlineUsers()
-				var socketmsg WebsocketMsg
-				socketmsg.Type = "fetch_all_users"
-				Broadcast <- socketmsg
+		} else {
+			for client := range userManagementControllers.OnlineUsers {
+				err := client.WriteJSON(message)
+				if err != nil {
+					fmt.Println("Client disconnected:", client)
+					client.Close()
+					delete(userManagementControllers.OnlineUsers, client)
+					userManagementControllers.UpdateOnlineUsers()
+					var socketmsg WebsocketMsg
+					socketmsg.Type = "fetch_all_users"
+					Broadcast <- socketmsg
+				}
 			}
 		}
-		//}
 		Mutex.Unlock()
 	}
 }

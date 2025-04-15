@@ -6,6 +6,9 @@ let anotherUserClicked = false;
 let chatboxOpen = false;
 let openChat = [(ID = null), (recipient = null)];
 
+let typingTimeout;
+let isTyping = false;
+
 async function fetchData(apiEndpoint) {
   try {
     const response = await fetch(apiEndpoint);
@@ -62,14 +65,17 @@ async function ShowAllChatUsers(allUserData) {
         // Listen to input events (typing) in the messageInput field
         /* messageInput.removeEventListener("input", (event) =>
           handleTyping(event, loggedInUser.username, user.username)
-        ); // Remove previous event listener to avoid duplicates
+        );  */// Remove previous event listener to avoid duplicates
         messageInput.addEventListener("input", (event) =>
           handleTyping(event, loggedInUser.username, user.username)
-        ); */
+        );
       } else {
         li.textContent = user.username;
+        chatbox.style.display = "none";
         messageInput.style.display = "none";
         sendButton.style.display = "none";
+        document.getElementById("typing").style.display = "none";
+        stopTyping(loggedInUser.username, user.username); // Stop typing when user is offline
       }
       li.onclick = null; // Clear previous handler
       li.onclick = async (e) => {
@@ -83,6 +89,7 @@ async function ShowAllChatUsers(allUserData) {
           chatboxOpen = false;
           openChat = [null, null];
           chatbox.style.display = "none";
+          stopTyping(loggedInUser.username, user.username);
         } else if (
           !chatboxOpen ||
           (chatboxOpen && openChat[1] !== user.username)
@@ -105,16 +112,18 @@ async function ShowAllChatUsers(allUserData) {
               // Listen to input events (typing) in the messageInput field
               /*     messageInput.removeEventListener("input", (event) =>
                 handleTyping(event, loggedInUser.username, user.username)
-              ); // Remove previous event listener to avoid duplicates
+              ); */// Remove previous event listener to avoid duplicates
               messageInput.addEventListener("input", (event) =>
                 handleTyping(event, loggedInUser.username, user.username)
-              ); */
+              );
             } else if (chatID === 0 || !chatID) {
               openChat = [null, null];
               messageInput.style.display = "none";
               sendButton.style.display = "none";
               chatHeader.textContent = `Chat with ${user.username}`;
               messageDisplay.innerHTML = "No chat history.";
+              stopTyping(loggedInUser.username, user.username);
+
             } else {
               console.error("Failed to retrieve chat ID");
             }
@@ -135,12 +144,16 @@ async function ShowAllChatUsers(allUserData) {
               await showMessages(chatID, user.username);
               messageInput.style.display = "none";
               sendButton.style.display = "none";
+              stopTyping(loggedInUser.username, user.username);
+
             } else if (chatID === 0 || !chatID) {
               openChat = [null, null];
               messageInput.style.display = "none";
               sendButton.style.display = "none";
               chatHeader.textContent = `Chat with ${user.username}`;
               messageDisplay.innerHTML = "No chat history.";
+              stopTyping(loggedInUser.username, user.username);
+
             } else {
               console.error("Failed to retrieve chat ID");
             }
@@ -171,11 +184,14 @@ function connect() {
 
       const message = JSON.parse(event.data);
 
+      const chatbox = document.getElementById("chatbox");
       const messageDisplay = document.getElementById("message-display");
       const messageElement = document.createElement("p");
       const details = document.createElement("div");
       const messageInput = document.getElementById("messageInput");
       const sendButton = document.getElementById("send-btn");
+      const typingIndicator = document.getElementById("typing");
+
 
       if (message.type === "message_content") {
         //await handlePrivateChat(message.sender, message.recipient);
@@ -218,26 +234,29 @@ function connect() {
 
           messageInput.style.display = "block";
           sendButton.style.display = "block";
-
+          typingIndicator.style.display = "none";
+          stopTyping(message.sender, message.recipient);
           // Listen to input events (typing) in the messageInput field
           /*     messageInput.removeEventListener("input", (event) =>
             handleTyping(event, loggedInUser.username, user.username)
-          ); // Remove previous event listener to avoid duplicates
+          ); */ // Remove previous event listener to avoid duplicates
           messageInput.addEventListener("input", (event) =>
             handleTyping(event, message.sender, message.recipient)
-          ); */
+          );
         } else {
           chatboxOpen = false;
           openChat = [null, null];
           chatbox.style.display = "none";
           messageInput.style.display = "none";
           sendButton.style.display = "none";
+          typingIndicator.style.display = "none";
+          stopTyping(loggedInUser.username, user.username);
+
         }
       } else if (message.type === "show_all_users") {
         await ShowAllChatUsers(message.users);
-      } /* else if (message.type === "typing") {
+      } else if (message.type === "typing") {
         // Process incoming typing notifications and display the typing indicator in the chat UI
-        const typingIndicator = document.getElementById("typing");
 
         if (message.typing && message.sender === openChat[1]) {
           // Show typing indicator if the sender is the current chat recipient
@@ -247,7 +266,7 @@ function connect() {
           // Hide typing indicator when typing stops
           typingIndicator.style.display = "none";
         }
-      } */ else if (message.type === "fetch_all_users") {
+      } else if (message.type === "fetch_all_users") {
         fetchAllChatUsers();
       }
     } catch (error) {
@@ -257,10 +276,13 @@ function connect() {
 
   ws.onclose = function (event) {
     console.log("Offline: WebSocket connection closed on event:", event);
+    stopTyping(loggedInUser.username, openChat[1]);
   };
 
   ws.onerror = function (error) {
     console.error("Offline: WebSocket error:", error);
+    stopTyping(loggedInUser.username, user.username);
+
   };
 }
 
@@ -276,21 +298,25 @@ async function handlePrivateChat(senderUsername, recipientUsername) {
   // Listen to input events (typing) in the messageInput field
   /*  messageInput.removeEventListener("input", (event) =>
     handleTyping(event, loggedInUser.username, user.username)
-  ); // Remove previous event listener to avoid duplicates
+  ); */ // Remove previous event listener to avoid duplicates
   messageInput.addEventListener("input", (event) =>
     handleTyping(event, senderUsername, recipientUsername)
-  ); */
+  );
 
   if (loggedInUser.username === senderUsername) {
     chatHeader.textContent = `Chat with ${recipientUsername}`;
     messageInput.placeholder = `Type a message to ${recipientUsername}`;
     sendButton.onclick = null; // Clear previous handler
     sendButton.onclick = () => sendMessage(senderUsername, recipientUsername);
+    document.getElementById("typing").style.display = "none";
+    stopTyping(senderUsername, recipientUsername);
   } else if (loggedInUser.username === recipientUsername) {
     chatHeader.textContent = `Chat with ${senderUsername}`;
     messageInput.placeholder = `Type a message to ${senderUsername}`;
     sendButton.onclick = null; // Clear previous handler
     sendButton.onclick = () => sendMessage(recipientUsername, senderUsername);
+    document.getElementById("typing").style.display = "none";
+    stopTyping(recipientUsername, senderUsername);
   }
 
   // Send a message to the server to initiate or check the chat
@@ -316,6 +342,8 @@ async function showMessages(chatID, recipientUsername) {
   let messages = await fetchData(`/api/chat-messages/${chatID}`);
   if (!messages || messages.length === 0) {
     messageDisplay.textContent = "Chat started but no messages yet.";
+    stopTyping(loggedInUser.username, recipientUsername);
+
     return;
   }
 
@@ -338,7 +366,7 @@ async function showMessages(chatID, recipientUsername) {
 
     batch.forEach((message) => {
       if (anotherUserClicked) return;
-      
+
       const messageElement = document.createElement("p");
       const details = document.createElement("div");
       details.classList.add("details");
@@ -353,9 +381,12 @@ async function showMessages(chatID, recipientUsername) {
 
       messageDisplay.prepend(details);
       messageDisplay.prepend(messageElement);
+      document.getElementById("typing").style.display = "none";
+      stopTyping(loggedInUser.username, recipientUsername);
     });
 
     isProcessingMessages = false;
+
   }
 
   // Initial batch load (latest 10 messages)
@@ -412,10 +443,6 @@ function sendMessage(senderUsername, recipientUsername) {
 
 /* TYPING */
 
-/* let typingTimeout;
-let isTyping = false;
-const TYPING_DELAY = 1000;
-
 function handleTyping(event, senderUsername, recipientUsername) {
   if (!recipientUsername) return; // Ensure a chat is active
 
@@ -428,7 +455,8 @@ function handleTyping(event, senderUsername, recipientUsername) {
   typingTimeout = setTimeout(() => {
     isTyping = false;
     sendTypingStatus(false, senderUsername, recipientUsername);
-  }, TYPING_DELAY);
+    stopTyping(senderUsername, recipientUsername);
+  }, 2000); // 2 seconds of inactivity
 }
 
 function sendTypingStatus(isTyping, senderUsername, recipientUsername) {
@@ -445,4 +473,11 @@ function sendTypingStatus(isTyping, senderUsername, recipientUsername) {
     );
   }
 }
- */
+
+// Add a function to handle when typing stops or input loses focus
+function stopTyping(senderUsername, recipientUsername) {
+  if (isTyping) {
+    isTyping = false;
+    sendTypingStatus(false, senderUsername, recipientUsername);
+  }
+}
