@@ -32,169 +32,91 @@ async function checkSessionActive() {
 function showNotAuthenticatedContainer() {
     const authContainer = document.getElementsByTagName('main')[0];
     authContainer.innerHTML = `
-    <header>
-        <nav class="navbar navbar-expand-lg navbar-light py-10" aria-label="Thirteenth navbar example">
-            <div class="container-fluid">
-                <a class="navbar-brand" href="/">
-                    <img src="/img/logo.png" alt="Forum" class="me-2" style="height: 60px;">
-                </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasNavbar" aria-labelledby="offcanvasNavbarLabel">
-                    <div class="offcanvas-header">
-                        <h5 class="offcanvas-title" id="offcanvasNavbarLabel"><img src="/img/logo.png" alt="Forum" class="me-2" style="height: 50px;"></h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-                    </div>
-                    <div class="offcanvas-body">
-                        <ul class="navbar-nav justify-content-end flex-grow-1 pe-3">
-                            <li class="nav-item">
-                                <a type="button" class="btn btn-success singIn-btn" data-bs-toggle="modal" data-bs-target="#authModal"><i class="fa-solid fa-user pe-2"></i> Sign in</a>
-                            </li>
-                        </ul>
-                        
-                    </div>
+    <div class="containerAuth">
+        <div class="form-box login">
+            <form method="post" id="loginForm">
+                <h1>Login</h1>
+                <div class="input-box">
+                    <input type="text" placeholder="Username Or Email" name="username" required>
+                    <i class='bx bxs-user'></i>
                 </div>
+                <div class="input-box">
+                    <input id="login-password" type="password" placeholder="Password" name="password" required>
+                    <i id="toggle-login-password-icon" class='bx bxs-show' style="cursor: pointer;" ></i>
+                </div>
+                <!-- <div class="forgot-link">
+                    <a href="#">Forgot Password?</a>
+                </div> -->
+                <button type="submit" onclick="loginFunc()" class="btnAuth">Login</button>
+            </form>
+        </div>
 
-            <div class="collapse navbar-collapse" id="navbarsExample11">
-                <div class="navbar-nav col-sm-12 col-lg-10 justify-content-lg-center">
-                    
+        <div class="form-box register">
+            <form method="post" id="registerForm">
+                <h1>Registration</h1>
+                <div class="input-box">
+                    <input type="text" name="username" placeholder="Nick Name" required>
+                    <i class='bx bxs-user'></i>
                 </div>
-                <div class="d-lg-flex col-sm-12 col-lg-2 justify-content-lg-end">
-                    <a type="button" class="btn btn-success singIn-btn"data-bs-toggle="modal" data-bs-target="#authModal"><i class="fa-solid fa-user pe-2"></i> Sign in</a>
+                <div class="input-box">
+                    <input type="text" name="firstname" placeholder="First Name" required>
+                    <i class='bx bxs-user'></i>
                 </div>
+                <div class="input-box">
+                    <input type="text" name="lastname" placeholder="Last Name" required>
+                    <i class='bx bxs-user'></i>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="gender" id="genderMale" value="male">
+                    <label class="form-check-label" for="genderMale">
+                        Male
+                        <i class='bx bx-male'></i>
+                    </label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="gender" id="genderFemale" value="female">
+                    <label class="form-check-label" for="genderFemale">
+                        Female
+                        <i class='bx bx-female'></i>
+                    </label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="gender" id="genderNeutral" value="neutral" checked>
+                    <label class="form-check-label" for="genderNeutral">
+                        Neutral
+                        <i class='bx bx-body'></i>
+                    </label>
+                </div>
+                <div class="input-box">
+                    <input type="number" name="age" placeholder="Age" required>
+                    <i class='bx bxs-calendar'></i>
+                </div>
+                <div class="input-box">
+                    <input type="email" name="email" placeholder="Email" required>
+                    <i class='bx bxs-envelope' ></i>
+                </div>
+                <div class="input-box">
+                    <input id="register-password" type="password" placeholder="Password" name="password" required>
+                    <i id="toggle-register-password-icon" class='bx bxs-show'  style="cursor: pointer;" ></i>
+                </div>
+                <button type="submit" onclick="registerFunc()" class="btnAuth">Register</button>
+            </form>
+        </div>
+
+        <div class="toggle-box">
+            <div class="toggle-panel toggle-left">
+                <h1 style="color: #fff;">Hello, Welcome!</h1>
+                <p>Don't have an account?</p>
+                <button class="btnAuth register-btn">Register</button>
             </div>
-            </div>
-        </nav>
-    </header>
 
-    <!-- Modal -->
-    <div class="modal fade bd-example-modal-xl" id="authModal" tabindex="-1" aria-labelledby="editPostModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content" style="background-color: rgba(0, 0, 0, 0);border-color: rgba(0, 0, 0, 0)">
-                <!--
-                <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="editPostModalLabel">Login/Register</h1>
-                    <a type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></a>
-                </div>
-                <div class="modal-body">
-                    
-                </div>
-                -->
-
-                <div class="containerAuth">
-                    <div class="form-box login">
-                        <form method="post" id="loginForm">
-                            <h1>Login</h1>
-                            <div class="input-box">
-                                <input type="text" placeholder="Username Or Email" name="username" required>
-                                <i class='bx bxs-user'></i>
-                            </div>
-                            <div class="input-box">
-                                <input id="login-password" type="password" placeholder="Password" name="password" required>
-                                <i id="toggle-login-password-icon" class='bx bxs-show' style="cursor: pointer;" ></i>
-                            </div>
-                            <!-- <div class="forgot-link">
-                                <a href="#">Forgot Password?</a>
-                            </div> -->
-                            <button type="submit" onclick="loginFunc()" class="btnAuth">Login</button>
-                        </form>
-                    </div>
-
-                    <div class="form-box register">
-                        <form method="post" id="registerForm">
-                            <h1>Registration</h1>
-                            <div class="input-box">
-                                <input type="text" name="username" placeholder="Nick Name" required>
-                                <i class='bx bxs-user'></i>
-                            </div>
-                            <div class="input-box">
-                                <input type="text" name="firstname" placeholder="First Name" required>
-                                <i class='bx bxs-user'></i>
-                            </div>
-                            <div class="input-box">
-                                <input type="text" name="lastname" placeholder="Last Name" required>
-                                <i class='bx bxs-user'></i>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="gender" id="genderMale" value="male">
-                                <label class="form-check-label" for="genderMale">
-                                    Male
-                                    <i class='bx bx-male'></i>
-                                </label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="gender" id="genderFemale" value="female">
-                                <label class="form-check-label" for="genderFemale">
-                                    Female
-                                    <i class='bx bx-female'></i>
-                                </label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="gender" id="genderNeutral" value="neutral" checked>
-                                <label class="form-check-label" for="genderNeutral">
-                                    Neutral
-                                    <i class='bx bx-body'></i>
-                                </label>
-                            </div>
-                            <div class="input-box">
-                                <input type="number" name="age" placeholder="Age" required>
-                                <i class='bx bxs-calendar'></i>
-                            </div>
-                            <div class="input-box">
-                                <input type="email" name="email" placeholder="Email" required>
-                                <i class='bx bxs-envelope' ></i>
-                            </div>
-                            <div class="input-box">
-                                <input id="register-password" type="password" placeholder="Password" name="password" required>
-                                <i id="toggle-register-password-icon" class='bx bxs-show'  style="cursor: pointer;" ></i>
-                            </div>
-                            <button type="submit" onclick="registerFunc()" class="btnAuth">Register</button>
-                        </form>
-                    </div>
-
-                    <div class="toggle-box">
-                        <div class="toggle-panel toggle-left">
-                            <h1 style="color: #fff;">Hello, Welcome!</h1>
-                            <p>Don't have an account?</p>
-                            <button class="btnAuth register-btn">Register</button>
-                        </div>
-
-                        <div class="toggle-panel toggle-right">
-                            <h1 style="color: #fff;">Welcome Back!</h1>
-                            <p>Already have an account?</p>
-                            <button class="btnAuth login-btn">Login</button>
-                        </div>
-                    </div>
-                </div>
+            <div class="toggle-panel toggle-right">
+                <h1 style="color: #fff;">Welcome Back!</h1>
+                <p>Already have an account?</p>
+                <button class="btnAuth login-btn">Login</button>
             </div>
         </div>
-    </div>
-
-
-    <header class="hero">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-6 text-content">
-                    <h1 class="text-header">Welcome To <br/> Future Lab!</h1>
-                    <p style="color: #7c7e82;">Discover a thriving online community where ideas come to life! Our forum is the perfect place to connect with like-minded individuals, share your thoughts, ask questions, and explore engaging discussions across a variety of topics. Join us today and be part of something bigger!</p>
-                    <!-- <a class="btn btn-success" href="/auth/">Join Now</a> -->
-                </div>
-                <div class="col-md-6">
-                    <!-- <img src="/img/background.png" class="img-fluid" alt="Background Image"> -->
-                    <!-- https://lottie.host/e4c9739c-85ef-441d-8064-2b6fc1c7ad60/rrBxdg5bgH.lottie -->
-                    <dotlottie-player
-                    src="/img/Animation-1739026245825.lottie"
-                    background="transparent"
-                    speed="1"
-                    style="width: 100%;"
-                    loop
-                    autoplay
-                    ></dotlottie-player>
-                </div>
-            </div>
-        </div>
-    </header>
+    </div>    
     `;
 
 
@@ -832,9 +754,9 @@ async function loginFunc() {
 
     if(res.success) {
         form.reset();
-        const authModal = document.getElementById('authModal');
-        const modalInstance = bootstrap.Modal.getInstance(authModal);
-        modalInstance.hide();
+        // const authModal = document.getElementById('authModal');
+        // const modalInstance = bootstrap.Modal.getInstance(authModal);
+        // modalInstance.hide();
         await checkSession();
     }
 }
@@ -854,9 +776,9 @@ async function registerFunc() {
 
     if(res.success) {
         form.reset();
-        const authModal = document.getElementById('authModal');
-        const modalInstance = bootstrap.Modal.getInstance(authModal);
-        modalInstance.hide();
+        // const authModal = document.getElementById('authModal');
+        // const modalInstance = bootstrap.Modal.getInstance(authModal);
+        // modalInstance.hide();
         await checkSession();
     }
 }
