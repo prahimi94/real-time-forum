@@ -35,7 +35,7 @@ function fetchAllChatUsers() {
     .then(async (data) => {
       allUserData = data.data;
       await ShowAllChatUsers(allUserData);
-     });
+    });
   // do more things and hdle errors
 }
 
@@ -55,12 +55,10 @@ async function ShowAllChatUsers(allUserData) {
 
     allUserData.forEach((user) => {
       if (user.username === loggedInUser.username) return;
-
       const li = document.createElement("li");
       //const isOnline = onlineUsernames.includes(user.username);
 
       if (user.isOnline) {
-        console.log(user.username, user.isOnline)
 
         li.classList.add("isOnline");
         li.textContent = `${user.username} (Online)`;
@@ -255,7 +253,7 @@ function connect() {
           messageInput.style.display = "none";
           sendButton.style.display = "none";
           typingIndicator.style.display = "none";
-          stopTyping(loggedInUser.username, user.username);
+          stopTyping(loggedInUser.username, message.recipient);
 
         }
       } else if (message.type === "show_all_users") {

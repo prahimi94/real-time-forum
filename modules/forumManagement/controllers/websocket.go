@@ -196,6 +196,22 @@ func HandleMessages() {
 					if err != nil {
 						client.Close()
 						delete(userManagementControllers.OnlineUsers, client)
+						var socketmsg WebsocketMsg
+						socketmsg.Type = "fetch_all_users"
+						Broadcast <- socketmsg
+					}
+				}
+			}
+		} else if message.Type == "message_content" || message.Type == "private_chat" {
+			for client, username := range userManagementControllers.OnlineUsers {
+				if username == message.Recipient || username == message.Sender {
+					err := client.WriteJSON(message)
+					if err != nil {
+						client.Close()
+						delete(userManagementControllers.OnlineUsers, client)
+						var socketmsg WebsocketMsg
+						socketmsg.Type = "fetch_all_users"
+						Broadcast <- socketmsg
 					}
 				}
 			}
