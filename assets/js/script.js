@@ -311,10 +311,10 @@ function showAuthenticatedContainer() {
                                 <form id="newPostForm" enctype="multipart/form-data">
                                     <div class="mb-3">
                                         <div class="mt-3">
-                                            <select id="categories" name="categories" required
-                                                class="form-control multiSelect" multiple="multiple"
-                                                data-placeholder="Select categories">
-                                            </select>
+                                            <div class="custom-multiselect" id="custom-multiselect-submit">
+                                                <div class="select-box" id="categories" onclick="categoriesClicked('custom-multiselect-submit')">Select categories</div>
+                                                <div class="options-list" onchange="categoriyListChanged('categoriesList')" id="categoriesList"> </div>
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="mb-3">
@@ -374,13 +374,19 @@ function showAuthenticatedContainer() {
 
 
     // laod categories in select for new post
-    const selectCategoriesContainer = document.getElementById('categories');
+    const selectCategoriesContainer = document.getElementById('categoriesList');
     const categoryOptions = categories.map(category =>
-        `<option value="${category.id}">${category.name}</option>`
+        `<label><input type="checkbox" name="categories" value="${category.id}" /> ${category.name}</label>`
     ).join('');
     selectCategoriesContainer.innerHTML = categoryOptions;
-    //todo
-    // $('#categories').select2();
+
+
+    const multiSelect = document.querySelector(".custom-multiselect");
+    document.addEventListener("click", (e) => {
+        if (!multiSelect.contains(e.target)) {
+            multiSelect.classList.remove("open");
+        }
+    });
 }
 
 async function fetchCategories() {
@@ -414,11 +420,18 @@ async function fetchCategories() {
     });
 
     // laod categories in select for new post
-    const selectCategoriesContainer = document.getElementById('categories');
+    const selectCategoriesContainer = document.getElementById('categoriesList');
     const categoryOptions = categories.map(category =>
-        `<option value="${category.id}">${category.name}</option>`
+        `<label><input type="checkbox" name="categories" value="${category.id}" /> ${category.name}</label>`
     ).join('');
     selectCategoriesContainer.innerHTML = categoryOptions;
+
+    const multiSelect = document.querySelector(".custom-multiselect");
+    document.addEventListener("click", (e) => {
+        if (!multiSelect.contains(e.target)) {
+            multiSelect.classList.remove("open");
+        }
+    });
 }
 
 async function fetchPost(postId, postUuid) {
@@ -585,19 +598,34 @@ async function updateUser() {
 
 async function submitPost() {
     const form = document.getElementById('newPostForm');
+    const optionsList = document.getElementById("categoriesList");
+    const selectBox = document.getElementById("categories");
+
     form.addEventListener('submit', (event) => {
         event.preventDefault();
     });
-    
+
+    const formData = new FormData(form);
+
+    // Add selected categories
+    optionsList.querySelectorAll('input[name="categories"]:checked').forEach(input => {
+        formData.append('categories[]', input.value);
+    });
+
     const response = await fetch('/api/submitPost', {
         method: 'POST',
-        body: new FormData(form),
+        body: formData,
     });
-    res = await response.json();
+
+    const res = await response.json();
     showToast(res);
 
     form.reset();
-    $('.multiSelect').val(null).trigger('change');
+    optionsList.querySelectorAll('input[name="categories"]').forEach(input => {
+        input.checked = false;
+    });
+    selectBox.textContent = "Select options";
+
     fetchPosts();
 }
 
@@ -623,19 +651,38 @@ async function likePost(id, uuid, actionType) {
 }
 
 async function updatePost(id, uuid) {
+    console.log('updatePost');
     const form = document.getElementById('updatePostForm-' + id);
+    const optionsList = document.getElementById("updatePostCategoriesList-" + uuid);
+    const selectBox = document.getElementById("update_post_categories-" + uuid);
+
     form.addEventListener('submit', (event) => {
         event.preventDefault();
     });
-    
+
+    const formData = new FormData(form);
+    console.log('updatePost formData', formData);
+
+    // Add selected categories
+    optionsList.querySelectorAll('input[name="update_post_categories-'+ uuid +'"]:checked').forEach(input => {
+        formData.append('update_post_categories[]', input.value);
+    });
+    console.log('updatePost formData after', formData);
+
     const response = await fetch('/api/updatePost', {
         method: 'POST',
-        body: new FormData(form),
+        body: formData,
     });
     res = await response.json();
     showToast(res);
 
     form.reset();
+
+    optionsList.querySelectorAll('input[name="update_post_categories-'+ uuid +'"]').forEach(input => {
+        input.checked = false;
+    });
+    selectBox.textContent = "Select options";
+
     const updatePostModal = document.getElementById('updatePostModal-' + id);
     // const modalInstance = bootstrap.Modal.getInstance(updatePostModal);
     // modalInstance.hide();
@@ -817,10 +864,10 @@ function fillPostsInHtml(posts, actionSubject = '') {
                 <form id="newPostForm" enctype="multipart/form-data">
                     <div class="mb-3">
                         <div class="mt-3">
-                            <select id="categories" name="categories" required
-                                class="form-control multiSelect" multiple="multiple"
-                                data-placeholder="Select categories">
-                            </select>
+                            <div class="custom-multiselect" id="custom-multiselect-submit">
+                                <div class="select-box" id="categories" onclick="categoriesClicked('custom-multiselect-submit')">Select categories</div>
+                                <div class="options-list" onchange="categoriyListChanged('categoriesList', 'categories')" id="categoriesList"> </div>
+                            </div>
                         </div>
                     </div>
                     <div class="mb-3">
@@ -902,15 +949,15 @@ function fillPostsInHtml(posts, actionSubject = '') {
                                     <h1 class="modal-title fs-5" id="editPostModalLabel">Edit post</h1>
                                     <a type="button" class="btn-close close-modal" data-bs-dismiss="modal" aria-label="Close"></a>
                                     </div>
-                                    <form id="updatePostForm-${post.id}" method="post">
+                                    <form id="updatePostForm-${post.id}" method="post" enctype="multipart/form-data">
                                     <div class="modal-body">
                                             <input type="hidden" name="post_uuid" value="${post.uuid}">
                                             <input type="hidden" name="post_id" value="${post.id}">
                                             <div class="mt-3">
-                                                <select id="update_post_categories" name="update_post_categories" required
-                                                    class="form-control multiSelect" multiple="multiple"
-                                                    data-placeholder="Select categories">
-                                                </select>
+                                                <div class="custom-multiselect" id="custom-multiselect-update-${post.uuid}">
+                                                    <div class="select-box" id="update_post_categories-${post.uuid}" onclick="categoriesClicked('custom-multiselect-update-${post.uuid}')">Select categories</div>
+                                                    <div class="options-list" onchange="categoriyListChanged('updatePostCategoriesList-${post.uuid}', 'update_post_categories-${post.uuid}')" id="updatePostCategoriesList-${post.uuid}"> </div>
+                                                </div>
                                             </div>
                                             <div class="mt-3">
                                                 <input type="text" class="form-control" placeholder="Title" required
@@ -969,29 +1016,31 @@ function fillPostsInHtml(posts, actionSubject = '') {
                 <h2 class="accordion-header" id="flush-heading-${post.id}">
                     <div class="col-sm-12 col-md-12 mb-3">
                         <div class="post-card" id="post-${post.id}">
-                            <button onclick="fetchPost(${post.id}, '${post.uuid}')" class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse-${post.id}" aria-expanded="false" aria-controls="flush-collapseOne">
+                            <div onclick="accordionHeadedClicked(${post.id})">
+                                <button onclick="fetchPost(${post.id}, '${post.uuid}')" class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse-${post.id}" aria-expanded="false" aria-controls="flush-collapseOne">
 
-                            <div class="d-flex flex-column justify-content-between">
-                                <h5 class="mt-2 post-title">
-                                    ${post.title}
-                                </h5>
-                                <div>
-                                    <div class="d-flex text-body-secondary pt-3 m-posts">
-                                        ${postImage}
-                                        <div class="pb-3 mb-0 small lh-sm w-100 mb-3 ms-2 mt-1">
-                                            <div class="d-flex justify-content-between mb-1 m-posts-userInfo">
-                                                <span class="post-user">${post.user.username}</span>
-                                                <span class="text-right m-posts-ctg">${postCategories}</span>
+                                <div class="d-flex flex-column justify-content-between">
+                                    <h5 class="mt-2 post-title">
+                                        ${post.title}
+                                    </h5>
+                                    <div>
+                                        <div class="d-flex text-body-secondary pt-3 m-posts">
+                                            ${postImage}
+                                            <div class="pb-3 mb-0 small lh-sm w-100 mb-3 ms-2 mt-1">
+                                                <div class="d-flex justify-content-between mb-1 m-posts-userInfo">
+                                                    <span class="post-user">${post.user.username}</span>
+                                                    <span class="text-right m-posts-ctg">${postCategories}</span>
+                                                </div>
+                                                <span class="d-block post-dateTime">${formattedDateTime}</span>
                                             </div>
-                                            <span class="d-block post-dateTime">${formattedDateTime}</span>
                                         </div>
                                     </div>
+                                    <p class="post-description">${post.description}</p>
+                                    ${postFiles}
                                 </div>
-                                <p class="post-description">${post.description}</p>
-                                ${postFiles}
-                            </div>
 
-                            </button>
+                                </button>
+                            </div>
 
 
                             <div class="mt-4">
@@ -1030,14 +1079,22 @@ function fillPostsInHtml(posts, actionSubject = '') {
 
     postsContainer.innerHTML += '</div>'; //close the accordion
     
+    
     // laod categories in select for new post
-    const selectCategoriesContainer = document.getElementById('categories');
+    const selectCategoriesContainer = document.getElementById('categoriesList');
     const categoryOptions = categories.map(category =>
-        `<option value="${category.id}">${category.name}</option>`
+        `<label><input type="checkbox" name="categories" value="${category.id}" /> ${category.name}</label>`
     ).join('');
     selectCategoriesContainer.innerHTML = categoryOptions;
-    //todo
-    // $('#categories').select2();
+
+
+    // laod categories in select for new post
+    const updatePostCategoryOptions = categories.map(category =>
+        `<label><input type="checkbox" name="update_post_categories" value="${category.id}" /> ${category.name}</label>`
+    ).join('');
+    document.querySelectorAll('[id^="updatePostCategoriesList"]').forEach(container => {
+        container.innerHTML = updatePostCategoryOptions;
+    });
 }
 
 function updatePostHtml(post, comments, postId) {
@@ -1090,15 +1147,15 @@ function updatePostHtml(post, comments, postId) {
                                 <h1 class="modal-title fs-5" id="editPostModalLabel">Edit post</h1>
                                 <a type="button" class="btn-close close-modal" data-bs-dismiss="modal" aria-label="Close"></a>
                                 </div>
-                                <form id="updatePostForm-${post.id}" method="post">
+                                <form id="updatePostForm-${post.id}" method="post" enctype="multipart/form-data">
                                 <div class="modal-body">
                                         <input type="hidden" name="post_uuid" value="${post.uuid}">
                                         <input type="hidden" name="post_id" value="${post.id}">
                                         <div class="mt-3">
-                                            <select id="update_post_categories" name="update_post_categories" required
-                                                class="form-control multiSelect" multiple="multiple"
-                                                data-placeholder="Select categories">
-                                            </select>
+                                            <div class="custom-multiselect" id="custom-multiselect-update-${post.uuid}">
+                                                <div class="select-box" id="update_post_categories-${post.uuid}" onclick="categoriesClicked('custom-multiselect-update-${post.uuid}')">Select categories</div>
+                                                <div class="options-list" onchange="categoriyListChanged('updatePostCategoriesList-${post.uuid}', 'update_post_categories-${post.uuid}')" id="updatePostCategoriesList-${post.uuid}"> </div>
+                                            </div>
                                         </div>
                                         <div class="mt-3">
                                             <input type="text" class="form-control" placeholder="Title" required
@@ -1157,28 +1214,30 @@ function updatePostHtml(post, comments, postId) {
     const postCommentsElement = document.getElementById('post-comments-' + postId);
     if (postElement) {
         postElement.innerHTML = `
-        <button onclick="fetchPost(${post.id}, '${post.uuid}')" class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse-${post.id}" aria-expanded="false" aria-controls="flush-collapseOne">
-            <div class="d-flex flex-column justify-content-between">
-                <h5 class="mt-2 post-title">
-                    ${post.title}
-                </h5>
-                <div>
-                    <div class="d-flex text-body-secondary pt-3 m-posts">
-                        ${postImage}
-                        <div class="pb-3 mb-0 small lh-sm w-100 mb-3 ms-2 mt-1">
-                            <div class="d-flex justify-content-between mb-1 m-posts-userInfo">
-                                <span class="post-user">${post.user.username}</span>
-                                <span class="text-right m-posts-ctg">${postCategories}</span>
+        <div onclick="accordionHeadedClicked(${post.id})">
+            <button onclick="fetchPost(${post.id}, '${post.uuid}')" class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse-${post.id}" aria-expanded="false" aria-controls="flush-collapseOne">
+                <div class="d-flex flex-column justify-content-between">
+                    <h5 class="mt-2 post-title">
+                        ${post.title}
+                    </h5>
+                    <div>
+                        <div class="d-flex text-body-secondary pt-3 m-posts">
+                            ${postImage}
+                            <div class="pb-3 mb-0 small lh-sm w-100 mb-3 ms-2 mt-1">
+                                <div class="d-flex justify-content-between mb-1 m-posts-userInfo">
+                                    <span class="post-user">${post.user.username}</span>
+                                    <span class="text-right m-posts-ctg">${postCategories}</span>
+                                </div>
+                                <span class="d-block post-dateTime">${formattedDateTime}</span>
                             </div>
-                            <span class="d-block post-dateTime">${formattedDateTime}</span>
                         </div>
                     </div>
+                    <p class="post-description">${post.description}</p>
+                    ${postFiles}
                 </div>
-                <p class="post-description">${post.description}</p>
-                ${postFiles}
-            </div>
 
             </button>
+        </div>
             
 
             <div class="mt-4">
@@ -1248,7 +1307,7 @@ function updatePostHtml(post, comments, postId) {
                 //                     <h1 class="modal-title fs-5" id="editCommentModalLabel">Edit comment</h1>
                 //                     <a type="button" class="btn-close close-modal" data-bs-dismiss="modal" aria-label="Close"></a>
                 //                     </div>
-                //                     <form id="updateCommentForm-${comment.id}" method="post">
+                //                     <form id="updateCommentForm-${comment.id}" method="post" enctype="multipart/form-data">
                 //                     <div class="modal-body">
                 //                             <input type="hidden" name="post_uuid" value="${post.uuid}">
                 //                             <input type="hidden" name="comment_id" value="${comment.id}">
@@ -1350,6 +1409,14 @@ function updatePostHtml(post, comments, postId) {
 
         postCommentsElement.innerHTML = postCommentsHtml
     }
+
+
+    // laod categories in select for new post
+    const selectUpdatePostCategoriesContainer = document.getElementById('updatePostCategoriesList-' + postId);
+    const updatePostCategoryOptions = categories.map(category =>
+        `<label><input type="checkbox" name="update_post_categories" value="${category.id}" /> ${category.name}</label>`
+    ).join('');
+    selectUpdatePostCategoriesContainer.innerHTML = updatePostCategoryOptions;
 }
 
 function removePostHtml(postId) {
