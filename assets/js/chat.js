@@ -32,7 +32,10 @@ function fetchAllChatUsers() {
         .json()
         .catch(() => ({ success: false, message: "Invalid JSON response" }))
     ) // Prevent JSON parse errors
-    .then((data) => { });
+    .then(async (data) => {
+      allUserData = data.data;
+      await ShowAllChatUsers(allUserData);
+     });
   // do more things and hdle errors
 }
 
@@ -57,6 +60,7 @@ async function ShowAllChatUsers(allUserData) {
       //const isOnline = onlineUsernames.includes(user.username);
 
       if (user.isOnline) {
+
         li.classList.add("isOnline");
         li.textContent = `${user.username} (Online)`;
         messageInput.style.display = "block";

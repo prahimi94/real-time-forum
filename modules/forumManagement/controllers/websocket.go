@@ -334,10 +334,18 @@ func GetAllChatUsersHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Return the users as JSON
-	w.Header().Set("Content-Type", "application/json")
-	var socketmsg WebsocketMsg
-	socketmsg.Type = "show_all_users"
-	socketmsg.Users = users
-	Broadcast <- socketmsg
-	json.NewEncoder(w).Encode(map[string]bool{"success": true})
+	/* 	w.Header().Set("Content-Type", "application/json")
+	   	var socketmsg WebsocketMsg
+	   	socketmsg.Type = "show_all_users"
+	   	socketmsg.Users = users
+	   	Broadcast <- socketmsg
+	   	json.NewEncoder(w).Encode(map[string]bool{"success": true}) */
+
+	res := utils.Result{
+		Success: true,
+		Message: "Users fetched successfully",
+		Data:    users,
+	}
+	utils.ReturnJson(w, res)
+
 }

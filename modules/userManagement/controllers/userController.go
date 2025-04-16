@@ -334,7 +334,7 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 	Mutex.Lock()
 	defer Mutex.Unlock()
 	SocketLogoutHandler(w, r, loggedInUser.Username)
-	
+
 	// RedirectToIndex(w, r)
 	res := utils.Result{
 		Success: true,
@@ -590,7 +590,7 @@ func UpdateOnlineUsers() {
 func SocketLogoutHandler(w http.ResponseWriter, r *http.Request, userName string) {
 	for clientConn, clientUserName := range OnlineUsers {
 		if clientUserName == userName {
-			fmt.Println("User logged out:", clientUserName)
+			fmt.Println("User logged out:", clientUserName, "Current OnlineUsers:", OnlineUsers)
 			//Mutex.Lock()
 			defer clientConn.Close() // close their websocket
 			delete(OnlineUsers, clientConn)
