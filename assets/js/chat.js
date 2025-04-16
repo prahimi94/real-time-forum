@@ -60,6 +60,7 @@ async function ShowAllChatUsers(allUserData) {
       //const isOnline = onlineUsernames.includes(user.username);
 
       if (user.isOnline) {
+        console.log(user.username, user.isOnline)
 
         li.classList.add("isOnline");
         li.textContent = `${user.username} (Online)`;
