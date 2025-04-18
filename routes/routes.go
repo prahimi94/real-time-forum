@@ -18,7 +18,7 @@ func SetupRoutes() {
 
 	//FOR CHAT
 	http.HandleFunc("/ws", forumManagementControllers.WsHandler)
-	http.HandleFunc("/api/online-users", forumManagementControllers.OnlineUsersHandler) //GET USERS CONNECTED TO WS
+	//http.HandleFunc("/api/online-users", forumManagementControllers.OnlineUsersHandler) //GET USERS CONNECTED TO WS
 	http.HandleFunc("/api/get-chat-id", forumManagementControllers.GetChatIDHandler)
 	http.HandleFunc("/api/chat-messages/", forumManagementControllers.ChatMsgHandler) //GET CHAT MESSAGES
 

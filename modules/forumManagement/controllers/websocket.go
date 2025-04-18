@@ -55,6 +55,7 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 		Mutex.Lock()
 		userManagementControllers.OnlineUsers[conn] = myUsername
 		userManagementControllers.UpdateOnlineUsers()
+		broadcastUserOnlineStatus(myUserID, true)
 		Mutex.Unlock()
 
 		var chatID int // Declare chatID outside the loop
@@ -70,8 +71,7 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 				conn.Close()
 				delete(userManagementControllers.OnlineUsers, conn)
 				userManagementControllers.UpdateOnlineUsers()
-				socketmsg.Type = "fetch_all_users"
-				Broadcast <- socketmsg
+				broadcastUserOnlineStatus(myUserID, false)
 				break
 			}
 
@@ -95,89 +95,112 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 				// Remove the connection from the OnlineUsers map
 				delete(userManagementControllers.OnlineUsers, conn)
 				userManagementControllers.UpdateOnlineUsers()
+				broadcastUserOnlineStatus(myUserID, false)
 				Mutex.Unlock()
-
-				// Broadcast the updated user list to all clients
-				socketmsg.Type = "fetch_all_users"
-				Broadcast <- socketmsg
-
 				// Exit the loop to stop processing messages for this connection
 				break
 			}
 
-			// Handle "typing" message type
-			if msgData.Type == "typing" {
-				fmt.Println("Typing message received: ", msgData)
-				socketmsg.Type = "typing"
-				socketmsg.Sender = msgData.Sender
-				socketmsg.Recipient = msgData.Recipient
-				socketmsg.Typing = msgData.Typing
-				Broadcast <- socketmsg // Notify the recipient about typing status
-				continue
-			}
+			for _, username := range userManagementControllers.OnlineUsers {
+				if username == msgData.Recipient {
+					// Check if both sender and recipient are online
+					senderOnline := false
+					recipientOnline := false
 
-			// Handle "private_chat" message type
-			if msgData.Type == "private_chat" {
-				recipientUsername := msgData.Recipient
+					for _, onlineUsername := range userManagementControllers.OnlineUsers {
+						if onlineUsername == msgData.Sender {
+							senderOnline = true
+						}
+						if onlineUsername == msgData.Recipient {
+							recipientOnline = true
+						}
+						// Break early if both are found
+						if senderOnline && recipientOnline {
+							break
+						}
+					}
 
-				// Get recipient user ID
-				recipientUserID, err := userManagementModels.GetUserIDByUsername(recipientUsername)
-				if err != nil {
-					errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-					continue
-				}
+					// If either sender or recipient is not online, skip processing and do not save the message
+					if !senderOnline || !recipientOnline {
+						fmt.Printf("Skipping message. Sender online: %v, Recipient online: %v\n", senderOnline, recipientOnline)
+						continue
+					}
 
-				// Check if chat exists, if not create it and add chat members
-				chatID, err = forumManagementModels.CheckChatExists(myUserID, recipientUserID)
-				if err != nil {
-					errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-					continue
-				}
-				// If no chatID exists (0), InsertChat
-				if chatID == 0 {
-					chat := &forumManagementModels.Chat{ID: chatID, Type: "private"}
-					chatID, err = forumManagementModels.InsertChat(chat, myUserID, recipientUserID, nil)
+					// Handle "typing" message type
+					if msgData.Type == "typing" {
+						//fmt.Println("Typing message received: ", msgData)
+						socketmsg.Type = "typing"
+						socketmsg.Sender = msgData.Sender
+						socketmsg.Recipient = msgData.Recipient
+						socketmsg.Typing = msgData.Typing
+						Broadcast <- socketmsg // Notify the recipient about typing status
+						continue
+					}
+
+					// Handle "private_chat" message type
+					//if msgData.Type == "private_chat" {
+					recipientUsername := msgData.Recipient
+
+					// Get recipient user ID
+					recipientUserID, err := userManagementModels.GetUserIDByUsername(recipientUsername)
 					if err != nil {
 						errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 						continue
 					}
-				}
-				socketmsg.Type = "private_chat_confirmed"
-				socketmsg.Recipient = msgData.Recipient
-				socketmsg.Sender = msgData.Sender
-				Broadcast <- socketmsg
-				continue
-			}
 
-			sanitizedMsg := utils.SanitizeInput(msgData.Content)
-			// Ignore empty messages
-			if sanitizedMsg == "" {
-				continue
-			}
+					// Check if chat exists, if not create it and add chat members
+					chatID, err = forumManagementModels.CheckChatExists(myUserID, recipientUserID)
+					if err != nil {
+						errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+						continue
+					}
+					// If no chatID exists (0), InsertChat
+					if chatID == 0 {
+						chat := &forumManagementModels.Chat{ID: chatID, Type: "private"}
+						chatID, err = forumManagementModels.InsertChat(chat, myUserID, recipientUserID, nil)
+						if err != nil {
+							errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+							continue
+						}
+					}
+					/* socketmsg.Type = "private_chat_confirmed"
+					socketmsg.Recipient = msgData.Recipient
+					socketmsg.Sender = msgData.Sender
+					Broadcast <- socketmsg
+					continue */
+					//}
 
-			// If chatID exists, go directly to InsertMsg
-			if chatID != 0 {
-				msg := &forumManagementModels.Message{
-					ChatID:            chatID, // Use the chat ID from the "private_chat" logic
-					Content:           sanitizedMsg,
-					Status:            "enable",
-					CreatedBy:         myUserID,
-					CreatedAt:         time.Now(), // Ensure CreatedAt is set
-					UpdatedBy:         &myUserID,
-					CreatedByUsername: myUsername,
-				}
-				_, err = forumManagementModels.InsertMsg(msg, nil)
-				if err != nil {
-					errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-					continue
+					sanitizedMsg := utils.SanitizeInput(msgData.Content)
+					// Ignore empty messages
+					if sanitizedMsg == "" {
+						continue
+					}
+
+					// If chatID exists, go directly to InsertMsg
+					if chatID != 0 {
+						msg := &forumManagementModels.Message{
+							ChatID:            chatID,
+							Content:           sanitizedMsg,
+							Status:            "enable",
+							CreatedBy:         myUserID,
+							CreatedAt:         time.Now(), // Ensure CreatedAt is set
+							UpdatedBy:         &myUserID,
+							CreatedByUsername: myUsername,
+						}
+						_, err = forumManagementModels.InsertMsg(msg, nil)
+						if err != nil {
+							errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+							continue
+						}
+					}
+					socketmsg.Recipient = msgData.Recipient
+					socketmsg.Sender = msgData.Sender
+					socketmsg.Message.Content = sanitizedMsg
+					socketmsg.Message.CreatedAt = msgData.Timestamp
+					socketmsg.Type = "private_chat"
+					Broadcast <- socketmsg
 				}
 			}
-			socketmsg.Recipient = msgData.Recipient
-			socketmsg.Sender = msgData.Sender
-			socketmsg.Message.Content = sanitizedMsg
-			socketmsg.Message.CreatedAt = msgData.Timestamp
-			socketmsg.Type = "message_content"
-			Broadcast <- socketmsg
 		}
 	}
 }
@@ -189,43 +212,38 @@ func HandleMessages() {
 
 		Mutex.Lock()
 
-		if message.Type == "typing" {
-			for client, username := range userManagementControllers.OnlineUsers {
-				if username == message.Recipient {
-					err := client.WriteJSON(message)
-					if err != nil {
-						client.Close()
-						delete(userManagementControllers.OnlineUsers, client)
-						var socketmsg WebsocketMsg
-						socketmsg.Type = "fetch_all_users"
-						Broadcast <- socketmsg
-					}
-				}
+		for client, username := range userManagementControllers.OnlineUsers {
+
+			// Retrieve the userID of the disconnected user
+			disconnectedUserID, err := userManagementModels.GetUserIDByUsername(username)
+			if err != nil {
+				fmt.Println("Error retrieving userID for disconnected user:", err)
 			}
-		} else if message.Type == "message_content" || message.Type == "private_chat" {
-			for client, username := range userManagementControllers.OnlineUsers {
-				if username == message.Recipient || username == message.Sender {
-					err := client.WriteJSON(message)
-					if err != nil {
-						client.Close()
-						delete(userManagementControllers.OnlineUsers, client)
-						var socketmsg WebsocketMsg
-						socketmsg.Type = "fetch_all_users"
-						Broadcast <- socketmsg
-					}
-				}
-			}
-		} else {
-			for client := range userManagementControllers.OnlineUsers {
+
+			if message.Type == "typing" && username == message.Recipient {
 				err := client.WriteJSON(message)
 				if err != nil {
-					fmt.Println("Client disconnected:", client)
 					client.Close()
 					delete(userManagementControllers.OnlineUsers, client)
 					userManagementControllers.UpdateOnlineUsers()
-					var socketmsg WebsocketMsg
-					socketmsg.Type = "fetch_all_users"
-					Broadcast <- socketmsg
+					broadcastUserOnlineStatus(disconnectedUserID, false)
+				}
+			} else if message.Type == "private_chat" && (username == message.Recipient || username == message.Sender) {
+				err := client.WriteJSON(message)
+				if err != nil {
+					client.Close()
+					delete(userManagementControllers.OnlineUsers, client)
+					userManagementControllers.UpdateOnlineUsers()
+					broadcastUserOnlineStatus(disconnectedUserID, false)
+				}
+			} else {
+				err := client.WriteJSON(message)
+				if err != nil {
+					client.Close()
+					delete(userManagementControllers.OnlineUsers, client)
+					userManagementControllers.UpdateOnlineUsers()
+					broadcastUserOnlineStatus(disconnectedUserID, false)
+
 				}
 			}
 		}
@@ -233,23 +251,24 @@ func HandleMessages() {
 	}
 }
 
-func OnlineUsersHandler(w http.ResponseWriter, r *http.Request) {
-	Mutex.Lock()
-	defer Mutex.Unlock()
+/*
+	 func OnlineUsersHandler(w http.ResponseWriter, r *http.Request) {
+		Mutex.Lock()
+		defer Mutex.Unlock()
 
-	// Collect usernames of online users
-	usernames := make([]string, 0, len(userManagementControllers.OnlineUsers))
-	for _, username := range userManagementControllers.OnlineUsers {
-		usernames = append(usernames, username)
+		// Collect usernames of online users
+		usernames := make([]string, 0, len(userManagementControllers.OnlineUsers))
+		for _, username := range userManagementControllers.OnlineUsers {
+			usernames = append(usernames, username)
+		}
+
+		// Respond with the list of usernames
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(usernames); err != nil {
+			http.Error(w, "Failed to encode online users", http.StatusInternalServerError)
+		}
 	}
-
-	// Respond with the list of usernames
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(usernames); err != nil {
-		http.Error(w, "Failed to encode online users", http.StatusInternalServerError)
-	}
-}
-
+*/
 func ChatMsgHandler(w http.ResponseWriter, r *http.Request) {
 	// Extract chatID from the URL path
 	chatIDStr := r.URL.Path[len("/api/chat-messages/"):]
@@ -341,6 +360,7 @@ func GetAllChatUsersHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for i, user := range users {
+		users[i].IsOnline = false // Default to false
 		for _, username := range userManagementControllers.OnlineUsers {
 			if username == user.Username {
 				users[i].IsOnline = true
@@ -364,4 +384,26 @@ func GetAllChatUsersHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	utils.ReturnJson(w, res)
 
+}
+
+func broadcastUserOnlineStatus(userID int, isOnline bool) {
+	// Broadcast the updated user list to all clients
+	users, err := userManagementModels.ReadAllChatUsers(userID)
+
+	for i, user := range users {
+		for _, username := range userManagementControllers.OnlineUsers {
+			if username == user.Username {
+				users[i].IsOnline = isOnline
+				continue
+			}
+		}
+	}
+	if err != nil {
+		fmt.Println("Error fetching users: ", err)
+	}
+	var socketmsg WebsocketMsg
+	socketmsg.Type = "fetch_all_users"
+	socketmsg.Users = users
+	Broadcast <- socketmsg
+	//fmt.Println("broadcastUserOnlineStatus: ", socketmsg.Users)
 }

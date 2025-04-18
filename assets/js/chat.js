@@ -1,8 +1,8 @@
 let ws;
-let onlineUsernames = [];
+//let onlineUsernames = [];
 let allUserData = {};
 let isProcessingMessages = false;
-let anotherUserClicked = false;
+//let anotherUserClicked = false;
 let chatboxOpen = false;
 let openChat = [(ID = null), (recipient = null)];
 
@@ -34,12 +34,13 @@ function fetchAllChatUsers() {
     ) // Prevent JSON parse errors
     .then(async (data) => {
       allUserData = data.data;
-      await ShowAllChatUsers(allUserData);
+      //await ShowAllChatUsers(allUserData);
     });
   // do more things and hdle errors
 }
 
 async function ShowAllChatUsers(allUserData) {
+  //console.log("ShowAllChatUsers data:", allUserData);
   if (!Array.isArray(allUserData)) {
     allUserData = Object.values(allUserData);
   }
@@ -53,61 +54,74 @@ async function ShowAllChatUsers(allUserData) {
     const messageInput = document.getElementById("messageInput");
     const sendButton = document.getElementById("send-btn");
 
-    allUserData.forEach((user) => {
+    allUserData.forEach(async (user) => {
       if (user.username === loggedInUser.username) return;
+      const chatID = await getChatID(
+        loggedInUser.username,
+        user.username
+      );
       const li = document.createElement("li");
       //const isOnline = onlineUsernames.includes(user.username);
 
-      if (user.isOnline) {
 
+      if (user.isOnline) {
+        //console.log("User is online:", user.username);
         li.classList.add("isOnline");
         li.textContent = `${user.username} (Online)`;
-        messageInput.style.display = "block";
-        sendButton.style.display = "block";
+        openChat = [chatID, user.username];
+        if (chatboxOpen || chatbox.style.display === "block") {
+          chatboxOpen = true;
+          messageInput.style.display = "block";
+          sendButton.style.display = "block";
 
-        // Listen to input events (typing) in the messageInput field
-        /* messageInput.removeEventListener("input", (event) =>
-          handleTyping(event, loggedInUser.username, user.username)
-        );  */// Remove previous event listener to avoid duplicates
-        messageInput.addEventListener("input", (event) =>
-          handleTyping(event, loggedInUser.username, user.username)
-        );
-      } else {
+          // Listen to input events (typing) in the messageInput field
+          /* messageInput.removeEventListener("input", (event) =>
+            handleTyping(event, loggedInUser.username, user.username)
+          ); */// Remove previous event listener to avoid duplicates
+          messageInput.addEventListener("input", (event) =>
+            handleTyping(event, loggedInUser.username, user.username)
+          );
+        }
+
+      } else { // if user is offline
+        //console.log("User is offline:", user.username);
         li.textContent = user.username;
+        isProcessingMessages = false;
+        openChat = [null, null];
+        chatboxOpen = false;
         chatbox.style.display = "none";
         messageInput.style.display = "none";
         sendButton.style.display = "none";
         document.getElementById("typing").style.display = "none";
         stopTyping(loggedInUser.username, user.username); // Stop typing when user is offline
       }
+
+      // Manage event when username is clicked
       li.onclick = null; // Clear previous handler
       li.onclick = async (e) => {
         e.preventDefault();
 
         isProcessingMessages = false;
-        anotherUserClicked = true;
+        //anotherUserClicked = true;
         messageDisplay.innerHTML = "";
 
-        if (chatboxOpen || (chatboxOpen && openChat[1] === user.username)) {
+        if (chatboxOpen) {
           chatboxOpen = false;
           openChat = [null, null];
           chatbox.style.display = "none";
           stopTyping(loggedInUser.username, user.username);
-        } else if (
-          !chatboxOpen ||
-          (chatboxOpen && openChat[1] !== user.username)
-        ) {
+        } else if (!chatboxOpen) {
           chatboxOpen = true;
           chatbox.style.display = "block";
+          messageDisplay.scrollTop = messageDisplay.scrollHeight;
+          messages.style.display = "block";
+          messageDisplay.style.display = "block";
+          messageDisplay.innerHTML = "";
+
           if (user.isOnline) {
-            // Fetch the chat ID and load the chat messages
-            const chatID = await getChatID(
-              loggedInUser.username,
-              user.username
-            );
             if (chatID) {
+              chatboxOpen = true;
               openChat = [chatID, user.username];
-              messageDisplay.scrollTop = messageDisplay.scrollHeight;
               await showMessages(chatID, user.username);
               messageInput.style.display = "block";
               sendButton.style.display = "block";
@@ -119,46 +133,35 @@ async function ShowAllChatUsers(allUserData) {
               messageInput.addEventListener("input", (event) =>
                 handleTyping(event, loggedInUser.username, user.username)
               );
+              await handlePrivateChat(loggedInUser.username, user.username);
+
             } else if (chatID === 0 || !chatID) {
               openChat = [null, null];
+              chatboxOpen = true;
               messageInput.style.display = "none";
               sendButton.style.display = "none";
               chatHeader.textContent = `Chat with ${user.username}`;
               messageDisplay.innerHTML = "No chat history.";
               stopTyping(loggedInUser.username, user.username);
-
-            } else {
-              console.error("Failed to retrieve chat ID");
             }
-            await handlePrivateChat(loggedInUser.username, user.username);
-          } else {
-            chatbox.style.display = "block";
-            messages.style.display = "block";
-            messageDisplay.style.display = "block";
-            messageDisplay.innerHTML = "";
 
-            // Fetch the chat ID and load the chat messages
-            const chatID = await getChatID(
-              loggedInUser.username,
-              user.username
-            );
+          } else { //if user is offline
+
             if (chatID) {
+              chatboxOpen = true;
               openChat = [chatID, user.username];
               await showMessages(chatID, user.username);
               messageInput.style.display = "none";
               sendButton.style.display = "none";
               stopTyping(loggedInUser.username, user.username);
-
             } else if (chatID === 0 || !chatID) {
+              chatboxOpen = true;
               openChat = [null, null];
               messageInput.style.display = "none";
               sendButton.style.display = "none";
               chatHeader.textContent = `Chat with ${user.username}`;
               messageDisplay.innerHTML = "No chat history.";
               stopTyping(loggedInUser.username, user.username);
-
-            } else {
-              console.error("Failed to retrieve chat ID");
             }
           }
         }
@@ -174,9 +177,10 @@ async function ShowAllChatUsers(allUserData) {
 function connect() {
   ws = new WebSocket("ws://localhost:8080/ws");
 
-  ws.onopen = function () {
+  ws.onopen = async function () {
     console.log("Online: Connected to WebSocket server");
     fetchAllChatUsers(); // Fetch all users to populate the list
+    await ShowAllChatUsers(allUserData); // Show all users in the chat list
   };
 
   ws.onmessage = async function (event) {
@@ -196,7 +200,7 @@ function connect() {
       const typingIndicator = document.getElementById("typing");
 
 
-      if (message.type === "message_content") {
+      if (message.type === "private_chat") {
         //await handlePrivateChat(message.sender, message.recipient);
 
         // Show notification only to the recipient
@@ -212,9 +216,9 @@ function connect() {
         const chatID = await getChatID(message.sender, message.recipient);
         if (
           chatID &&
-          openChat[0] === chatID &&
-          (openChat[1] === message.recipient ||
-            openChat[1] === message.sender) /*  &&
+          openChat.recipient === chatID &&
+          (openChat.recipient === message.recipient ||
+            openChat.recipient === message.sender) /*  &&
         message.users.includes(message.sender) &&
           message.users.includes(message.recipient) */
         ) {
@@ -256,21 +260,23 @@ function connect() {
           stopTyping(loggedInUser.username, message.recipient);
 
         }
-      } else if (message.type === "show_all_users") {
+      } /* else if (message.type === "show_all_users") {
         await ShowAllChatUsers(message.users);
-      } else if (message.type === "typing") {
+      } */ else if (message.type === "typing") {
         // Process incoming typing notifications and display the typing indicator in the chat UI
 
-        if (message.typing && message.sender === openChat[1]) {
+        if (message.typing && message.sender === openChat.recipient) {
           // Show typing indicator if the sender is the current chat recipient
           typingIndicator.textContent = `${message.sender} is typing...`;
           typingIndicator.style.display = "block";
-        } else if (!message.typing && message.sender === openChat[1]) {
+        } else if (!message.typing && message.sender === openChat.recipient) {
           // Hide typing indicator when typing stops
           typingIndicator.style.display = "none";
         }
       } else if (message.type === "fetch_all_users") {
         fetchAllChatUsers();
+        await ShowAllChatUsers(message.users);
+
       }
     } catch (error) {
       console.error("Failed to parse WebSocket message:", event.data, error);
@@ -279,7 +285,7 @@ function connect() {
 
   ws.onclose = function (event) {
     console.log("Offline: WebSocket connection closed on event:", event);
-    stopTyping(loggedInUser.username, openChat[1]);
+    stopTyping(loggedInUser.username, openChat.recipient);
   };
 
   ws.onerror = function (error) {
@@ -354,21 +360,21 @@ async function showMessages(chatID, recipientUsername) {
   messages.reverse();
 
   isProcessingMessages = false;
-  anotherUserClicked = false;
+  //anotherUserClicked = false;
 
   // Throttle to process msgs in batches of 10
   const batchSize = 10;
   let loadedMessages = []; // Keep track of already loaded messages
 
   function processBatch() {
-    if (isProcessingMessages || anotherUserClicked) return; // Prevent multiple triggers
+    if (isProcessingMessages/*  || anotherUserClicked */) return; // Prevent multiple triggers
     isProcessingMessages = true;
 
     const batch = messages.splice(0, batchSize); // Get the next batch of messages
     loadedMessages = [...batch, ...loadedMessages]; // Add to the loaded messages
 
     batch.forEach((message) => {
-      if (anotherUserClicked) return;
+      //if (anotherUserClicked) return;
 
       const messageElement = document.createElement("p");
       const details = document.createElement("div");
@@ -431,7 +437,7 @@ function sendMessage(senderUsername, recipientUsername) {
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(
         JSON.stringify({
-          type: "message_content",
+          type: "private_chat",
           sender: senderUsername,
           recipient: recipientUsername,
           content: message,
