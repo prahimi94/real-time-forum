@@ -1,5 +1,5 @@
 let ws;
-//let onlineUsernames = [];
+let onlineUsernames = [];
 let allUserData = {};
 let isProcessingMessages = false;
 //let anotherUserClicked = false;
@@ -34,8 +34,11 @@ function fetchAllChatUsers() {
         .catch(() => ({ success: false, message: "Invalid JSON response" }))
     ) // Prevent JSON parse errors
     .then(async (data) => {
+      allUserData = {};
+      document.getElementById("chat-users-list").innerHTML = ""; // Clear the current list
       allUserData = data.data;
-      //await ShowAllChatUsers(allUserData);
+      console.log(loggedInUser.username, "fetchAllChatUsers() allUserData:", allUserData);
+      await ShowAllChatUsers(allUserData);
     });
   // do more things and hdle errors
 }
@@ -54,8 +57,19 @@ async function ShowAllChatUsers(allUserData) {
     const messageInput = document.getElementById("messageInput");
     const sendButton = document.getElementById("send-btn");
 
-    allUserData.forEach(async (user) => {
-      if (user.username === loggedInUser.username) return;
+    for (const user of allUserData) {
+      if (user.username === loggedInUser.username) {
+        if (user.isOnline && !onlineUsernames.includes(user.username)) {
+          onlineUsernames.push(user.username); // Add online user to the list if not included
+        } else if (!user.isOnline && onlineUsernames.includes(user.username)) {
+          onlineUsernames = onlineUsernames.filter(
+            (username) => username !== user.username
+          );
+        }
+        continue;
+      }
+
+
       const chatID = await getChatID(
         loggedInUser.username,
         user.username
@@ -65,8 +79,11 @@ async function ShowAllChatUsers(allUserData) {
 
 
       if (user.isOnline) {
+        if (!onlineUsernames.includes(user.username)) {
+          onlineUsernames.push(user.username); // Add online user to the list if not included
+        }
         li.classList.add("isOnline");
-        li.textContent = `${user.username} (Online)`;
+        li.textContent = `${user.username} 👋`;
         openChat = [chatID, user.username];
         if (chatboxOpen || chatbox.style.display === "block") {
           chatboxOpen = true;
@@ -83,6 +100,9 @@ async function ShowAllChatUsers(allUserData) {
         }
 
       } else { // if user is offline
+        if (onlineUsernames.includes(user.username)) {
+          onlineUsernames = onlineUsernames.filter((username) => username !== user.username);
+        }
         li.textContent = user.username;
         isProcessingMessages = false;
         openChat = [null, null];
@@ -136,10 +156,10 @@ async function ShowAllChatUsers(allUserData) {
               await handlePrivateChat(loggedInUser.username, user.username);
 
             } else if (chatID === 0 || !chatID) {
-              openChat = [null, null];
+              openChat = [chatID, user.username];
               chatboxOpen = true;
-              messageInput.style.display = "none";
-              sendButton.style.display = "none";
+              messageInput.style.display = "block";
+              sendButton.style.display = "block";
               chatHeader.textContent = `Chat with ${user.username}`;
               messageDisplay.innerHTML = ""; // Clear previous messages
               messageDisplay.innerHTML = "No chat history.";
@@ -171,7 +191,7 @@ async function ShowAllChatUsers(allUserData) {
       };
 
       chatUsersList.appendChild(li);
-    });
+    }
   } catch (error) {
     console.error("Error fetching all users:", error);
   }
@@ -181,11 +201,8 @@ function connect() {
   ws = new WebSocket("ws://localhost:8080/ws");
 
   ws.onopen = async function () {
-    console.log("Online: Connected to WebSocket server");
-    allUserData = {};
-    document.getElementById("chat-users-list").innerHTML = ""; // Clear the current list
+    console.log("Online: Connected to WebSocket server", loggedInUser.username);
     fetchAllChatUsers(); // Fetch all users to populate the list
-    await ShowAllChatUsers(allUserData); // Show all users in the chat list
   };
 
   ws.onmessage = async function (event) {
@@ -280,8 +297,36 @@ function connect() {
         }
       } else if (message.type === "fetch_all_users") {
         //fetchAllChatUsers();
-        document.getElementById("chat-users-list").innerHTML = ""; // Clear the current list
-        await ShowAllChatUsers(message.users);
+        if (allUserData.length === 0) {
+          await ShowAllChatUsers(message.users);
+        } else {
+          console.log(loggedInUser.username, "onmessage message.users:", message.users);
+
+          chatUsersLi = document.getElementById("chat-users-list").getElementsByTagName("li");
+          // Update only the online/offline status of users
+          message.users.forEach((user) => {
+            for (const li of chatUsersLi) {
+              if (li.textContent.includes(user.username)) {
+                if (user.isOnline) {
+                  if (!onlineUsernames.includes(user.username)) {
+                    onlineUsernames.push(user.username); // Add online user to the list if not included
+                  }
+                  li.classList.add("isOnline");
+                  li.textContent = `${user.username} 👋`;
+                } else {
+                  if (onlineUsernames.includes(user.username)) {
+                    onlineUsernames = onlineUsernames.filter(
+                      (username) => username !== user.username
+                    );
+                  }
+                  li.classList.remove("isOnline");
+                  li.textContent = user.username;
+                }
+                break;
+              }
+            }
+          });
+        }
       }
     } catch (error) {
       console.error("Failed to parse WebSocket message:", event.data, error);
@@ -289,7 +334,7 @@ function connect() {
   };
 
   ws.onclose = function (event) {
-    console.log("Offline: WebSocket connection closed on event:", event);
+    console.log(loggedInUser.username, "Offline: WebSocket connection closed on event:", event);
     stopTyping(loggedInUser.username, openChat[1]);
   };
 
