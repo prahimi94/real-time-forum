@@ -182,6 +182,8 @@ function connect() {
 
   ws.onopen = async function () {
     console.log("Online: Connected to WebSocket server");
+    allUserData = {};
+    document.getElementById("chat-users-list").innerHTML = ""; // Clear the current list
     fetchAllChatUsers(); // Fetch all users to populate the list
     await ShowAllChatUsers(allUserData); // Show all users in the chat list
   };
@@ -277,7 +279,8 @@ function connect() {
           typingIndicator.style.display = "none";
         }
       } else if (message.type === "fetch_all_users") {
-        fetchAllChatUsers();
+        //fetchAllChatUsers();
+        document.getElementById("chat-users-list").innerHTML = ""; // Clear the current list
         await ShowAllChatUsers(message.users);
       }
     } catch (error) {
