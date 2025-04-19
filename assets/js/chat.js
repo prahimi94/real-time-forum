@@ -40,13 +40,12 @@ function fetchAllChatUsers() {
 }
 
 async function ShowAllChatUsers(allUserData) {
-  //console.log("ShowAllChatUsers data:", allUserData);
   if (!Array.isArray(allUserData)) {
     allUserData = Object.values(allUserData);
   }
   try {
     const chatUsersList = document.getElementById("chat-users-list");
-    chatUsersList.textContent = ""; // Clear the current list
+    chatUsersList.innerHTML = ""; // Clear the current list
     const messageDisplay = document.getElementById("message-display");
     const chatbox = document.getElementById("chatbox");
     const chatHeader = document.getElementById("chat-header");
@@ -65,7 +64,6 @@ async function ShowAllChatUsers(allUserData) {
 
 
       if (user.isOnline) {
-        //console.log("User is online:", user.username);
         li.classList.add("isOnline");
         li.textContent = `${user.username} (Online)`;
         openChat = [chatID, user.username];
@@ -84,7 +82,6 @@ async function ShowAllChatUsers(allUserData) {
         }
 
       } else { // if user is offline
-        //console.log("User is offline:", user.username);
         li.textContent = user.username;
         isProcessingMessages = false;
         openChat = [null, null];
@@ -202,7 +199,6 @@ function connect() {
 
       if (message.type === "private_chat") {
         //await handlePrivateChat(message.sender, message.recipient);
-
         // Show notification only to the recipient
         if (loggedInUser.username === message.recipient) {
           const res = {
@@ -216,40 +212,40 @@ function connect() {
         const chatID = await getChatID(message.sender, message.recipient);
         if (
           chatID &&
-          openChat.recipient === chatID &&
-          (openChat.recipient === message.recipient ||
-            openChat.recipient === message.sender) /*  &&
+          openChat[0] === chatID &&
+          (openChat[1] === message.recipient ||
+            openChat[1] === message.sender) /*  &&
         message.users.includes(message.sender) &&
           message.users.includes(message.recipient) */
         ) {
           chatboxOpen = true;
           openChat = [chatID, message.recipient];
-
-          details.classList.add("details");
-          messageElement.classList.add("msg");
-          details.textContent = `${message.sender} (${message.timestamp})`;
-          messageElement.textContent = message.message.content;
-
-          if (loggedInUser.username === message.sender) {
-            messageElement.classList.add("from-me");
-            details.classList.add("my-details");
-          }
-
-          messageDisplay.appendChild(messageElement);
-          messageDisplay.appendChild(details);
-          messageDisplay.scrollTop = messageDisplay.scrollHeight;
-
-          messageInput.style.display = "block";
-          sendButton.style.display = "block";
-          typingIndicator.style.display = "none";
-          stopTyping(message.sender, message.recipient);
-          // Listen to input events (typing) in the messageInput field
-          /*     messageInput.removeEventListener("input", (event) =>
-            handleTyping(event, loggedInUser.username, user.username)
-          ); */ // Remove previous event listener to avoid duplicates
-          messageInput.addEventListener("input", (event) =>
-            handleTyping(event, message.sender, message.recipient)
-          );
+          await showMessages(chatID, message);
+          /*  details.classList.add("details");
+           messageElement.classList.add("msg");
+           details.textContent = `${message.sender} (${message.timestamp})`;
+           messageElement.textContent = message.message.content;
+ 
+           if (loggedInUser.username === message.sender) {
+             messageElement.classList.add("from-me");
+             details.classList.add("my-details");
+           }
+ 
+           messageDisplay.appendChild(messageElement);
+           messageDisplay.appendChild(details);
+           messageDisplay.scrollTop = messageDisplay.scrollHeight;
+ 
+           messageInput.style.display = "block";
+           sendButton.style.display = "block";
+           typingIndicator.style.display = "none";
+           stopTyping(message.sender, message.recipient);
+           // Listen to input events (typing) in the messageInput field
+           /*     messageInput.removeEventListener("input", (event) =>
+             handleTyping(event, loggedInUser.username, user.username)
+           ); // Remove previous event listener to avoid duplicates
+           messageInput.addEventListener("input", (event) =>
+             handleTyping(event, message.sender, message.recipient)
+           ); */
         } else {
           chatboxOpen = false;
           openChat = [null, null];
@@ -265,18 +261,17 @@ function connect() {
       } */ else if (message.type === "typing") {
         // Process incoming typing notifications and display the typing indicator in the chat UI
 
-        if (message.typing && message.sender === openChat.recipient) {
+        if (message.typing && message.sender === openChat[1]) {
           // Show typing indicator if the sender is the current chat recipient
           typingIndicator.textContent = `${message.sender} is typing...`;
           typingIndicator.style.display = "block";
-        } else if (!message.typing && message.sender === openChat.recipient) {
+        } else if (!message.typing && message.sender === openChat[1]) {
           // Hide typing indicator when typing stops
           typingIndicator.style.display = "none";
         }
       } else if (message.type === "fetch_all_users") {
         fetchAllChatUsers();
         await ShowAllChatUsers(message.users);
-
       }
     } catch (error) {
       console.error("Failed to parse WebSocket message:", event.data, error);
@@ -285,7 +280,7 @@ function connect() {
 
   ws.onclose = function (event) {
     console.log("Offline: WebSocket connection closed on event:", event);
-    stopTyping(loggedInUser.username, openChat.recipient);
+    stopTyping(loggedInUser.username, openChat[1]);
   };
 
   ws.onerror = function (error) {
@@ -352,7 +347,6 @@ async function showMessages(chatID, recipientUsername) {
   if (!messages || messages.length === 0) {
     messageDisplay.textContent = "Chat started but no messages yet.";
     stopTyping(loggedInUser.username, recipientUsername);
-
     return;
   }
 
@@ -424,7 +418,7 @@ async function getChatID(senderUsername, recipientUsername) {
   const data = await fetchData(
     `/api/get-chat-id?sender=${senderUsername}&recipient=${recipientUsername}`
   );
-  return data.chatID; // Return the chatID from the response
+  return data.data; // Return the chatID from the response
 }
 
 function sendMessage(senderUsername, recipientUsername) {

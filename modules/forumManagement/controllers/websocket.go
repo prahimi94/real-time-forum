@@ -183,9 +183,9 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 							Content:           sanitizedMsg,
 							Status:            "enable",
 							CreatedBy:         myUserID,
-							CreatedAt:         time.Now(), // Ensure CreatedAt is set
+							CreatedAt:         msgData.Timestamp,
 							UpdatedBy:         &myUserID,
-							CreatedByUsername: myUsername,
+							CreatedByUsername: msgData.Sender,
 						}
 						_, err = forumManagementModels.InsertMsg(msg, nil)
 						if err != nil {
@@ -193,11 +193,12 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 							continue
 						}
 					}
-					socketmsg.Recipient = msgData.Recipient
-					socketmsg.Sender = msgData.Sender
-					socketmsg.Message.Content = sanitizedMsg
-					socketmsg.Message.CreatedAt = msgData.Timestamp
 					socketmsg.Type = "private_chat"
+					socketmsg.Message.Content = sanitizedMsg
+					socketmsg.Sender = msgData.Sender
+					socketmsg.Recipient = msgData.Recipient
+					socketmsg.Message.CreatedAt = msgData.Timestamp
+					socketmsg.Message.CreatedByUsername = msgData.Sender
 					Broadcast <- socketmsg
 				}
 			}
@@ -336,8 +337,14 @@ func GetChatIDHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Respond with the chat ID
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]int{"chatID": chatID})
+	/* 	w.Header().Set("Content-Type", "application/json")
+	   	json.NewEncoder(w).Encode(map[string]int{"chatID": chatID}) */
+	res := utils.Result{
+		Success: true,
+		Message: "ChatID fetched successfully",
+		Data:    chatID,
+	}
+	utils.ReturnJson(w, res)
 }
 
 func GetAllChatUsersHandler(w http.ResponseWriter, r *http.Request) {
