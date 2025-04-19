@@ -5,6 +5,7 @@ let isProcessingMessages = false;
 //let anotherUserClicked = false;
 let chatboxOpen = false;
 let openChat = [(ID = null), (recipient = null)];
+let loadedMessages = []; // Keep track of already loaded messages
 
 let typingTimeout;
 let isTyping = false;
@@ -98,8 +99,9 @@ async function ShowAllChatUsers(allUserData) {
       li.onclick = async (e) => {
         e.preventDefault();
 
-        isProcessingMessages = false;
+        //isProcessingMessages = false;
         //anotherUserClicked = true;
+        loadedMessages = []; // Reset the loaded messages array
         messageDisplay.innerHTML = "";
 
         if (chatboxOpen) {
@@ -111,14 +113,15 @@ async function ShowAllChatUsers(allUserData) {
           chatboxOpen = true;
           chatbox.style.display = "block";
           messageDisplay.scrollTop = messageDisplay.scrollHeight;
+          messageDisplay.innerHTML = "";
           messages.style.display = "block";
           messageDisplay.style.display = "block";
-          messageDisplay.innerHTML = "";
 
           if (user.isOnline) {
             if (chatID) {
               chatboxOpen = true;
               openChat = [chatID, user.username];
+              messageDisplay.innerHTML = ""; // Clear previous messages
               await showMessages(chatID, user.username);
               messageInput.style.display = "block";
               sendButton.style.display = "block";
@@ -138,6 +141,7 @@ async function ShowAllChatUsers(allUserData) {
               messageInput.style.display = "none";
               sendButton.style.display = "none";
               chatHeader.textContent = `Chat with ${user.username}`;
+              messageDisplay.innerHTML = ""; // Clear previous messages
               messageDisplay.innerHTML = "No chat history.";
               stopTyping(loggedInUser.username, user.username);
             }
@@ -147,6 +151,7 @@ async function ShowAllChatUsers(allUserData) {
             if (chatID) {
               chatboxOpen = true;
               openChat = [chatID, user.username];
+              messageDisplay.innerHTML = ""; // Clear previous messages
               await showMessages(chatID, user.username);
               messageInput.style.display = "none";
               sendButton.style.display = "none";
@@ -157,6 +162,7 @@ async function ShowAllChatUsers(allUserData) {
               messageInput.style.display = "none";
               sendButton.style.display = "none";
               chatHeader.textContent = `Chat with ${user.username}`;
+              messageDisplay.innerHTML = ""; // Clear previous messages
               messageDisplay.innerHTML = "No chat history.";
               stopTyping(loggedInUser.username, user.username);
             }
@@ -220,32 +226,34 @@ function connect() {
         ) {
           chatboxOpen = true;
           openChat = [chatID, message.recipient];
-          await showMessages(chatID, message.recipient);
-          /*  details.classList.add("details");
-           messageElement.classList.add("msg");
-           details.textContent = `${message.sender} (${message.timestamp})`;
-           messageElement.textContent = message.message.content;
- 
-           if (loggedInUser.username === message.sender) {
-             messageElement.classList.add("from-me");
-             details.classList.add("my-details");
-           }
- 
-           messageDisplay.appendChild(messageElement);
-           messageDisplay.appendChild(details);
-           messageDisplay.scrollTop = messageDisplay.scrollHeight;
- 
-           messageInput.style.display = "block";
-           sendButton.style.display = "block";
-           typingIndicator.style.display = "none";
-           stopTyping(message.sender, message.recipient);
-           // Listen to input events (typing) in the messageInput field
-           /*     messageInput.removeEventListener("input", (event) =>
-             handleTyping(event, loggedInUser.username, user.username)
-           ); // Remove previous event listener to avoid duplicates
-           messageInput.addEventListener("input", (event) =>
-             handleTyping(event, message.sender, message.recipient)
-           ); */
+          /* await showMessages(chatID, message.recipient); */
+
+          details.classList.add("details");
+          messageElement.classList.add("msg");
+          timestamp = new Date(message.message.created_at).toLocaleString(); // Format the timestamp
+          details.textContent = `${message.sender} (${timestamp})`;
+          messageElement.textContent = message.message.content;
+
+          if (loggedInUser.username === message.sender) {
+            messageElement.classList.add("from-me");
+            details.classList.add("my-details");
+          }
+
+          messageDisplay.appendChild(messageElement);
+          messageDisplay.appendChild(details);
+          messageDisplay.scrollTop = messageDisplay.scrollHeight;
+
+          messageInput.style.display = "block";
+          sendButton.style.display = "block";
+          typingIndicator.style.display = "none";
+          stopTyping(message.sender, message.recipient);
+          // Listen to input events (typing) in the messageInput field
+          /*     messageInput.removeEventListener("input", (event) =>
+            handleTyping(event, loggedInUser.username, user.username)
+          );  */// Remove previous event listener to avoid duplicates
+          messageInput.addEventListener("input", (event) =>
+            handleTyping(event, message.sender, message.recipient)
+          );
         } else {
           chatboxOpen = false;
           openChat = [null, null];
@@ -322,47 +330,52 @@ async function handlePrivateChat(senderUsername, recipientUsername) {
   }
 
   // Send a message to the server to initiate or check the chat
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(
-      JSON.stringify({
-        type: "private_chat",
-        sender: senderUsername,
-        recipient: recipientUsername,
-      })
-    );
-  }
+  /*   if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(
+        JSON.stringify({
+          type: "private_chat",
+          sender: senderUsername,
+          recipient: recipientUsername,
+        })
+      );
+    } */
 }
+let scrollHandler = null; // Reference to the current scroll handler
 
 async function showMessages(chatID, recipientUsername) {
+  if (openChat[0] !== chatID || openChat[1] !== recipientUsername) return; // Check if the chat is still open
   /*  const messageInput = document.getElementById("messageInput");
   const sendButton = document.getElementById("send-btn"); */
   const chatHeader = document.getElementById("chat-header");
   const messageDisplay = document.getElementById("message-display");
-
   chatHeader.textContent = `Chat with ${recipientUsername}`;
-
+  messageDisplay.innerHTML = ""; // Clear previous messages
+  // Remove any previous scroll listener
+  if (scrollHandler) {
+    messageDisplay.removeEventListener("scroll", scrollHandler);
+  }
   let messages = await fetchData(`/api/chat-messages/${chatID}`);
+
   if (!messages || messages.length === 0) {
     messageDisplay.textContent = "Chat started but no messages yet.";
     stopTyping(loggedInUser.username, recipientUsername);
     return;
   }
   // Reverse the messages to show the latest ones at the bottom
-  messages.reverse();
+  // messages.reverse();
 
-  isProcessingMessages = false;
+  //isProcessingMessages = false;
   //anotherUserClicked = false;
 
   // Throttle to process msgs in batches of 10
   const batchSize = 10;
-  let loadedMessages = []; // Keep track of already loaded messages
 
-  function processBatch() {
-    if (isProcessingMessages/*  || anotherUserClicked */) return; // Prevent multiple triggers
-    isProcessingMessages = true;
+  function renderMessages(batch, appendToTop = true) {
+    //if (isProcessingMessages/*  || anotherUserClicked */) return; // Prevent multiple triggers
+    //isProcessingMessages = true;
 
-    const batch = messages.splice(0, batchSize); // Get the next batch of messages
-    loadedMessages = [...batch, ...loadedMessages]; // Add to the loaded messages
+    // const batch = messages.splice(0, batchSize); // Get the next batch of messages
+    //loadedMessages = [...batch, ...loadedMessages]; // Add to the loaded messages
 
     batch.forEach((message) => {
       //if (anotherUserClicked) return;
@@ -371,7 +384,8 @@ async function showMessages(chatID, recipientUsername) {
       const details = document.createElement("div");
       details.classList.add("details");
       messageElement.classList.add("msg");
-      details.textContent = `${message.created_by_username} (${message.created_at})`;
+      timestamp = new Date(message.created_at).toLocaleString(); // Format the timestamp
+      details.textContent = `${message.created_by_username} (${timestamp})`;
       messageElement.textContent = message.content;
 
       if (loggedInUser.username === message.created_by_username) {
@@ -379,31 +393,50 @@ async function showMessages(chatID, recipientUsername) {
         details.classList.add("my-details");
       }
 
-      messageDisplay.prepend(details);
-      messageDisplay.prepend(messageElement);
+      if (appendToTop) {
+        messageDisplay.prepend(details);
+        messageDisplay.prepend(messageElement);
+      } else {
+        messageDisplay.append(messageElement);
+        messageDisplay.append(details);
+      }
+
+
       document.getElementById("typing").style.display = "none";
       stopTyping(loggedInUser.username, recipientUsername);
     });
 
-    isProcessingMessages = false;
+    // isProcessingMessages = false;
 
   }
 
-  // Initial batch load (latest 10 messages)
-  processBatch();
+  // Load initial batch (most recent messages)
+  //messages.reverse(); // Ensure the latest messages are at the end
+  const initialBatch = messages.slice(-batchSize);
+  loadedMessages = [...initialBatch];
+  renderMessages(initialBatch, false);
 
   // Scroll to the bottom of the chatbox to show the latest messages
   messageDisplay.scrollTop = messageDisplay.scrollHeight;
 
   // Add scroll event listener to load more messages when scrolling near the top
-  messageDisplay.addEventListener("scroll", () => {
-    if (messageDisplay.scrollTop === 0 && messages.length > 0) {
+  scrollHandler = () => {
+    if (openChat[0] !== chatID || openChat[1] !== recipientUsername) return; // Check if the chat is still open
+    if (messageDisplay.scrollTop === 0 && loadedMessages.length < messages.length) {
       const previousHeight = messageDisplay.scrollHeight; // Store the current height
-      processBatch();
+      const remainingMessages = messages.length - loadedMessages.length;
+      const olderBatch = messages.slice(
+        Math.max(0, remainingMessages - batchSize),
+        remainingMessages
+      ).reverse(); // Get the next batch of older messages
+      loadedMessages = [...olderBatch, ...loadedMessages];
+      renderMessages(olderBatch);
       // Maintain the scroll position after loading more messages
       messageDisplay.scrollTop = messageDisplay.scrollHeight - previousHeight;
     }
-  });
+  }
+  messageDisplay.addEventListener("scroll", scrollHandler);
+
 
   /*   if (!message.users.includes(recipientUsername)) {
     messageInput.style.display = "none";
