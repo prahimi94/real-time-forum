@@ -106,7 +106,7 @@ async function ShowAllChatUsers(allUserData) {
           chatboxOpen = false;
           openChat = [null, null];
           chatbox.style.display = "none";
-          stopTyping(loggedInUser.username, user.username);
+          stopTyping(loggedInUser.username, user.username); // stop typing when chatbox is closed
         } else if (!chatboxOpen) {
           chatboxOpen = true;
           chatbox.style.display = "block";
@@ -220,7 +220,7 @@ function connect() {
         ) {
           chatboxOpen = true;
           openChat = [chatID, message.recipient];
-          await showMessages(chatID, message);
+          await showMessages(chatID, message.recipient);
           /*  details.classList.add("details");
            messageElement.classList.add("msg");
            details.textContent = `${message.sender} (${message.timestamp})`;
@@ -253,8 +253,7 @@ function connect() {
           messageInput.style.display = "none";
           sendButton.style.display = "none";
           typingIndicator.style.display = "none";
-          stopTyping(loggedInUser.username, message.recipient);
-
+          stopTyping(message.sender, message.recipient);
         }
       } /* else if (message.type === "show_all_users") {
         await ShowAllChatUsers(message.users);
@@ -286,7 +285,6 @@ function connect() {
   ws.onerror = function (error) {
     console.error("Offline: WebSocket error:", error);
     stopTyping(loggedInUser.username, user.username);
-
   };
 }
 
@@ -349,7 +347,6 @@ async function showMessages(chatID, recipientUsername) {
     stopTyping(loggedInUser.username, recipientUsername);
     return;
   }
-
   // Reverse the messages to show the latest ones at the bottom
   messages.reverse();
 
@@ -464,7 +461,6 @@ function handleTyping(event, senderUsername, recipientUsername) {
 
 function sendTypingStatus(isTyping, senderUsername, recipientUsername) {
   if (!senderUsername || !recipientUsername) return; // Ensure sender and recipient are provided
-
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.send(
       JSON.stringify({

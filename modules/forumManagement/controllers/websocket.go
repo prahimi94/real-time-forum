@@ -183,7 +183,7 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 							Content:           sanitizedMsg,
 							Status:            "enable",
 							CreatedBy:         myUserID,
-							CreatedAt:         msgData.Timestamp,
+							CreatedAt:         time.Now(),
 							UpdatedBy:         &myUserID,
 							CreatedByUsername: msgData.Sender,
 						}

@@ -228,11 +228,14 @@ func ReadAllMsgs(chatID, userID int) ([]Message, error) {
 	var messages []Message
 
 	query := `
-        SELECT m.id, m.chat_id, m.content, m.status, m.created_at, m.created_by, m.updated_at, m.updated_by
-        FROM messages m
-        JOIN chat_members cm ON m.chat_id = cm.chat_id
-        WHERE m.chat_id = ? AND cm.user_id = ?;
-    `
+		SELECT 
+			m.id, m.chat_id, m.content, m.status, m.created_at, m.created_by, 
+			m.updated_at, m.updated_by, u.username AS created_by_username
+		FROM messages m
+		JOIN chat_members cm ON m.chat_id = cm.chat_id
+		JOIN users u ON m.created_by = u.id
+		WHERE m.chat_id = ? AND cm.user_id = ?;
+	`
 	rows, err := db.Query(query, chatID, userID)
 	if err != nil {
 		return nil, err
@@ -250,6 +253,7 @@ func ReadAllMsgs(chatID, userID int) ([]Message, error) {
 			&message.CreatedBy,
 			&message.UpdatedAt,
 			&message.UpdatedBy,
+			&message.CreatedByUsername,
 		); err != nil {
 			return nil, err
 		}
