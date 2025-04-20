@@ -1,8 +1,9 @@
 /* Modal Header */
 .modal-header {
-    padding: 2px 16px;
+    /* padding: 2px 16px; */
     /* background-color: #5cb85c; */
-    color: white;
+    color: black;
+    padding: var(--bs-modal-header-padding);
   }
   
   /* Modal Body */

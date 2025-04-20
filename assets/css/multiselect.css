@@ -1,7 +1,9 @@
 .custom-multiselect {
     position: relative;
-    width: 200px;
+    width: 100%;
     font-family: sans-serif;
+    font-size: 1rem;
+    color: var(--bs-gray-600);
 }
 
 .select-box {
@@ -9,6 +11,7 @@
     border: 1px solid #ccc;
     background-color: #fdfdfd;
     cursor: pointer;
+    border-radius: var(--bs-border-radius);
 }
 
 .options-list {

@@ -953,21 +953,23 @@ function fillPostsInHtml(posts, actionSubject = '') {
                                     <div class="modal-body">
                                             <input type="hidden" name="post_uuid" value="${post.uuid}">
                                             <input type="hidden" name="post_id" value="${post.id}">
-                                            <div class="mt-3">
-                                                <div class="custom-multiselect" id="custom-multiselect-update-${post.uuid}">
-                                                    <div class="select-box" id="update_post_categories-${post.uuid}" onclick="categoriesClicked('custom-multiselect-update-${post.uuid}')">Select categories</div>
-                                                    <div class="options-list" onchange="categoriyListChanged('updatePostCategoriesList-${post.uuid}', 'update_post_categories-${post.uuid}')" id="updatePostCategoriesList-${post.uuid}"> </div>
+                                            <div class="mb-3">
+                                                <div class="mt-3">
+                                                    <div class="custom-multiselect" id="custom-multiselect-update-${post.uuid}">
+                                                        <div class="select-box" id="update_post_categories-${post.uuid}" onclick="categoriesClicked('custom-multiselect-update-${post.uuid}')">Select categories</div>
+                                                        <div class="options-list" onchange="categoriyListChanged('updatePostCategoriesList-${post.uuid}', 'update_post_categories-${post.uuid}')" id="updatePostCategoriesList-${post.uuid}"> </div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div class="mt-3">
+                                            <div class="mb-3">
                                                 <input type="text" class="form-control" placeholder="Title" required
                                                     name="title">
                                             </div>
-                                            <div class="mt-3">
+                                            <div class="mb-3">
                                                 <textarea class="form-control" placeholder="Description" required rows="4"
                                                     name="description"></textarea>
                                             </div>
-                                            <div class="mt-3 text-center border p-3 rounded">
+                                            <div class="mb-3 text-center border p-3 rounded">
                                                 <p class="text-muted">Attach an image or video (optional)</p>
                                                 <input type="file" class="form-control" name="postFiles" multiple>
                                             </div>
@@ -1127,12 +1129,12 @@ function updatePostHtml(post, comments, postId) {
                                     </a>
                                     <ul class="mydropdown-menu dropdown-menu dropdown-menu-end" style="border: 1px solid #c2c2c270;">
                                         <li>
-                                            <a type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="updatePostModal-${post.id}">
+                                            <a type="button" class="dropdown-item open-modal" data-target="updatePostModal-${post.id}">
                                                 <i class="fas fa-edit me-2"></i>Edit Post
                                             </a>                                        
                                         </li>
                                         <li>
-                                            <a type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="deletPostModal-${post.id}"><i class="fa-solid fa-trash me-2"></i>Delete Post</a> 
+                                            <a type="button" class="dropdown-item open-modal" data-target="deletPostModal-${post.id}"><i class="fa-solid fa-trash me-2"></i>Delete Post</a> 
                                         </li>
                                     </ul>
                                 </div>
@@ -1151,21 +1153,23 @@ function updatePostHtml(post, comments, postId) {
                                 <div class="modal-body">
                                         <input type="hidden" name="post_uuid" value="${post.uuid}">
                                         <input type="hidden" name="post_id" value="${post.id}">
-                                        <div class="mt-3">
-                                            <div class="custom-multiselect" id="custom-multiselect-update-${post.uuid}">
-                                                <div class="select-box" id="update_post_categories-${post.uuid}" onclick="categoriesClicked('custom-multiselect-update-${post.uuid}')">Select categories</div>
-                                                <div class="options-list" onchange="categoriyListChanged('updatePostCategoriesList-${post.uuid}', 'update_post_categories-${post.uuid}')" id="updatePostCategoriesList-${post.uuid}"> </div>
+                                         <div class="mb-3">
+                                            <div class="mt-3">
+                                                <div class="custom-multiselect" id="custom-multiselect-update-${post.uuid}">
+                                                    <div class="select-box" id="update_post_categories-${post.uuid}" onclick="categoriesClicked('custom-multiselect-update-${post.uuid}')">Select categories</div>
+                                                    <div class="options-list" onchange="categoriyListChanged('updatePostCategoriesList-${post.uuid}', 'update_post_categories-${post.uuid}')" id="updatePostCategoriesList-${post.uuid}"> </div>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div class="mt-3">
+                                        <div class="mb-3">
                                             <input type="text" class="form-control" placeholder="Title" required
                                                 name="title">
                                         </div>
-                                        <div class="mt-3">
+                                        <div class="mb-3">
                                             <textarea class="form-control" placeholder="Description" required rows="4"
                                                 name="description"></textarea>
                                         </div>
-                                        <div class="mt-3 text-center border p-3 rounded">
+                                        <div class="mb-3 text-center border p-3 rounded">
                                             <p class="text-muted">Attach an image or video (optional)</p>
                                             <input type="file" class="form-control" name="postFiles" multiple>
                                         </div>
@@ -1287,13 +1291,13 @@ function updatePostHtml(post, comments, postId) {
                 //                         <ul class="dropdown-menu dropdown-menu-end" style="border: 1px solid #c2c2c270;">
                 //                             <li>
                 //                                 <!-- Button trigger modal -->
-                //                                 <a type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#updateCommentModal-${comment.id}">
+                //                                 <a type="button" class="dropdown-item" data-bs-toggle="modal" data-target="#updateCommentModal-${comment.id}">
                 //                                     <i class="fas fa-edit me-2"></i>Edit Comment
                 //                                 </a>
                                                 
                 //                             </li>
                 //                             <li>
-                //                                 <a type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#deletCommentModal-${comment.id}"><i class="fa-solid fa-trash me-2"></i>Delete Comment</a> 
+                //                                 <a type="button" class="dropdown-item" data-bs-toggle="modal" data-target="#deletCommentModal-${comment.id}"><i class="fa-solid fa-trash me-2"></i>Delete Comment</a> 
                 //                             </li>
                 //                         </ul>
                 //                     </div>
@@ -1412,7 +1416,7 @@ function updatePostHtml(post, comments, postId) {
 
 
     // laod categories in select for new post
-    const selectUpdatePostCategoriesContainer = document.getElementById('updatePostCategoriesList-' + postId);
+    const selectUpdatePostCategoriesContainer = document.getElementById(`updatePostCategoriesList-${post.uuid}`);
     const updatePostCategoryOptions = categories.map(category =>
         `<label><input type="checkbox" name="update_post_categories" value="${category.id}" /> ${category.name}</label>`
     ).join('');
