@@ -4,7 +4,7 @@ let allUserData = {};
 let isProcessingMessages = false;
 //let anotherUserClicked = false;
 let chatboxOpen = false;
-let openChat = [(ID = null), (recipient = null)];
+let activeChat = [(ID = null), (recipient = null)];
 let loadedMessages = []; // Keep track of already loaded messages
 
 let typingTimeout;
@@ -23,6 +23,7 @@ async function fetchData(apiEndpoint) {
   }
 }
 
+/* 
 function fetchAllChatUsers() {
   fetch("/api/users", {
     method: "GET",
@@ -34,14 +35,15 @@ function fetchAllChatUsers() {
         .catch(() => ({ success: false, message: "Invalid JSON response" }))
     ) // Prevent JSON parse errors
     .then(async (data) => {
-      allUserData = {};
+      //allUserData = {};
       document.getElementById("chat-users-list").innerHTML = ""; // Clear the current list
       allUserData = data.data;
+      onlineUsernames = new Set(allUserData.filter(user => user.isOnline).map(user => user.username));
       console.log(loggedInUser.username, "fetchAllChatUsers() allUserData:", allUserData);
       await ShowAllChatUsers(allUserData);
     });
   // do more things and hdle errors
-}
+} */
 
 async function ShowAllChatUsers(allUserData) {
   if (!Array.isArray(allUserData)) {
@@ -50,46 +52,40 @@ async function ShowAllChatUsers(allUserData) {
   try {
     const chatUsersList = document.getElementById("chat-users-list");
     chatUsersList.innerHTML = ""; // Clear the current list
-    const messageDisplay = document.getElementById("message-display");
     const chatbox = document.getElementById("chatbox");
-    const chatHeader = document.getElementById("chat-header");
-    const messages = document.getElementById("messages");
     const messageInput = document.getElementById("messageInput");
     const sendButton = document.getElementById("send-btn");
 
     for (const user of allUserData) {
       if (user.username === loggedInUser.username) {
-        if (user.isOnline && !onlineUsernames.includes(user.username)) {
+        /* if (user.isOnline && !onlineUsernames.includes(user.username)) {
           onlineUsernames.push(user.username); // Add online user to the list if not included
         } else if (!user.isOnline && onlineUsernames.includes(user.username)) {
           onlineUsernames = onlineUsernames.filter(
             (username) => username !== user.username
           );
-        }
+        } */
         continue;
       }
 
-
-      const chatID = await getChatID(
-        loggedInUser.username,
-        user.username
-      );
+      const chatID = await getChatID(loggedInUser.username, user.username);
       const li = document.createElement("li");
-      //const isOnline = onlineUsernames.includes(user.username);
-
 
       if (user.isOnline) {
-        if (!onlineUsernames.includes(user.username)) {
+        activeChat = [chatID, user.username];
+        /* if (!onlineUsernames.includes(user.username)) {
           onlineUsernames.push(user.username); // Add online user to the list if not included
-        }
+        } */
         li.classList.add("isOnline");
         li.textContent = `${user.username} 👋`;
-        openChat = [chatID, user.username];
+
+        li.onclick = null; // Clear previous handler
+        li.onclick = async () => openChatbox(chatID, loggedInUser.username, user.username);
+
         if (chatboxOpen || chatbox.style.display === "block") {
-          chatboxOpen = true;
           messageInput.style.display = "block";
           sendButton.style.display = "block";
-
+          await handlePrivateChat(loggedInUser.username, user.username)
           // Listen to input events (typing) in the messageInput field
           /* messageInput.removeEventListener("input", (event) =>
             handleTyping(event, loggedInUser.username, user.username)
@@ -100,12 +96,15 @@ async function ShowAllChatUsers(allUserData) {
         }
 
       } else { // if user is offline
-        if (onlineUsernames.includes(user.username)) {
+       /*  if (onlineUsernames.includes(user.username)) {
           onlineUsernames = onlineUsernames.filter((username) => username !== user.username);
-        }
+        } */
         li.textContent = user.username;
+        li.onclick = null; // Clear previous handler
+        li.onclick = async () => openChatbox(chatID, loggedInUser.username, user.username);
+
         isProcessingMessages = false;
-        openChat = [null, null];
+        activeChat = [null, null];
         chatboxOpen = false;
         chatbox.style.display = "none";
         messageInput.style.display = "none";
@@ -113,87 +112,69 @@ async function ShowAllChatUsers(allUserData) {
         document.getElementById("typing").style.display = "none";
         stopTyping(loggedInUser.username, user.username); // Stop typing when user is offline
       }
-
-      // Manage event when username is clicked
-      li.onclick = null; // Clear previous handler
-      li.onclick = async (e) => {
-        e.preventDefault();
-
-        //isProcessingMessages = false;
-        //anotherUserClicked = true;
-        loadedMessages = []; // Reset the loaded messages array
-        messageDisplay.innerHTML = "";
-
-        if (chatboxOpen) {
-          chatboxOpen = false;
-          openChat = [null, null];
-          chatbox.style.display = "none";
-          stopTyping(loggedInUser.username, user.username); // stop typing when chatbox is closed
-        } else if (!chatboxOpen) {
-          chatboxOpen = true;
-          chatbox.style.display = "block";
-          messageDisplay.scrollTop = messageDisplay.scrollHeight;
-          messageDisplay.innerHTML = "";
-          messages.style.display = "block";
-          messageDisplay.style.display = "block";
-
-          if (user.isOnline) {
-            if (chatID) {
-              chatboxOpen = true;
-              openChat = [chatID, user.username];
-              messageDisplay.innerHTML = ""; // Clear previous messages
-              await showMessages(chatID, user.username);
-              messageInput.style.display = "block";
-              sendButton.style.display = "block";
-
-              // Listen to input events (typing) in the messageInput field
-              /*     messageInput.removeEventListener("input", (event) =>
-                handleTyping(event, loggedInUser.username, user.username)
-              ); */// Remove previous event listener to avoid duplicates
-              messageInput.addEventListener("input", (event) =>
-                handleTyping(event, loggedInUser.username, user.username)
-              );
-              await handlePrivateChat(loggedInUser.username, user.username);
-
-            } else if (chatID === 0 || !chatID) {
-              openChat = [chatID, user.username];
-              chatboxOpen = true;
-              messageInput.style.display = "block";
-              sendButton.style.display = "block";
-              chatHeader.textContent = `Chat with ${user.username}`;
-              messageDisplay.innerHTML = ""; // Clear previous messages
-              messageDisplay.innerHTML = "No chat history.";
-              stopTyping(loggedInUser.username, user.username);
-            }
-
-          } else { //if user is offline
-
-            if (chatID) {
-              chatboxOpen = true;
-              openChat = [chatID, user.username];
-              messageDisplay.innerHTML = ""; // Clear previous messages
-              await showMessages(chatID, user.username);
-              messageInput.style.display = "none";
-              sendButton.style.display = "none";
-              stopTyping(loggedInUser.username, user.username);
-            } else if (chatID === 0 || !chatID) {
-              chatboxOpen = true;
-              openChat = [null, null];
-              messageInput.style.display = "none";
-              sendButton.style.display = "none";
-              chatHeader.textContent = `Chat with ${user.username}`;
-              messageDisplay.innerHTML = ""; // Clear previous messages
-              messageDisplay.innerHTML = "No chat history.";
-              stopTyping(loggedInUser.username, user.username);
-            }
-          }
-        }
-      };
-
       chatUsersList.appendChild(li);
     }
   } catch (error) {
     console.error("Error fetching all users:", error);
+  }
+}
+
+async function openChatbox(chatID, senderUsername, recipientUsername) {
+  const messageDisplay = document.getElementById("message-display");
+  const chatbox = document.getElementById("chatbox");
+  const chatHeader = document.getElementById("chat-header");
+  const messages = document.getElementById("messages");
+  const messageInput = document.getElementById("messageInput");
+  const sendButton = document.getElementById("send-btn");
+
+  //isProcessingMessages = false;
+  //anotherUserClicked = true;
+  loadedMessages = []; // Reset the loaded messages array
+  messageDisplay.innerHTML = "";
+
+  if (chatboxOpen) {
+    chatboxOpen = false;
+    activeChat = [null, null];
+    chatbox.style.display = "none";
+    stopTyping(senderUsername, recipientUsername); // stop typing when chatbox is closed
+  } else if (!chatboxOpen) {
+    chatboxOpen = true;
+    activeChat = [chatID, recipientUsername];
+    chatbox.style.display = "block";
+    messages.style.display = "block";
+    messageDisplay.style.display = "block";
+    messageDisplay.scrollTop = messageDisplay.scrollHeight;
+    messageDisplay.innerHTML = "";
+    chatHeader.textContent = `Chat with ${recipientUsername}`;
+
+    if (recipientUsername.isOnline) {
+      if (chatID) {
+        await showMessages(chatID, recipientUsername);
+      } else if (chatID === 0 || !chatID) {
+        messageDisplay.innerHTML = "No chat history.";
+      }
+      messageInput.style.display = "block";
+      sendButton.style.display = "block";
+      // Listen to input events (typing) in the messageInput field
+      /*     messageInput.removeEventListener("input", (event) =>
+        handleTyping(event, loggedInUser.username, user.username)
+      ); */// Remove previous event listener to avoid duplicates
+      messageInput.addEventListener("input", (event) =>
+        handleTyping(event, senderUsername, recipientUsername)
+      );
+      await handlePrivateChat(senderUsername, recipientUsername);
+    } else { //if user is offline
+      messageInput.style.display = "none";
+      sendButton.style.display = "none";
+      stopTyping(senderUsername, recipientUsername);
+      if (chatID) {
+        await showMessages(chatID, recipientUsername);
+      } else if (chatID === 0 || !chatID) {
+        chatHeader.textContent = `Chat with ${recipientUsername}`;
+        messageDisplay.innerHTML = ""; // Clear previous messages
+        messageDisplay.innerHTML = "No chat history.";
+      }
+    }
   }
 }
 
@@ -202,7 +183,7 @@ function connect() {
 
   ws.onopen = async function () {
     console.log("Online: Connected to WebSocket server", loggedInUser.username);
-    fetchAllChatUsers(); // Fetch all users to populate the list
+    //fetchAllChatUsers(); // Fetch all users to populate the list
   };
 
   ws.onmessage = async function (event) {
@@ -237,16 +218,15 @@ function connect() {
         const chatID = await getChatID(message.sender, message.recipient);
         if (
           chatID &&
-          openChat[0] === chatID &&
-          (openChat[1] === message.recipient ||
-            openChat[1] === message.sender) /*  &&
-        message.users.includes(message.sender) &&
-          message.users.includes(message.recipient) */
+          activeChat[0] === chatID &&
+          (activeChat[1] === message.recipient ||
+            activeChat[1] === message.sender)
         ) {
           chatboxOpen = true;
-          openChat = [chatID, message.recipient];
+          activeChat = [chatID, message.recipient];
           /* await showMessages(chatID, message.recipient); */
 
+          // Append new message to messageDisplay
           details.classList.add("details");
           messageElement.classList.add("msg");
           timestamp = new Date(message.message.created_at).toLocaleString(); // Format the timestamp
@@ -264,8 +244,6 @@ function connect() {
 
           messageInput.style.display = "block";
           sendButton.style.display = "block";
-          typingIndicator.style.display = "none";
-          stopTyping(message.sender, message.recipient);
           // Listen to input events (typing) in the messageInput field
           /*     messageInput.removeEventListener("input", (event) =>
             handleTyping(event, loggedInUser.username, user.username)
@@ -273,9 +251,10 @@ function connect() {
           messageInput.addEventListener("input", (event) =>
             handleTyping(event, message.sender, message.recipient)
           );
+          await handlePrivateChat(message.sender, message.recipient);
         } else {
           chatboxOpen = false;
-          openChat = [null, null];
+          activeChat = [null, null];
           chatbox.style.display = "none";
           messageInput.style.display = "none";
           sendButton.style.display = "none";
@@ -287,45 +266,46 @@ function connect() {
       } */ else if (message.type === "typing") {
         // Process incoming typing notifications and display the typing indicator in the chat UI
 
-        if (message.typing && message.sender === openChat[1]) {
+        if (message.typing && message.sender === activeChat[1]) {
           // Show typing indicator if the sender is the current chat recipient
           typingIndicator.textContent = `${message.sender} is typing...`;
           typingIndicator.style.display = "block";
-        } else if (!message.typing && message.sender === openChat[1]) {
+        } else if (!message.typing && message.sender === activeChat[1]) {
           // Hide typing indicator when typing stops
           typingIndicator.style.display = "none";
         }
       } else if (message.type === "fetch_all_users") {
-        //fetchAllChatUsers();
-        if (allUserData.length === 0) {
+        if (allUserData.length === 0 || (allUserData.length != message.users.length)) { 
+          //fetchAllChatUsers();
           await ShowAllChatUsers(message.users);
         } else {
-          console.log(loggedInUser.username, "onmessage message.users:", message.users);
 
-          chatUsersLi = document.getElementById("chat-users-list").getElementsByTagName("li");
+          let chatUsersLi = document.getElementById("chat-users-list").getElementsByTagName("li");
+          onlineUsernames = new Set(message.users.filter(user => user.isOnline).map(user => user.username));
+
           // Update only the online/offline status of users
-          message.users.forEach((user) => {
-            for (const li of chatUsersLi) {
-              if (li.textContent.includes(user.username)) {
-                if (user.isOnline) {
-                  if (!onlineUsernames.includes(user.username)) {
-                    onlineUsernames.push(user.username); // Add online user to the list if not included
-                  }
-                  li.classList.add("isOnline");
-                  li.textContent = `${user.username} 👋`;
-                } else {
-                  if (onlineUsernames.includes(user.username)) {
-                    onlineUsernames = onlineUsernames.filter(
-                      (username) => username !== user.username
-                    );
-                  }
-                  li.classList.remove("isOnline");
-                  li.textContent = user.username;
-                }
-                break;
+          //message.users.forEach(async (user) => {
+          //if (loggedInUser.username === user.username) return; // Skip the logged-in user
+
+          //const chatID = await getChatID(loggedInUser.username, user.username);
+
+          // Update only the online/offline status of users without rearranging the list
+          for (const li of chatUsersLi) {
+            const username = li.textContent.replace(" 👋", ""); // Remove the emoji if present
+            const isOnline = onlineUsernames.has(username);
+
+            if (isOnline) {
+              if (!li.classList.contains("isOnline")) {
+                li.classList.add("isOnline");
+                li.textContent = `${username} 👋`;
+              }
+            } else {
+              if (li.classList.contains("isOnline")) {
+                li.classList.remove("isOnline");
+                li.textContent = username;
               }
             }
-          });
+          }
         }
       }
     } catch (error) {
@@ -335,12 +315,12 @@ function connect() {
 
   ws.onclose = function (event) {
     console.log(loggedInUser.username, "Offline: WebSocket connection closed on event:", event);
-    stopTyping(loggedInUser.username, openChat[1]);
+    stopTyping(loggedInUser.username, activeChat[1]);
   };
 
   ws.onerror = function (error) {
     console.error("Offline: WebSocket error:", error);
-    stopTyping(loggedInUser.username, user.username);
+    stopTyping(loggedInUser.username, activeChat[1]);
   };
 }
 
@@ -350,7 +330,6 @@ async function handlePrivateChat(senderUsername, recipientUsername) {
   const chatHeader = document.getElementById("chat-header");
   const messageInput = document.getElementById("messageInput");
   const sendButton = document.getElementById("send-btn");
-
   messageInput.style.display = "block";
   sendButton.style.display = "block";
   // Listen to input events (typing) in the messageInput field
@@ -391,7 +370,7 @@ async function handlePrivateChat(senderUsername, recipientUsername) {
 let scrollHandler = null; // Reference to the current scroll handler
 
 async function showMessages(chatID, recipientUsername) {
-  if (openChat[0] !== chatID || openChat[1] !== recipientUsername) return; // Check if the chat is still open
+  if (activeChat[0] !== chatID || activeChat[1] !== recipientUsername) return; // Check if the chat is still open
   /*  const messageInput = document.getElementById("messageInput");
   const sendButton = document.getElementById("send-btn"); */
   const chatHeader = document.getElementById("chat-header");
@@ -469,7 +448,7 @@ async function showMessages(chatID, recipientUsername) {
 
   // Add scroll event listener to load more messages when scrolling near the top
   scrollHandler = () => {
-    if (openChat[0] !== chatID || openChat[1] !== recipientUsername) return; // Check if the chat is still open
+    if (activeChat[0] !== chatID || activeChat[1] !== recipientUsername) return; // Check if the chat is still open
     if (messageDisplay.scrollTop === 0 && loadedMessages.length < messages.length) {
       const previousHeight = messageDisplay.scrollHeight; // Store the current height
       const remainingMessages = messages.length - loadedMessages.length;

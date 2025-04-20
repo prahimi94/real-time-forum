@@ -55,7 +55,7 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 		Mutex.Lock()
 		userManagementControllers.OnlineUsers[conn] = myUsername
 		userManagementControllers.UpdateOnlineUsers()
-		broadcastUserOnlineStatus(myUserID, true)
+		broadcastUserOnlineStatus()
 		Mutex.Unlock()
 
 		var chatID int // Declare chatID outside the loop
@@ -71,7 +71,7 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 				conn.Close()
 				delete(userManagementControllers.OnlineUsers, conn)
 				userManagementControllers.UpdateOnlineUsers()
-				broadcastUserOnlineStatus(myUserID, false)
+				broadcastUserOnlineStatus()
 				break
 			}
 
@@ -95,7 +95,7 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 				// Remove the connection from the OnlineUsers map
 				delete(userManagementControllers.OnlineUsers, conn)
 				userManagementControllers.UpdateOnlineUsers()
-				broadcastUserOnlineStatus(myUserID, false)
+				broadcastUserOnlineStatus()
 				Mutex.Unlock()
 				// Exit the loop to stop processing messages for this connection
 				break
@@ -216,10 +216,10 @@ func HandleMessages() {
 		for client, username := range userManagementControllers.OnlineUsers {
 
 			// Retrieve the userID of the disconnected user
-			disconnectedUserID, err := userManagementModels.GetUserIDByUsername(username)
+			/* disconnectedUserID, err := userManagementModels.GetUserIDByUsername(username)
 			if err != nil {
 				fmt.Println("Error retrieving userID for disconnected user:", err)
-			}
+			} */
 
 			if message.Type == "typing" && username == message.Recipient {
 				err := client.WriteJSON(message)
@@ -227,7 +227,7 @@ func HandleMessages() {
 					client.Close()
 					delete(userManagementControllers.OnlineUsers, client)
 					userManagementControllers.UpdateOnlineUsers()
-					broadcastUserOnlineStatus(disconnectedUserID, false)
+					broadcastUserOnlineStatus()
 				}
 			} else if message.Type == "private_chat" && (username == message.Recipient || username == message.Sender) {
 				err := client.WriteJSON(message)
@@ -235,7 +235,7 @@ func HandleMessages() {
 					client.Close()
 					delete(userManagementControllers.OnlineUsers, client)
 					userManagementControllers.UpdateOnlineUsers()
-					broadcastUserOnlineStatus(disconnectedUserID, false)
+					broadcastUserOnlineStatus()
 				}
 			} else {
 				err := client.WriteJSON(message)
@@ -243,7 +243,7 @@ func HandleMessages() {
 					client.Close()
 					delete(userManagementControllers.OnlineUsers, client)
 					userManagementControllers.UpdateOnlineUsers()
-					broadcastUserOnlineStatus(disconnectedUserID, false)
+					broadcastUserOnlineStatus()
 
 				}
 			}
@@ -393,24 +393,47 @@ func GetAllChatUsersHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func broadcastUserOnlineStatus(userID int, isOnline bool) {
-	// Broadcast the updated user list to all clients
-	users, err := userManagementModels.ReadAllChatUsers(userID)
+func broadcastUserOnlineStatus() {
+	// Iterate through all online users
+	for conn, username := range userManagementControllers.OnlineUsers {
 
-	for i, user := range users {
-		for _, username := range userManagementControllers.OnlineUsers {
-			if username == user.Username {
-				users[i].IsOnline = isOnline
-				continue
+		// Get the user ID of the current online user
+		currentUserID, err := userManagementModels.GetUserIDByUsername(username)
+		if err != nil {
+			fmt.Println("Error fetching user ID for username:", username, err)
+			continue
+		}
+
+		// Fetch the user list specific to the current user
+		users, err := userManagementModels.ReadAllChatUsers(currentUserID)
+		if err != nil {
+			fmt.Println("Error fetching users for userID:", currentUserID, err)
+			continue
+		}
+
+		// Update the online status for the fetched user list
+		for i, user := range users {
+			for _, onlineUsername := range userManagementControllers.OnlineUsers {
+				if onlineUsername == user.Username {
+					users[i].IsOnline = true
+					break
+				}
 			}
 		}
+
+		// Prepare the WebSocket message
+		var socketmsg WebsocketMsg
+		socketmsg.Type = "fetch_all_users"
+		socketmsg.Users = users
+
+		// Send the message to the specific user
+		err = conn.WriteJSON(socketmsg)
+		if err != nil {
+			fmt.Println("Error sending message to user:", username, err)
+			conn.Close()
+			delete(userManagementControllers.OnlineUsers, conn)
+			userManagementControllers.UpdateOnlineUsers()
+			broadcastUserOnlineStatus()
+		}
 	}
-	if err != nil {
-		fmt.Println("Error fetching users: ", err)
-	}
-	var socketmsg WebsocketMsg
-	socketmsg.Type = "fetch_all_users"
-	socketmsg.Users = users
-	Broadcast <- socketmsg
-	//fmt.Println("broadcastUserOnlineStatus: ", socketmsg.Users)
 }
