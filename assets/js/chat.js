@@ -1,14 +1,8 @@
 let ws;
 let onlineUsernames = [];
 let allUserData = {};
-let isProcessingMessages = false;
-//let anotherUserClicked = false;
-let chatboxOpen = false;
 let activeChat = [(ID = null), (recipient = null)];
-let loadedMessages = []; // Keep track of already loaded messages
-
-let typingTimeout;
-let isTyping = false;
+let loadedMessages = []; // Keep track of loaded messages for func showMessage
 
 async function fetchData(apiEndpoint) {
   try {
@@ -23,94 +17,53 @@ async function fetchData(apiEndpoint) {
   }
 }
 
-/* 
-function fetchAllChatUsers() {
-  fetch("/api/users", {
-    method: "GET",
-    headers: { "Content-Type": "application/json" },
-  })
-    .then((res) =>
-      res
-        .json()
-        .catch(() => ({ success: false, message: "Invalid JSON response" }))
-    ) // Prevent JSON parse errors
-    .then(async (data) => {
-      //allUserData = {};
-      document.getElementById("chat-users-list").innerHTML = ""; // Clear the current list
-      allUserData = data.data;
-      onlineUsernames = new Set(allUserData.filter(user => user.isOnline).map(user => user.username));
-      console.log(loggedInUser.username, "fetchAllChatUsers() allUserData:", allUserData);
-      await ShowAllChatUsers(allUserData);
-    });
-  // do more things and hdle errors
-} */
-
+// Handles listing all users
 async function ShowAllChatUsers(allUserData) {
   if (!Array.isArray(allUserData)) {
     allUserData = Object.values(allUserData);
   }
   try {
     const chatUsersList = document.getElementById("chat-users-list");
-    chatUsersList.innerHTML = ""; // Clear the current list
+    chatUsersList.innerHTML = "";
     const chatbox = document.getElementById("chatbox");
     const messageInput = document.getElementById("messageInput");
     const sendButton = document.getElementById("send-btn");
 
     for (const user of allUserData) {
-      if (user.username === loggedInUser.username) {
-        /* if (user.isOnline && !onlineUsernames.includes(user.username)) {
-          onlineUsernames.push(user.username); // Add online user to the list if not included
-        } else if (!user.isOnline && onlineUsernames.includes(user.username)) {
-          onlineUsernames = onlineUsernames.filter(
-            (username) => username !== user.username
-          );
-        } */
-        continue;
-      }
+      if (user.username === loggedInUser.username) continue;
 
       const chatID = await getChatID(loggedInUser.username, user.username);
       const li = document.createElement("li");
 
       if (user.isOnline) {
         activeChat = [chatID, user.username];
-        /* if (!onlineUsernames.includes(user.username)) {
-          onlineUsernames.push(user.username); // Add online user to the list if not included
-        } */
         li.classList.add("isOnline");
         li.textContent = `${user.username} 👋`;
 
-        li.onclick = null; // Clear previous handler
+        li.onclick = null;
         li.onclick = async () => openChatbox(chatID, loggedInUser.username, user.username);
 
-        if (chatboxOpen || chatbox.style.display === "block") {
+        if (chatbox.style.display === "block") {
           messageInput.style.display = "block";
           sendButton.style.display = "block";
           await handlePrivateChat(loggedInUser.username, user.username)
           // Listen to input events (typing) in the messageInput field
-          /* messageInput.removeEventListener("input", (event) =>
+          messageInput.removeEventListener("input", (event) =>
             handleTyping(event, loggedInUser.username, user.username)
-          ); */// Remove previous event listener to avoid duplicates
+          ); // Remove previous event listener to avoid duplicates
           messageInput.addEventListener("input", (event) =>
             handleTyping(event, loggedInUser.username, user.username)
           );
         }
 
-      } else { // if user is offline
-       /*  if (onlineUsernames.includes(user.username)) {
-          onlineUsernames = onlineUsernames.filter((username) => username !== user.username);
-        } */
+      } else {
         li.textContent = user.username;
-        li.onclick = null; // Clear previous handler
+        li.onclick = null;
         li.onclick = async () => openChatbox(chatID, loggedInUser.username, user.username);
 
-        isProcessingMessages = false;
         activeChat = [null, null];
-        chatboxOpen = false;
         chatbox.style.display = "none";
-        messageInput.style.display = "none";
-        sendButton.style.display = "none";
-        document.getElementById("typing").style.display = "none";
-        stopTyping(loggedInUser.username, user.username); // Stop typing when user is offline
+        stopTyping(loggedInUser.username, user.username);
       }
       chatUsersList.appendChild(li);
     }
@@ -119,6 +72,7 @@ async function ShowAllChatUsers(allUserData) {
   }
 }
 
+// Handles when username is clicked
 async function openChatbox(chatID, senderUsername, recipientUsername) {
   const messageDisplay = document.getElementById("message-display");
   const chatbox = document.getElementById("chatbox");
@@ -126,19 +80,14 @@ async function openChatbox(chatID, senderUsername, recipientUsername) {
   const messages = document.getElementById("messages");
   const messageInput = document.getElementById("messageInput");
   const sendButton = document.getElementById("send-btn");
-
-  //isProcessingMessages = false;
-  //anotherUserClicked = true;
   loadedMessages = []; // Reset the loaded messages array
   messageDisplay.innerHTML = "";
 
-  if (chatboxOpen) {
-    chatboxOpen = false;
+  if (chatbox.style.display === "block") {
     activeChat = [null, null];
     chatbox.style.display = "none";
     stopTyping(senderUsername, recipientUsername); // stop typing when chatbox is closed
-  } else if (!chatboxOpen) {
-    chatboxOpen = true;
+  } else if (chatbox.style.display === "none") {
     activeChat = [chatID, recipientUsername];
     chatbox.style.display = "block";
     messages.style.display = "block";
@@ -146,22 +95,22 @@ async function openChatbox(chatID, senderUsername, recipientUsername) {
     messageDisplay.scrollTop = messageDisplay.scrollHeight;
     messageDisplay.innerHTML = "";
     chatHeader.textContent = `Chat with ${recipientUsername}`;
+    messageInput.style.display = "block";
+    sendButton.style.display = "block";
+    // Listen to input events (typing) in the messageInput field
+    messageInput.removeEventListener("input", (event) =>
+      handleTyping(event, loggedInUser.username, user.username)
+    ); // Remove previous event listener to avoid duplicates
+    messageInput.addEventListener("input", (event) =>
+      handleTyping(event, senderUsername, recipientUsername)
+    );
 
-    if (recipientUsername.isOnline) {
+    if (onlineUsernames.has(recipientUsername)) {
       if (chatID) {
         await showMessages(chatID, recipientUsername);
       } else if (chatID === 0 || !chatID) {
         messageDisplay.innerHTML = "No chat history.";
       }
-      messageInput.style.display = "block";
-      sendButton.style.display = "block";
-      // Listen to input events (typing) in the messageInput field
-      /*     messageInput.removeEventListener("input", (event) =>
-        handleTyping(event, loggedInUser.username, user.username)
-      ); */// Remove previous event listener to avoid duplicates
-      messageInput.addEventListener("input", (event) =>
-        handleTyping(event, senderUsername, recipientUsername)
-      );
       await handlePrivateChat(senderUsername, recipientUsername);
     } else { //if user is offline
       messageInput.style.display = "none";
@@ -171,27 +120,23 @@ async function openChatbox(chatID, senderUsername, recipientUsername) {
         await showMessages(chatID, recipientUsername);
       } else if (chatID === 0 || !chatID) {
         chatHeader.textContent = `Chat with ${recipientUsername}`;
-        messageDisplay.innerHTML = ""; // Clear previous messages
+        messageDisplay.innerHTML = "";
         messageDisplay.innerHTML = "No chat history.";
       }
     }
   }
 }
 
+/* --- WEBSOCKET CONNECTION --- */
 function connect() {
   ws = new WebSocket("ws://localhost:8080/ws");
 
   ws.onopen = async function () {
     console.log("Online: Connected to WebSocket server", loggedInUser.username);
-    //fetchAllChatUsers(); // Fetch all users to populate the list
   };
 
   ws.onmessage = async function (event) {
     try {
-      /*  onlineUsernames = await fetchData("/api/online-users");
-      allUserData = await fetchData("/api/users");
-      await showAllChatUsers(); */
-
       const message = JSON.parse(event.data);
 
       const chatbox = document.getElementById("chatbox");
@@ -202,9 +147,7 @@ function connect() {
       const sendButton = document.getElementById("send-btn");
       const typingIndicator = document.getElementById("typing");
 
-
       if (message.type === "private_chat") {
-        //await handlePrivateChat(message.sender, message.recipient);
         // Show notification only to the recipient
         if (loggedInUser.username === message.recipient) {
           const res = {
@@ -215,6 +158,9 @@ function connect() {
           showToast(res);
         }
 
+        // Move sender and recipient to top of the chat-user-list only for them
+        reorderChatUserList(message.sender, message.recipient);
+
         const chatID = await getChatID(message.sender, message.recipient);
         if (
           chatID &&
@@ -222,14 +168,12 @@ function connect() {
           (activeChat[1] === message.recipient ||
             activeChat[1] === message.sender)
         ) {
-          chatboxOpen = true;
           activeChat = [chatID, message.recipient];
-          /* await showMessages(chatID, message.recipient); */
 
           // Append new message to messageDisplay
           details.classList.add("details");
           messageElement.classList.add("msg");
-          timestamp = new Date(message.message.created_at).toLocaleString(); // Format the timestamp
+          timestamp = new Date(message.message.created_at).toLocaleString();
           details.textContent = `${message.sender} (${timestamp})`;
           messageElement.textContent = message.message.content;
 
@@ -245,53 +189,43 @@ function connect() {
           messageInput.style.display = "block";
           sendButton.style.display = "block";
           // Listen to input events (typing) in the messageInput field
-          /*     messageInput.removeEventListener("input", (event) =>
+          messageInput.removeEventListener("input", (event) =>
             handleTyping(event, loggedInUser.username, user.username)
-          );  */// Remove previous event listener to avoid duplicates
+          );// Remove previous event listener to avoid duplicates
           messageInput.addEventListener("input", (event) =>
             handleTyping(event, message.sender, message.recipient)
           );
+
           await handlePrivateChat(message.sender, message.recipient);
+        
         } else {
-          chatboxOpen = false;
           activeChat = [null, null];
           chatbox.style.display = "none";
           messageInput.style.display = "none";
           sendButton.style.display = "none";
-          typingIndicator.style.display = "none";
           stopTyping(message.sender, message.recipient);
         }
-      } /* else if (message.type === "show_all_users") {
-        await ShowAllChatUsers(message.users);
-      } */ else if (message.type === "typing") {
-        // Process incoming typing notifications and display the typing indicator in the chat UI
-
-        if (message.typing && message.sender === activeChat[1]) {
-          // Show typing indicator if the sender is the current chat recipient
-          typingIndicator.textContent = `${message.sender} is typing...`;
+      } else if (message.type === "typing") {
+        // Process incoming typing notifs and display typing indicator
+        if (message.typing && loggedInUser.username === message.recipient && message.sender === activeChat[1]) {
+          // Show typing indicator if the recipient is the current chat recipient
           typingIndicator.style.display = "block";
-        } else if (!message.typing && message.sender === activeChat[1]) {
+          typingIndicator.textContent = `${message.sender} is typing...`;
+        } else if (!message.typing) {
           // Hide typing indicator when typing stops
           typingIndicator.style.display = "none";
         }
       } else if (message.type === "fetch_all_users") {
-        if (allUserData.length === 0 || (allUserData.length != message.users.length)) { 
-          //fetchAllChatUsers();
+        onlineUsernames = new Set(message.users.filter(user => user.isOnline).map(user => user.username));
+        if (allUserData.length === 0 || (allUserData.length != message.users.length)) {
           await ShowAllChatUsers(message.users);
         } else {
 
           let chatUsersLi = document.getElementById("chat-users-list").getElementsByTagName("li");
-          onlineUsernames = new Set(message.users.filter(user => user.isOnline).map(user => user.username));
 
-          // Update only the online/offline status of users
-          //message.users.forEach(async (user) => {
-          //if (loggedInUser.username === user.username) return; // Skip the logged-in user
-
-          //const chatID = await getChatID(loggedInUser.username, user.username);
-
-          // Update only the online/offline status of users without rearranging the list
+          // Update only the online/offline style without rearranging the list
           for (const li of chatUsersLi) {
-            const username = li.textContent.replace(" 👋", ""); // Remove the emoji if present
+            const username = li.textContent.replace(" 👋", "");
             const isOnline = onlineUsernames.has(username);
 
             if (isOnline) {
@@ -324,6 +258,23 @@ function connect() {
   };
 }
 
+// Function to reorder chat-user-list (when new private_chat msg arrives)
+function reorderChatUserList(sender, recipient) {
+  const chatUsersList = document.getElementById("chat-users-list");
+  const users = Array.from(chatUsersList.children);
+
+  if (loggedInUser.username === sender) {
+    const recipientElement = users.find((li) => li.textContent.includes(recipient));
+    if (recipientElement) chatUsersList.removeChild(recipientElement);
+    if (recipientElement && recipient !== sender) chatUsersList.prepend(recipientElement);
+  } else if (loggedInUser.username === recipient) {
+    const senderElement = users.find((li) => li.textContent.includes(sender));
+    if (senderElement) chatUsersList.removeChild(senderElement);
+    if (senderElement) chatUsersList.prepend(senderElement);
+  }
+}
+
+// Handles messageInput and send
 async function handlePrivateChat(senderUsername, recipientUsername) {
   document.getElementById("chatbox").style.display = "block";
   document.getElementById("messages").style.display = "block";
@@ -333,9 +284,9 @@ async function handlePrivateChat(senderUsername, recipientUsername) {
   messageInput.style.display = "block";
   sendButton.style.display = "block";
   // Listen to input events (typing) in the messageInput field
-  /*  messageInput.removeEventListener("input", (event) =>
-    handleTyping(event, loggedInUser.username, user.username)
-  ); */ // Remove previous event listener to avoid duplicates
+  messageInput.removeEventListener("input", (event) =>
+    handleTyping(event, senderUsername, recipientUsername)
+  ); // Remove previous event listener to avoid duplicates
   messageInput.addEventListener("input", (event) =>
     handleTyping(event, senderUsername, recipientUsername)
   );
@@ -343,36 +294,23 @@ async function handlePrivateChat(senderUsername, recipientUsername) {
   if (loggedInUser.username === senderUsername) {
     chatHeader.textContent = `Chat with ${recipientUsername}`;
     messageInput.placeholder = `Type a message to ${recipientUsername}`;
-    sendButton.onclick = null; // Clear previous handler
+    sendButton.onclick = null;
     sendButton.onclick = () => sendMessage(senderUsername, recipientUsername);
-    document.getElementById("typing").style.display = "none";
     stopTyping(senderUsername, recipientUsername);
   } else if (loggedInUser.username === recipientUsername) {
     chatHeader.textContent = `Chat with ${senderUsername}`;
     messageInput.placeholder = `Type a message to ${senderUsername}`;
-    sendButton.onclick = null; // Clear previous handler
+    sendButton.onclick = null;
     sendButton.onclick = () => sendMessage(recipientUsername, senderUsername);
-    document.getElementById("typing").style.display = "none";
     stopTyping(recipientUsername, senderUsername);
   }
-
-  // Send a message to the server to initiate or check the chat
-  /*   if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(
-        JSON.stringify({
-          type: "private_chat",
-          sender: senderUsername,
-          recipient: recipientUsername,
-        })
-      );
-    } */
 }
+
+// Shows messages in the chatbox/messageDisplay w/throttle 10msgs at a time
 let scrollHandler = null; // Reference to the current scroll handler
 
 async function showMessages(chatID, recipientUsername) {
   if (activeChat[0] !== chatID || activeChat[1] !== recipientUsername) return; // Check if the chat is still open
-  /*  const messageInput = document.getElementById("messageInput");
-  const sendButton = document.getElementById("send-btn"); */
   const chatHeader = document.getElementById("chat-header");
   const messageDisplay = document.getElementById("message-display");
   chatHeader.textContent = `Chat with ${recipientUsername}`;
@@ -388,30 +326,17 @@ async function showMessages(chatID, recipientUsername) {
     stopTyping(loggedInUser.username, recipientUsername);
     return;
   }
-  // Reverse the messages to show the latest ones at the bottom
-  // messages.reverse();
-
-  //isProcessingMessages = false;
-  //anotherUserClicked = false;
 
   // Throttle to process msgs in batches of 10
   const batchSize = 10;
 
   function renderMessages(batch, appendToTop = true) {
-    //if (isProcessingMessages/*  || anotherUserClicked */) return; // Prevent multiple triggers
-    //isProcessingMessages = true;
-
-    // const batch = messages.splice(0, batchSize); // Get the next batch of messages
-    //loadedMessages = [...batch, ...loadedMessages]; // Add to the loaded messages
-
     batch.forEach((message) => {
-      //if (anotherUserClicked) return;
-
       const messageElement = document.createElement("p");
       const details = document.createElement("div");
       details.classList.add("details");
       messageElement.classList.add("msg");
-      timestamp = new Date(message.created_at).toLocaleString(); // Format the timestamp
+      timestamp = new Date(message.created_at).toLocaleString();
       details.textContent = `${message.created_by_username} (${timestamp})`;
       messageElement.textContent = message.content;
 
@@ -428,17 +353,10 @@ async function showMessages(chatID, recipientUsername) {
         messageDisplay.append(details);
       }
 
-
-      document.getElementById("typing").style.display = "none";
       stopTyping(loggedInUser.username, recipientUsername);
     });
-
-    // isProcessingMessages = false;
-
   }
-
   // Load initial batch (most recent messages)
-  //messages.reverse(); // Ensure the latest messages are at the end
   const initialBatch = messages.slice(-batchSize);
   loadedMessages = [...initialBatch];
   renderMessages(initialBatch, false);
@@ -455,7 +373,7 @@ async function showMessages(chatID, recipientUsername) {
       const olderBatch = messages.slice(
         Math.max(0, remainingMessages - batchSize),
         remainingMessages
-      ).reverse(); // Get the next batch of older messages
+      ).reverse(); // Get the next batch of older messages, in reverse order
       loadedMessages = [...olderBatch, ...loadedMessages];
       renderMessages(olderBatch);
       // Maintain the scroll position after loading more messages
@@ -463,12 +381,6 @@ async function showMessages(chatID, recipientUsername) {
     }
   }
   messageDisplay.addEventListener("scroll", scrollHandler);
-
-
-  /*   if (!message.users.includes(recipientUsername)) {
-    messageInput.style.display = "none";
-    sendButton.style.display = "none";
-  } */
 }
 
 async function getChatID(senderUsername, recipientUsername) {
@@ -478,11 +390,11 @@ async function getChatID(senderUsername, recipientUsername) {
   return data.data; // Return the chatID from the response
 }
 
+// Send message to server
 function sendMessage(senderUsername, recipientUsername) {
-  isProcessingMessages = false;
   let input = document.getElementById("messageInput");
-  let message = input.value.trim(); // Remove leading/trailing whitespace
-  if (message.length === 0) return; // Do not accept empty messages
+  let messageContent = input.value.trim();
+  if (messageContent.length === 0) return;
 
   if (recipientUsername && ws && ws.readyState === WebSocket.OPEN) {
     if (ws && ws.readyState === WebSocket.OPEN) {
@@ -491,7 +403,7 @@ function sendMessage(senderUsername, recipientUsername) {
           type: "private_chat",
           sender: senderUsername,
           recipient: recipientUsername,
-          content: message,
+          content: messageContent,
           //timestamp: new Date().toLocaleString(),
           timestamp: new Date().toISOString(), // Use ISO 8601 format
         })
@@ -502,6 +414,9 @@ function sendMessage(senderUsername, recipientUsername) {
 }
 
 /* TYPING */
+
+let typingTimeout;
+let isTyping = false;
 
 function handleTyping(event, senderUsername, recipientUsername) {
   if (!recipientUsername) return; // Ensure a chat is active
@@ -519,8 +434,9 @@ function handleTyping(event, senderUsername, recipientUsername) {
   }, 2000); // 2 seconds of inactivity
 }
 
+// Send typing status to the server
 function sendTypingStatus(isTyping, senderUsername, recipientUsername) {
-  if (!senderUsername || !recipientUsername) return; // Ensure sender and recipient are provided
+  if (!senderUsername || !recipientUsername) return;
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.send(
       JSON.stringify({

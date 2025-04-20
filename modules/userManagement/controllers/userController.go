@@ -549,17 +549,6 @@ func UserSetCookie(w http.ResponseWriter, sessionToken string, expiresAt time.Ti
 	})
 }
 
-func LoggedInUsersHandler(w http.ResponseWriter, r *http.Request) {
-	usernames, err := userManagementModels.GetActiveSessionUsernames(r)
-	if err != nil {
-		http.Error(w, "Failed to fetch logged-in users", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(usernames)
-}
-
 // Helper function to broadcast the list of online users
 func UpdateOnlineUsers() {
 	usernames := make([]string, 0, len(OnlineUsers))
@@ -590,7 +579,6 @@ func UpdateOnlineUsers() {
 func SocketLogoutHandler(w http.ResponseWriter, r *http.Request, loggedInUser userManagementModels.User) {
 	for clientConn, clientUserName := range OnlineUsers {
 		if clientUserName == loggedInUser.Username {
-			//Mutex.Lock()
 			defer clientConn.Close() // close their websocket
 			delete(OnlineUsers, clientConn)
 			UpdateOnlineUsers() // Update the online users list
@@ -600,7 +588,5 @@ func SocketLogoutHandler(w http.ResponseWriter, r *http.Request, loggedInUser us
 			"type":    "logout",
 			"message": "You have been logged out.",
 		})
-		//Mutex.Unlock()
-		//break
 	}
 }

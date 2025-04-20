@@ -128,17 +128,14 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 
 					// Handle "typing" message type
 					if msgData.Type == "typing" {
-						//fmt.Println("Typing message received: ", msgData)
 						socketmsg.Type = "typing"
 						socketmsg.Sender = msgData.Sender
 						socketmsg.Recipient = msgData.Recipient
 						socketmsg.Typing = msgData.Typing
-						Broadcast <- socketmsg // Notify the recipient about typing status
+						Broadcast <- socketmsg
 						continue
 					}
 
-					// Handle "private_chat" message type
-					//if msgData.Type == "private_chat" {
 					recipientUsername := msgData.Recipient
 
 					// Get recipient user ID
@@ -163,12 +160,6 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 							continue
 						}
 					}
-					/* socketmsg.Type = "private_chat_confirmed"
-					socketmsg.Recipient = msgData.Recipient
-					socketmsg.Sender = msgData.Sender
-					Broadcast <- socketmsg
-					continue */
-					//}
 
 					sanitizedMsg := utils.SanitizeInput(msgData.Content)
 					// Ignore empty messages
@@ -215,12 +206,6 @@ func HandleMessages() {
 
 		for client, username := range userManagementControllers.OnlineUsers {
 
-			// Retrieve the userID of the disconnected user
-			/* disconnectedUserID, err := userManagementModels.GetUserIDByUsername(username)
-			if err != nil {
-				fmt.Println("Error retrieving userID for disconnected user:", err)
-			} */
-
 			if message.Type == "typing" && username == message.Recipient {
 				err := client.WriteJSON(message)
 				if err != nil {
@@ -252,24 +237,6 @@ func HandleMessages() {
 	}
 }
 
-/*
-	 func OnlineUsersHandler(w http.ResponseWriter, r *http.Request) {
-		Mutex.Lock()
-		defer Mutex.Unlock()
-
-		// Collect usernames of online users
-		usernames := make([]string, 0, len(userManagementControllers.OnlineUsers))
-		for _, username := range userManagementControllers.OnlineUsers {
-			usernames = append(usernames, username)
-		}
-
-		// Respond with the list of usernames
-		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(usernames); err != nil {
-			http.Error(w, "Failed to encode online users", http.StatusInternalServerError)
-		}
-	}
-*/
 func ChatMsgHandler(w http.ResponseWriter, r *http.Request) {
 	// Extract chatID from the URL path
 	chatIDStr := r.URL.Path[len("/api/chat-messages/"):]
@@ -336,9 +303,6 @@ func GetChatIDHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Respond with the chat ID
-	/* 	w.Header().Set("Content-Type", "application/json")
-	   	json.NewEncoder(w).Encode(map[string]int{"chatID": chatID}) */
 	res := utils.Result{
 		Success: true,
 		Message: "ChatID fetched successfully",
@@ -375,15 +339,6 @@ func GetAllChatUsersHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-
-	// Return the users as JSON
-	/* 	w.Header().Set("Content-Type", "application/json")
-	   	var socketmsg WebsocketMsg
-	   	socketmsg.Type = "show_all_users"
-	   	socketmsg.Users = users
-	   	Broadcast <- socketmsg
-	   	json.NewEncoder(w).Encode(map[string]bool{"success": true}) */
-
 	res := utils.Result{
 		Success: true,
 		Message: "Users fetched successfully",

@@ -18,17 +18,11 @@ func SetupRoutes() {
 
 	//FOR CHAT
 	http.HandleFunc("/ws", forumManagementControllers.WsHandler)
-	//http.HandleFunc("/api/online-users", forumManagementControllers.OnlineUsersHandler) //GET USERS CONNECTED TO WS
 	http.HandleFunc("/api/get-chat-id", forumManagementControllers.GetChatIDHandler)
 	http.HandleFunc("/api/chat-messages/", forumManagementControllers.ChatMsgHandler) //GET CHAT MESSAGES
 
 	//FOR SESSIONS
 	http.HandleFunc("/api/check-session", userManagementControllers.CheckSessionHandler)
-
-	//TO GET LOGGED-IN USERS = active session
-	http.HandleFunc("/api/loggedin-users", userManagementControllers.LoggedInUsersHandler)
-
-	//http.HandleFunc("/api/users", forumManagementControllers.GetAllChatUsersHandler) //GET ALL USERS
 
 	// http.HandleFunc("/home/", forumManagementControllers.HomePageHandler)
 	http.HandleFunc("/auth/", userManagementControllers.AuthHandler)
