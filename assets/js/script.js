@@ -1116,7 +1116,6 @@ function updatePostHtml(post, comments, postId) {
 
     const formattedDateTime = post.created_at.replace('T', ' ').replace('Z', '');
 
-    //todo
     const postButtons = 
     post.user_id === loggedInUser.id
                     ?`
@@ -1279,77 +1278,78 @@ function updatePostHtml(post, comments, postId) {
             comments.forEach(comment => {
                 const commentDateTime = comment.created_at.replace('T', ' ').replace('Z', '');
     
-                //todo
-                const commentButtons = ''
-                // comment.user_id === loggedInUser.id
-                //     ? `<div style="float: right;margin-top: -16px;">
-                //                 <div class="row py-3 ms-2">
-                //                     <div class="btn-group">
-                //                         <a type="button" class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                //                             <i class="fa-solid fa-ellipsis"></i>
-                //                         </a>
-                //                         <ul class="dropdown-menu dropdown-menu-end" style="border: 1px solid #c2c2c270;">
-                //                             <li>
-                //                                 <!-- Button trigger modal -->
-                //                                 <a type="button" class="dropdown-item" data-bs-toggle="modal" data-target="#updateCommentModal-${comment.id}">
-                //                                     <i class="fas fa-edit me-2"></i>Edit Comment
-                //                                 </a>
+                const commentButtons = 
+                comment.user_id === loggedInUser.id
+                    ? `<div style="float: right;margin-top: -16px;">
+                            <div class="row py-3 ms-2">
+                                <div class="btn-group">
+                                    <div class="mydropdown">
+                                        <a class="btn btn-light mydropdown-toggle" type="button">
+                                            <i class="fa-solid fa-ellipsis"></i>
+                                        </a>
+                                        <ul class="mydropdown-menu dropdown-menu dropdown-menu-end" style="border: 1px solid #c2c2c270;">
+                                            <li>
+                                                <!-- Button trigger modal -->
+                                                <a type="button" class="dropdown-item open-modal" data-target="updateCommentModal-${comment.id}">
+                                                    <i class="fas fa-edit me-2"></i>Edit Comment
+                                                </a>
                                                 
-                //                             </li>
-                //                             <li>
-                //                                 <a type="button" class="dropdown-item" data-bs-toggle="modal" data-target="#deletCommentModal-${comment.id}"><i class="fa-solid fa-trash me-2"></i>Delete Comment</a> 
-                //                             </li>
-                //                         </ul>
-                //                     </div>
-                //                 </div>
-                //             </div>
-                //             <!-- Modal -->
-                //             <div class="modal fade" id="updateCommentModal-${comment.id}" tabindex="-1" aria-labelledby="editCommentModalLabel" aria-hidden="true">
-                //                 <div class="modal-dialog">
-                //                 <div class="modal-content">
-                //                     <div class="modal-header">
-                //                     <h1 class="modal-title fs-5" id="editCommentModalLabel">Edit comment</h1>
-                //                     <a type="button" class="btn-close close-modal" data-bs-dismiss="modal" aria-label="Close"></a>
-                //                     </div>
-                //                     <form id="updateCommentForm-${comment.id}" method="post" enctype="multipart/form-data">
-                //                     <div class="modal-body">
-                //                             <input type="hidden" name="post_uuid" value="${post.uuid}">
-                //                             <input type="hidden" name="comment_id" value="${comment.id}">
-                //                             <div class="mb-3">
-                //                             <label for="description-text" class="col-form-label">Comment:</label>
-                //                             <textarea class="form-control" id="description-text" name="description">${comment.description}</textarea>
-                //                             </div>
-                //                     </div>
-                //                     <div class="modal-footer">
-                //                     <a type="button" class="btn btn-secondary close-modal" data-bs-dismiss="modal">Close</a>
-                //                     <a onclick="updateComment(${comment.id}, ${post.id}, '${post.uuid}')" class="btn btn-success">Save changes</a>
-                //                 </form>
-                //                     </div>
-                //                 </div>
-                //                 </div>
-                //             </div>
-                //             <div class="modal fade" id="deletCommentModal-${comment.id}" tabindex="-1" aria-labelledby="deletCommentModalLabel" aria-hidden="true">
-                //                 <form id="deleteCommentForm-${comment.id}" method="post">
-                //                     <input type="hidden" name="post_uuid" value="${post.uuid}">
-                //                     <input type="hidden" name="comment_id" value="${comment.id}">
-                //                     <div class="modal-dialog modal-dialog-centered">
-                //                         <div class="modal-content">
-                //                             <div class="modal-header bg-danger text-white">
-                //                                 <h5 class="modal-title" id="deletCommentModalLabel">Confirm Deletion</h5>
-                //                                 <a type="button" class="btn-close btn-close-white close-modal" data-bs-dismiss="modal" aria-label="Close"></a>
-                //                             </div>
-                //                             <div class="modal-body">
-                //                                 <p class="mb-0">Are you sure you want to delete this item? This action cannot be undone.</p>
-                //                             </div>
-                //                             <div class="modal-footer">
-                //                                 <a type="button" class="btn btn-secondary close-modal" data-bs-dismiss="modal">Cancel</a>
-                //                                 <a onclick="deleteComment(${comment.id}, ${post.id}, '${post.uuid}')" class="btn btn-danger" id="confirmDelete">Delete</a>
-                //                             </div>
-                //                         </div>
-                //                     </div>
-                //                 </form>
-                //             </div>`
-                //     : ``;
+                                            </li>
+                                            <li>
+                                                <a type="button" class="dropdown-item open-modal" data-target="deletCommentModal-${comment.id}"><i class="fa-solid fa-trash me-2"></i>Delete Comment</a> 
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Modal -->
+                        <div class="modal fade" id="updateCommentModal-${comment.id}" tabindex="-1" aria-labelledby="editCommentModalLabel" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                    <h1 class="modal-title fs-5" id="editCommentModalLabel">Edit comment</h1>
+                                    <a type="button" class="btn-close close-modal" data-bs-dismiss="modal" aria-label="Close"></a>
+                                    </div>
+                                    <form id="updateCommentForm-${comment.id}" method="post" enctype="multipart/form-data">
+                                    <div class="modal-body">
+                                            <input type="hidden" name="post_uuid" value="${post.uuid}">
+                                            <input type="hidden" name="comment_id" value="${comment.id}">
+                                            <div class="mb-3">
+                                            <label for="description-text" class="col-form-label">Comment:</label>
+                                            <textarea class="form-control" id="description-text" name="description">${comment.description}</textarea>
+                                            </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                    <a type="button" class="btn btn-secondary close-modal" data-bs-dismiss="modal">Close</a>
+                                    <a onclick="updateComment(${comment.id}, ${post.id}, '${post.uuid}')" class="btn btn-success">Save changes</a>
+                                    </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal fade" id="deletCommentModal-${comment.id}" tabindex="-1" aria-labelledby="deletCommentModalLabel" aria-hidden="true">
+                            <form id="deleteCommentForm-${comment.id}" method="post">
+                                <input type="hidden" name="post_uuid" value="${post.uuid}">
+                                <input type="hidden" name="comment_id" value="${comment.id}">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-danger text-white">
+                                            <h5 class="modal-title" id="deletCommentModalLabel">Confirm Deletion</h5>
+                                            <a type="button" class="btn-close btn-close-white close-modal" data-bs-dismiss="modal" aria-label="Close"></a>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p class="mb-0">Are you sure you want to delete this item? This action cannot be undone.</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <a type="button" class="btn btn-secondary close-modal" data-bs-dismiss="modal">Cancel</a>
+                                            <a onclick="deleteComment(${comment.id}, ${post.id}, '${post.uuid}')" class="btn btn-danger" id="confirmDelete">Delete</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>`
+                    : ``;
     
                 const commentLikeElement = comment.liked
                     ? `<a onclick="likeComment(${comment.id}, ${post.id}, '${post.uuid}','like')" name="like" value="like" class="btn btn-success"><i class="fa-solid fa-thumbs-up"></i></a>`
@@ -1468,42 +1468,6 @@ addEventListener("DOMContentLoaded", async function () {
     const toastLiveExample = document.getElementById('liveToast')
     // toast = new bootstrap.Toast(toastLiveExample)
 
-    // Add this in your script.js file
-    // document.addEventListener('shown.bs.modal', async function (event) {
-    //     const modal = event.target; // The modal that was opened
-        
-    //     if (modal.id.startsWith('updatePostModal-')) {
-    //         const postId = modal.id.split('-')[1]; // Extract the post ID from the modal ID
-            
-    //         // Fetch and populate the form with post data here
-    //         const postElement = document.getElementById(`post-${postId}`);
-    //         const title = postElement.querySelector('.post-title').textContent.trim();
-    //         const description = postElement.querySelector('.post-description').textContent.trim();
-    //         const selectedCategories = Array.from(postElement.querySelectorAll('.m-posts-ctg a')).map(category => {
-    //             const categoryName = category.textContent.trim();
-    //             const categoryObj = categories.find(cat => cat.name === categoryName);
-    //             return categoryObj ? categoryObj.id : null;
-    //         }).filter(id => id !== null);
-
-    //         const form = document.getElementById(`updatePostForm-${postId}`);
-    //         form.querySelector('input[name="title"]').value = title;
-    //         form.querySelector('textarea[name="description"]').value = description;
-    //         const categoriesSelect = form.querySelector('select[name="update_post_categories"]');
-    //         // laod categories in select for new post
-    //         const categoryOptions = categories.map(category =>
-    //             `<option value="${category.id}">${category.name}</option>`
-    //         ).join('');
-    //         categoriesSelect.innerHTML = categoryOptions;    
-
-    //         $(categoriesSelect).select2({
-    //             dropdownParent: $(`#updatePostModal-${postId}`)
-    //         }); // Initialize select2
-    //         if (selectedCategories && selectedCategories.length > 0) {
-    //             $(categoriesSelect).val(selectedCategories).trigger('change'); // Set values if selectedCategories are populated
-    //         }
-    //     }
-            
-    // });
 
     await checkSession();
 });

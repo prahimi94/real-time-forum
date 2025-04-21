@@ -17,20 +17,43 @@ document.addEventListener("click", function (e) {
       if (modal) {
         modal.classList.add("show");
         modal.style.display = "block";
+
+        console.log('opened')
+        if (modal.id.startsWith('updatePostModal-')) {
+          const postId = modal.id.split('-')[1]; // Extract the post ID from the modal ID
+          
+          // Fetch and populate the form with post data here
+          const postElement = document.getElementById(`post-${postId}`);
+          const title = postElement.querySelector('.post-title').textContent.trim();
+          const description = postElement.querySelector('.post-description').textContent.trim();
+          const selectedCategories = Array.from(postElement.querySelectorAll('.m-posts-ctg a')).map(category => {
+              const categoryName = category.textContent.trim();
+              const categoryObj = categories.find(cat => cat.name === categoryName);
+              return categoryObj ? categoryObj.id : null;
+          }).filter(id => id !== null);
+
+          const form = document.getElementById(`updatePostForm-${postId}`);
+          form.querySelector('input[name="title"]').value = title;
+          form.querySelector('textarea[name="description"]').value = description;
+
+          if (selectedCategories && selectedCategories.length > 0) {
+            const checkboxes = form.querySelectorAll('input[name="update_post_categories"]');
+            checkboxes.forEach((checkbox) => {
+              const isChecked = selectedCategories.includes(parseInt(checkbox.value));
+              checkbox.checked = isChecked;
+
+              if (isChecked) {
+                // Manually trigger the change event
+                // Use { bubbles: true } if any listeners are attached higher up the DOM (like on a form or container).
+                checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+              }
+            });
+
+          }
+        }
       }
     }
   });
-
-//todo
-// When the user clicks on the button, open the modal
-// btn.onclick = function() {
-//   modal.style.display = "block";
-// }
-
-// When the user clicks on <span> (x), close the modal
-// span.onclick = function() {
-//   modal.style.display = "none";
-// }
 
 document.addEventListener("click", function (e) {
     if (e.target.classList.contains("close-modal")) {
