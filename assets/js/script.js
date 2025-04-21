@@ -31,6 +31,7 @@ async function checkSessionActive() {
 
 function showNotAuthenticatedContainer() {
     const authContainer = document.getElementsByTagName('main')[0];
+    
     authContainer.innerHTML = `
     <div class="containerAuth">
         <div class="form-box login">
