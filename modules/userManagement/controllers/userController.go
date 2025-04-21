@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	errorManagementControllers "forum/modules/errorManagement/controllers"
+	"sync"
 
 	userManagementModels "forum/modules/userManagement/models"
 	"forum/utils"
@@ -22,6 +23,7 @@ const publicUrl = "modules/userManagement/views/"
 const forumPublicUrl = "modules/forumManagement/views/"
 
 var OnlineUsers = make(map[*websocket.Conn]string) // Map of online users (connected to WS) to usernames
+var Mutex = &sync.Mutex{}                          // Mutex to handle concurrent access to OnlineUsers
 
 //var u1 = uuid.Must(uuid.NewV4())
 
@@ -329,17 +331,9 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	deleteCookie(w, "session_token") // Deleting a cookie named "session_token"
-	SocketLogoutHandler(w, r, loggedInUser.Username)
-	// delete ws conn
-	//for client := range forumManagementControllers.OnlineUsers {
-	//if loggedInUser.Username == client {
-	//}
-	//fmt.Println(client)
-	/* forumManagementControllers.Mutex.Lock()
-	delete(forumManagementControllers.OnlineUsers, forumManagementControllers.conn)
-	forumManagementControllers.UpdateOnlineUsers() */
-	//}
-	//forumManagementControllers.Mutex.Unlock()
+	Mutex.Lock()
+	defer Mutex.Unlock()
+	SocketLogoutHandler(w, r, loggedInUser)
 
 	// RedirectToIndex(w, r)
 	res := utils.Result{
@@ -555,41 +549,6 @@ func UserSetCookie(w http.ResponseWriter, sessionToken string, expiresAt time.Ti
 	})
 }
 
-func LoggedInUsersHandler(w http.ResponseWriter, r *http.Request) {
-	usernames, err := userManagementModels.GetActiveSessionUsernames(r)
-	if err != nil {
-		http.Error(w, "Failed to fetch logged-in users", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(usernames)
-}
-
-func GetAllChatUsersHandler(w http.ResponseWriter, r *http.Request) {
-	// Retrieve the logged-in user's information
-	loginStatus, loginUser, _, checkLoginError := CheckLogin(w, r)
-	if checkLoginError != nil {
-		http.Error(w, "Failed to check login status", http.StatusInternalServerError)
-		return
-	}
-	if !loginStatus {
-		http.Error(w, "Unauthorized access", http.StatusUnauthorized)
-		return
-	}
-
-	// Pass the logged-in user's ID to ReadAllChatUsers
-	users, err := userManagementModels.ReadAllChatUsers(loginUser.ID)
-	if err != nil {
-		http.Error(w, "Failed to fetch users", http.StatusInternalServerError)
-		return
-	}
-
-	// Return the users as JSON
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(users)
-}
-
 // Helper function to broadcast the list of online users
 func UpdateOnlineUsers() {
 	usernames := make([]string, 0, len(OnlineUsers))
@@ -608,22 +567,26 @@ func UpdateOnlineUsers() {
 	for client := range OnlineUsers {
 		err := client.WriteMessage(websocket.TextMessage, userListJSON)
 		if err != nil {
+			Mutex.Lock()
+			defer Mutex.Unlock()
 			client.Close()
 			delete(OnlineUsers, client)
+
 		}
 	}
 }
 
-func SocketLogoutHandler(w http.ResponseWriter, r *http.Request, userName string) {
+func SocketLogoutHandler(w http.ResponseWriter, r *http.Request, loggedInUser userManagementModels.User) {
 	for clientConn, clientUserName := range OnlineUsers {
-		if clientUserName == userName {
+		if clientUserName == loggedInUser.Username {
+			defer clientConn.Close() // close their websocket
 			delete(OnlineUsers, clientConn)
-			UpdateOnlineUsers()
+			UpdateOnlineUsers() // Update the online users list
+			fmt.Println("User logged out:", clientUserName, "| OnlineUsers:", OnlineUsers)
 		}
 		clientConn.WriteJSON(map[string]string{
 			"type":    "logout",
 			"message": "You have been logged out.",
 		})
-		clientConn.Close() // close their websocket
 	}
 }
