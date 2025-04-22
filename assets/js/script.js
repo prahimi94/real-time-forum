@@ -184,9 +184,9 @@ function showAuthenticatedContainer() {
                     <a class="navbar-brand" href="/">
                         <img src="/img/logo.png" alt="Forum" class="me-2" style="height: 60px;">
                     </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar" aria-label="Toggle navigation">
+                <!-- <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar" aria-label="Toggle navigation">
                         <span class="navbar-toggler-icon"></span>
-                    </button>
+                    </button> -->
                 <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasNavbar" aria-labelledby="offcanvasNavbarLabel">
                         <div class="offcanvas-header">
                         <h5 class="offcanvas-title" id="offcanvasNavbarLabel"><img src="/img/logo.png" alt="Forum" class="me-2" style="height: 50px;"></h5>

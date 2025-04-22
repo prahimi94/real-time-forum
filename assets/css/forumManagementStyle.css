@@ -451,6 +451,7 @@ body {
     color: #999999;
     font-family: "Open Sans", serif;
     text-align: left;
+    overflow-x: scroll;
 }
 
 .col-right-userLogin .info-box-username p {
