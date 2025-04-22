@@ -1,6 +1,5 @@
 let ws;
 let onlineUsernames = [];
-let allUserData = {};
 let activeChat = [(ID = null), (recipient = null)];
 let loadedMessages = []; // Keep track of loaded messages for func showMessage
 
@@ -18,9 +17,9 @@ async function fetchData(apiEndpoint) {
 }
 
 // Handles listing all users
-async function ShowAllChatUsers(allUserData) {
-  if (!Array.isArray(allUserData)) {
-    allUserData = Object.values(allUserData);
+async function ShowAllChatUsers(users) {
+  if (!Array.isArray(users)) {
+    users = Object.values(users);
   }
   try {
     const chatUsersList = document.getElementById("chat-users-list");
@@ -29,14 +28,12 @@ async function ShowAllChatUsers(allUserData) {
     const messageInput = document.getElementById("messageInput");
     const sendButton = document.getElementById("send-btn");
 
-    for (const user of allUserData) {
+    for (const user of users) {
       if (user.username === loggedInUser.username) continue;
-
       const chatID = await getChatID(loggedInUser.username, user.username);
       const li = document.createElement("li");
 
       if (user.isOnline) {
-        activeChat = [chatID, user.username];
         li.classList.add("isOnline");
         li.textContent = `${user.username} 👋`;
 
@@ -61,7 +58,6 @@ async function ShowAllChatUsers(allUserData) {
         li.onclick = null;
         li.onclick = async () => openChatbox(chatID, loggedInUser.username, user.username);
 
-        activeChat = [null, null];
         chatbox.style.display = "none";
         stopTyping(loggedInUser.username, user.username);
       }
@@ -74,6 +70,10 @@ async function ShowAllChatUsers(allUserData) {
 
 // Handles when username is clicked
 async function openChatbox(chatID, senderUsername, recipientUsername) {
+  if (chatID === 0 || chatID === null) {
+    chatID = await getChatID(senderUsername, recipientUsername);
+  }
+
   const messageDisplay = document.getElementById("message-display");
   const chatbox = document.getElementById("chatbox");
   const chatHeader = document.getElementById("chat-header");
@@ -148,6 +148,7 @@ function connect() {
       const typingIndicator = document.getElementById("typing");
 
       if (message.type === "private_chat") {
+
         // Show notification only to the recipient
         if (loggedInUser.username === message.recipient) {
           const res = {
@@ -161,14 +162,14 @@ function connect() {
         // Move sender and recipient to top of the chat-user-list only for them
         reorderChatUserList(message.sender, message.recipient);
 
-        const chatID = await getChatID(message.sender, message.recipient);
-        if (
-          chatID &&
-          activeChat[0] === chatID &&
-          (activeChat[1] === message.recipient ||
-            activeChat[1] === message.sender)
-        ) {
-          activeChat = [chatID, message.recipient];
+        if (message.message.chat_id && (activeChat[1] === message.recipient || activeChat[1] === message.sender) && chatbox.style.display === "block") {
+          activeChat = [message.message.chat_id, message.recipient];
+
+          await handlePrivateChat(message.sender, message.recipient);
+
+          if (messageDisplay.innerHTML === "No chat history." || messageDisplay.innerHTML === "Chat started but no messages yet.") {
+            messageDisplay.innerHTML = "";
+          }
 
           // Append new message to messageDisplay
           details.classList.add("details");
@@ -196,14 +197,7 @@ function connect() {
             handleTyping(event, message.sender, message.recipient)
           );
 
-          await handlePrivateChat(message.sender, message.recipient);
-        
-        } else {
-          activeChat = [null, null];
-          chatbox.style.display = "none";
-          messageInput.style.display = "none";
-          sendButton.style.display = "none";
-          stopTyping(message.sender, message.recipient);
+
         }
       } else if (message.type === "typing") {
         // Process incoming typing notifs and display typing indicator
@@ -217,11 +211,14 @@ function connect() {
         }
       } else if (message.type === "fetch_all_users") {
         onlineUsernames = new Set(message.users.filter(user => user.isOnline).map(user => user.username));
-        if (allUserData.length === 0 || (allUserData.length != message.users.length)) {
+        const chatUsersList = document.getElementById("chat-users-list");
+        const currentUsers = Array.from(chatUsersList.children).map(li => li.textContent.replace(" 👋", ""));
+
+        // If chat-user-list is empty or a new user registers, reset the list ShowAllChatUsers
+        if (currentUsers.length === 0 || currentUsers.length + 1 !== message.users.length) {
           await ShowAllChatUsers(message.users);
         } else {
-
-          let chatUsersLi = document.getElementById("chat-users-list").getElementsByTagName("li");
+          let chatUsersLi = chatUsersList.getElementsByTagName("li");
 
           // Update only the online/offline style without rearranging the list
           for (const li of chatUsersLi) {
@@ -322,7 +319,7 @@ async function showMessages(chatID, recipientUsername) {
   let messages = await fetchData(`/api/chat-messages/${chatID}`);
 
   if (!messages || messages.length === 0) {
-    messageDisplay.textContent = "Chat started but no messages yet.";
+    messageDisplay.innerHTML = "Chat started but no messages yet.";
     stopTyping(loggedInUser.username, recipientUsername);
     return;
   }

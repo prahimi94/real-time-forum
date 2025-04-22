@@ -147,18 +147,13 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 
 					// Check if chat exists, if not create it and add chat members
 					chatID, err = forumManagementModels.CheckChatExists(myUserID, recipientUserID)
+					if err == nil && chatID == 0 {
+						newChat := &forumManagementModels.Chat{Type: "private"}
+						chatID, err = forumManagementModels.InsertChat(newChat, myUserID, recipientUserID, nil)
+					}
 					if err != nil {
 						errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 						continue
-					}
-					// If no chatID exists (0), InsertChat
-					if chatID == 0 {
-						chat := &forumManagementModels.Chat{ID: chatID, Type: "private"}
-						chatID, err = forumManagementModels.InsertChat(chat, myUserID, recipientUserID, nil)
-						if err != nil {
-							errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-							continue
-						}
 					}
 
 					sanitizedMsg := utils.SanitizeInput(msgData.Content)
@@ -168,7 +163,7 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 					}
 
 					// If chatID exists, go directly to InsertMsg
-					if chatID != 0 {
+					if (chatID != 0) && msgData.Content != "" {
 						msg := &forumManagementModels.Message{
 							ChatID:            chatID,
 							Content:           sanitizedMsg,
@@ -185,6 +180,7 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 						}
 					}
 					socketmsg.Type = "private_chat"
+					socketmsg.Message.ChatID = chatID
 					socketmsg.Message.Content = sanitizedMsg
 					socketmsg.Sender = msgData.Sender
 					socketmsg.Recipient = msgData.Recipient
