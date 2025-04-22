@@ -38,12 +38,13 @@ async function ShowAllChatUsers(users) {
         li.textContent = `${user.username} 👋`;
 
         li.onclick = null;
-        li.onclick = async () => openChatbox(chatID, loggedInUser.username, user.username);
+        li.onclick = async () =>
+          openChatbox(chatID, loggedInUser.username, user.username);
 
         if (chatbox.style.display === "block") {
           messageInput.style.display = "block";
           sendButton.style.display = "block";
-          await handlePrivateChat(loggedInUser.username, user.username)
+          await handlePrivateChat(loggedInUser.username, user.username);
           // Listen to input events (typing) in the messageInput field
           messageInput.removeEventListener("input", (event) =>
             handleTyping(event, loggedInUser.username, user.username)
@@ -52,11 +53,11 @@ async function ShowAllChatUsers(users) {
             handleTyping(event, loggedInUser.username, user.username)
           );
         }
-
       } else {
         li.textContent = user.username;
         li.onclick = null;
-        li.onclick = async () => openChatbox(chatID, loggedInUser.username, user.username);
+        li.onclick = async () =>
+          openChatbox(chatID, loggedInUser.username, user.username);
 
         chatbox.style.display = "none";
         stopTyping(loggedInUser.username, user.username);
@@ -112,7 +113,8 @@ async function openChatbox(chatID, senderUsername, recipientUsername) {
         messageDisplay.innerHTML = "No chat history.";
       }
       await handlePrivateChat(senderUsername, recipientUsername);
-    } else { //if user is offline
+    } else {
+      //if user is offline
       messageInput.style.display = "none";
       sendButton.style.display = "none";
       stopTyping(senderUsername, recipientUsername);
@@ -148,7 +150,6 @@ function connect() {
       const typingIndicator = document.getElementById("typing");
 
       if (message.type === "private_chat") {
-
         // Show notification only to the recipient
         if (loggedInUser.username === message.recipient) {
           const res = {
@@ -162,12 +163,20 @@ function connect() {
         // Move sender and recipient to top of the chat-user-list only for them
         reorderChatUserList(message.sender, message.recipient);
 
-        if (message.message.chat_id && (activeChat[1] === message.recipient || activeChat[1] === message.sender) && chatbox.style.display === "block") {
+        if (
+          message.message.chat_id &&
+          (activeChat[1] === message.recipient ||
+            activeChat[1] === message.sender) &&
+          chatbox.style.display === "block"
+        ) {
           activeChat = [message.message.chat_id, message.recipient];
 
           await handlePrivateChat(message.sender, message.recipient);
 
-          if (messageDisplay.innerHTML === "No chat history." || messageDisplay.innerHTML === "Chat started but no messages yet.") {
+          if (
+            messageDisplay.innerHTML === "No chat history." ||
+            messageDisplay.innerHTML === "Chat started but no messages yet."
+          ) {
             messageDisplay.innerHTML = "";
           }
 
@@ -192,30 +201,45 @@ function connect() {
           // Listen to input events (typing) in the messageInput field
           messageInput.removeEventListener("input", (event) =>
             handleTyping(event, loggedInUser.username, user.username)
-          );// Remove previous event listener to avoid duplicates
+          ); // Remove previous event listener to avoid duplicates
           messageInput.addEventListener("input", (event) =>
             handleTyping(event, message.sender, message.recipient)
           );
-
-
         }
       } else if (message.type === "typing") {
         // Process incoming typing notifs and display typing indicator
-        if (message.typing && loggedInUser.username === message.recipient && message.sender === activeChat[1]) {
+        if (
+          message.typing &&
+          loggedInUser.username === message.recipient &&
+          message.sender === activeChat[1]
+        ) {
           // Show typing indicator if the recipient is the current chat recipient
           typingIndicator.style.display = "block";
-          typingIndicator.textContent = `${message.sender} is typing...`;
+          typingIndicator.innerHTML = `
+          <span>${message.sender} is typing</span>
+          <div class="dot-flashing"></div>
+        `;
         } else if (!message.typing) {
           // Hide typing indicator when typing stops
           typingIndicator.style.display = "none";
+          typingIndicator.innerHTML = ""; // Clear the content
         }
       } else if (message.type === "fetch_all_users") {
-        onlineUsernames = new Set(message.users.filter(user => user.isOnline).map(user => user.username));
+        onlineUsernames = new Set(
+          message.users
+            .filter((user) => user.isOnline)
+            .map((user) => user.username)
+        );
         const chatUsersList = document.getElementById("chat-users-list");
-        const currentUsers = Array.from(chatUsersList.children).map(li => li.textContent.replace(" 👋", ""));
+        const currentUsers = Array.from(chatUsersList.children).map((li) =>
+          li.textContent.replace(" 👋", "")
+        );
 
         // If chat-user-list is empty or a new user registers, reset the list ShowAllChatUsers
-        if (currentUsers.length === 0 || currentUsers.length + 1 !== message.users.length) {
+        if (
+          currentUsers.length === 0 ||
+          currentUsers.length + 1 !== message.users.length
+        ) {
           await ShowAllChatUsers(message.users);
         } else {
           let chatUsersLi = chatUsersList.getElementsByTagName("li");
@@ -245,7 +269,11 @@ function connect() {
   };
 
   ws.onclose = function (event) {
-    console.log(loggedInUser.username, "Offline: WebSocket connection closed on event:", event);
+    console.log(
+      loggedInUser.username,
+      "Offline: WebSocket connection closed on event:",
+      event
+    );
     stopTyping(loggedInUser.username, activeChat[1]);
   };
 
@@ -261,9 +289,12 @@ function reorderChatUserList(sender, recipient) {
   const users = Array.from(chatUsersList.children);
 
   if (loggedInUser.username === sender) {
-    const recipientElement = users.find((li) => li.textContent.includes(recipient));
+    const recipientElement = users.find((li) =>
+      li.textContent.includes(recipient)
+    );
     if (recipientElement) chatUsersList.removeChild(recipientElement);
-    if (recipientElement && recipient !== sender) chatUsersList.prepend(recipientElement);
+    if (recipientElement && recipient !== sender)
+      chatUsersList.prepend(recipientElement);
   } else if (loggedInUser.username === recipient) {
     const senderElement = users.find((li) => li.textContent.includes(sender));
     if (senderElement) chatUsersList.removeChild(senderElement);
@@ -364,19 +395,21 @@ async function showMessages(chatID, recipientUsername) {
   // Add scroll event listener to load more messages when scrolling near the top
   scrollHandler = () => {
     if (activeChat[0] !== chatID || activeChat[1] !== recipientUsername) return; // Check if the chat is still open
-    if (messageDisplay.scrollTop === 0 && loadedMessages.length < messages.length) {
+    if (
+      messageDisplay.scrollTop === 0 &&
+      loadedMessages.length < messages.length
+    ) {
       const previousHeight = messageDisplay.scrollHeight; // Store the current height
       const remainingMessages = messages.length - loadedMessages.length;
-      const olderBatch = messages.slice(
-        Math.max(0, remainingMessages - batchSize),
-        remainingMessages
-      ).reverse(); // Get the next batch of older messages, in reverse order
+      const olderBatch = messages
+        .slice(Math.max(0, remainingMessages - batchSize), remainingMessages)
+        .reverse(); // Get the next batch of older messages, in reverse order
       loadedMessages = [...olderBatch, ...loadedMessages];
       renderMessages(olderBatch);
       // Maintain the scroll position after loading more messages
       messageDisplay.scrollTop = messageDisplay.scrollHeight - previousHeight;
     }
-  }
+  };
   messageDisplay.addEventListener("scroll", scrollHandler);
 }
 
