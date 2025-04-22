@@ -849,16 +849,16 @@ async function logoutFunc() {
 }
 
 function fillPostsInHtml(posts, actionSubject = '', fillType = 'reWrite') {
-    const middlePanel = document.getElementById('middlePanel');
-    const newPostContainer = document.getElementById('newPostContainer');
-    const postsContainer = document.getElementById('postsContainer');
 
     if (fillType == 'reWrite') {
         // load posts for home page
+        const middlePanel = document.getElementById('middlePanel');
         middlePanel.innerHTML = `
         <div class="row" id="newPostContainer"></div>
         <div class="row" id="postsContainer"></div>
         `;
+        const newPostContainer = document.getElementById('newPostContainer');
+        const postsContainer = document.getElementById('postsContainer');
         
         newPostContainer.innerHTML = `
         <div class="row" id="newPostContainer">
@@ -868,10 +868,10 @@ function fillPostsInHtml(posts, actionSubject = '', fillType = 'reWrite') {
                     <form id="newPostForm" enctype="multipart/form-data">
                         <div class="mb-3">
                             <div class="mt-3">
-                                <select id="categories" name="categories" required
-                                    class="form-control multiSelect" multiple="multiple"
-                                    data-placeholder="Select categories">
-                                </select>
+                                <div class="custom-multiselect" id="custom-multiselect-submit">
+                                    <div class="select-box" id="categories" onclick="categoriesClicked('custom-multiselect-submit')">Select categories</div>
+                                    <div class="options-list" onchange="categoriyListChanged('categoriesList', 'categories')" id="categoriesList"> </div>
+                                </div>
                             </div>
                         </div>
                         <div class="mb-3">
@@ -892,6 +892,7 @@ function fillPostsInHtml(posts, actionSubject = '', fillType = 'reWrite') {
             </div>
         </div>
         `;
+        console.log(newPostContainer.innerHTML)
         postsContainer.innerHTML = `
         <div class='col-md-12 text-center'>
             <h4 class='text-muted'>${actionSubject}</h4>
@@ -903,80 +904,86 @@ function fillPostsInHtml(posts, actionSubject = '', fillType = 'reWrite') {
         }
         
         postsContainer.innerHTML += '<div class="accordion accordion-flush" id="accordionFlushExample">';        
+    } else {
+        const postsContainer = document.getElementById('postsContainer');
     }
     
     posts.forEach(post => {
         const postImage = post.user.profile_photo
             ? `<img class="bd-placeholder-img flex-shrink-0 me-2 rounded" role="img" src="/uploads/${post.user.profile_photo}" width="45" height="45"/>`
             : `<div style="padding: 7px;"><i class="fa-solid fa-user" style="font-size: 2rem;"></i></div>`;
-    
+
         const postCategories = post.categories.map(category =>
             `<span class="badge-p text-dark"><a href="javascript:fetchCategoryPosts('${category.name}')">${category.name}</a></span>`
         ).join('');
-    
+
         const postFiles = post.post_files.map(post_file =>
             `<div class="col-md-12">
                 <img src="/uploads/${post_file.file_uploaded_name}" alt="post image" class="rounded mb-1" style="width: 100%; max-height: 400px;">
             </div>`
         ).join('');
-    
+
         const formattedDateTime = post.created_at.replace('T', ' ').replace('Z', '');
-    
+
         const postButtons = 
         post.user_id === loggedInUser.id
                         ?`
                         <div style="float: right;margin-top: -16px;">
                             <div class="row py-3 ms-2">
                                 <div class="btn-group">
-                                    <a type="button" class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="fa-solid fa-ellipsis"></i>
-                                    </a>
-                                    <ul class="dropdown-menu dropdown-menu-end" style="border: 1px solid #c2c2c270;">
-                                        <li>
-                                                <a type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#updatePostModal-${post.id}">
+                                    <div class="mydropdown">
+                                        <a class="mydropdown-toggle btn btn-light" type="button">
+                                            <i class="fa-solid fa-ellipsis"></i>
+                                        </a>
+                                        <ul class="mydropdown-menu dropdown-menu dropdown-menu-end" style="border: 1px solid #c2c2c270;">
+                                            <li>
+                                                <a type="button" class="dropdown-item open-modal" data-target="updatePostModal-${post.id}">
                                                     <i class="fas fa-edit me-2"></i>Edit Post
                                                 </a>                                        
-                                        </li>
-                                        <li>
-                                            <a type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#deletPostModal-${post.id}"><i class="fa-solid fa-trash me-2"></i>Delete Post</a> 
-                                        </li>
-                                    </ul>
+                                            </li>
+                                            <li>
+                                                <a type="button" class="dropdown-item open-modal" data-target="deletPostModal-${post.id}"><i class="fa-solid fa-trash me-2"></i>Delete Post</a> 
+                                            </li>
+                                        </ul>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                         <!-- Modal -->
-                        <div class="modal fade bd-example-modal-lg" id="updatePostModal-${post.id}" tabindex="-1" aria-labelledby="editPostModalLabel" aria-hidden="true">
+                        <div id="updatePostModal-${post.id}" class="modal fade bd-example-modal-lg">
                             <div class="modal-dialog modal-lg">
                                 <div class="modal-content">
                                     <div class="modal-header">
                                     <h1 class="modal-title fs-5" id="editPostModalLabel">Edit post</h1>
-                                    <a type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></a>
+                                    <a type="button" class="btn-close close-modal" data-bs-dismiss="modal" aria-label="Close"></a>
                                     </div>
-                                    <form id="updatePostForm-${post.id}" method="post">
+                                    <form id="updatePostForm-${post.id}" method="post" enctype="multipart/form-data">
                                     <div class="modal-body">
                                             <input type="hidden" name="post_uuid" value="${post.uuid}">
                                             <input type="hidden" name="post_id" value="${post.id}">
-                                            <div class="mt-3">
-                                                <select id="update_post_categories" name="update_post_categories" required
-                                                    class="form-control multiSelect" multiple="multiple"
-                                                    data-placeholder="Select categories">
-                                                </select>
+                                            <div class="mb-3">
+                                                <div class="mt-3">
+                                                    <div class="custom-multiselect" id="custom-multiselect-update-${post.uuid}">
+                                                        <div class="select-box" id="update_post_categories-${post.uuid}" onclick="categoriesClicked('custom-multiselect-update-${post.uuid}')">Select categories</div>
+                                                        <div class="options-list" onchange="categoriyListChanged('updatePostCategoriesList-${post.uuid}', 'update_post_categories-${post.uuid}')" id="updatePostCategoriesList-${post.uuid}"> </div>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div class="mt-3">
+                                            <div class="mb-3">
                                                 <input type="text" class="form-control" placeholder="Title" required
                                                     name="title">
                                             </div>
-                                            <div class="mt-3">
+                                            <div class="mb-3">
                                                 <textarea class="form-control" placeholder="Description" required rows="4"
                                                     name="description"></textarea>
                                             </div>
-                                            <div class="mt-3 text-center border p-3 rounded">
+                                            <div class="mb-3 text-center border p-3 rounded">
                                                 <p class="text-muted">Attach an image or video (optional)</p>
                                                 <input type="file" class="form-control" name="postFiles" multiple>
                                             </div>
                                     </div>
                                     <div class="modal-footer">
-                                    <a type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</a>
+                                    <a type="button" class="btn btn-secondary close-modal" data-bs-dismiss="modal">Close</a>
                                     <a onclick="updatePost(${post.id}, '${post.uuid}')" class="btn btn-success">Save changes</a>
                                 </form>
                                     </div>
@@ -990,13 +997,13 @@ function fillPostsInHtml(posts, actionSubject = '', fillType = 'reWrite') {
                                     <div class="modal-content">
                                         <div class="modal-header bg-danger text-white">
                                             <h5 class="modal-title" id="deletPostModalLabel-${post.id}">Confirm Deletion</h5>
-                                            <a type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></a>
+                                            <a type="button" class="btn-close btn-close-white close-modal" data-bs-dismiss="modal" aria-label="Close"></a>
                                         </div>
                                         <div class="modal-body">
                                             <p class="mb-0">Are you sure you want to delete this item? This action cannot be undone.</p>
                                         </div>
                                         <div class="modal-footer">
-                                            <a type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</a>
+                                            <a type="button" class="btn btn-secondary close-modal" data-bs-dismiss="modal">Cancel</a>
                                             <a onclick="deletePost(${post.id}, '${post.uuid}')" class="btn btn-danger" id="confirmDelete">Delete</a>
                                         </div>
                                     </div>
@@ -1005,69 +1012,71 @@ function fillPostsInHtml(posts, actionSubject = '', fillType = 'reWrite') {
                         </div>
                         `
                         : ``;
-    
+
         const postLikeElement = post.liked
             ? `<a onclick="likePost(${post.id}, '${post.uuid}', 'like')" value="like" name="like_post" class="btn btn-success"><i class="fa-solid fa-thumbs-up"></i></a>`
             : `<a onclick="likePost(${post.id}, '${post.uuid}', 'like')" value="like" name="like_post" class="btn btn-outline-success"><i class="fa-regular fa-thumbs-up"></i></a>`;
-    
+
         const postDislikeElement = post.disliked
             ? `<a onclick="likePost(${post.id}, '${post.uuid}', 'dislike')" value="dislike" name="dislike_post" value="dislike" class="btn btn-danger"><i class="fa-solid fa-thumbs-down"></i></a>`
             : `<a onclick="likePost(${post.id}, '${post.uuid}', 'dislike')" value="dislike" name="dislike_post" value="dislike" class="btn btn-outline-danger"><i class="fa-regular fa-thumbs-down"></i></a>`;
-    
+
         const postHTML = `
             <div class="accordion-item">
                 <h2 class="accordion-header" id="flush-heading-${post.id}">
                     <div class="col-sm-12 col-md-12 mb-3">
                         <div class="post-card" id="post-${post.id}">
-                            <button onclick="fetchPost(${post.id}, '${post.uuid}')" class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse-${post.id}" aria-expanded="false" aria-controls="flush-collapseOne">
-    
-                            <div class="d-flex flex-column justify-content-between">
-                                <h5 class="mt-2 post-title">
-                                    ${post.title}
-                                </h5>
-                                <div>
-                                    <div class="d-flex text-body-secondary pt-3 m-posts">
-                                        ${postImage}
-                                        <div class="pb-3 mb-0 small lh-sm w-100 mb-3 ms-2 mt-1">
-                                            <div class="d-flex justify-content-between mb-1 m-posts-userInfo">
-                                                <span class="post-user">${post.user.username}</span>
-                                                <span class="text-right m-posts-ctg">${postCategories}</span>
+                            <div onclick="accordionHeadedClicked(${post.id})">
+                                <button onclick="fetchPost(${post.id}, '${post.uuid}')" class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse-${post.id}" aria-expanded="false" aria-controls="flush-collapseOne">
+
+                                <div class="d-flex flex-column justify-content-between">
+                                    <h5 class="mt-2 post-title">
+                                        ${post.title}
+                                    </h5>
+                                    <div>
+                                        <div class="d-flex text-body-secondary pt-3 m-posts">
+                                            ${postImage}
+                                            <div class="pb-3 mb-0 small lh-sm w-100 mb-3 ms-2 mt-1">
+                                                <div class="d-flex justify-content-between mb-1 m-posts-userInfo">
+                                                    <span class="post-user">${post.user.username}</span>
+                                                    <span class="text-right m-posts-ctg">${postCategories}</span>
+                                                </div>
+                                                <span class="d-block post-dateTime">${formattedDateTime}</span>
                                             </div>
-                                            <span class="d-block post-dateTime">${formattedDateTime}</span>
                                         </div>
                                     </div>
+                                    <p class="post-description">${post.description}</p>
+                                    ${postFiles}
                                 </div>
-                                <p class="post-description">${post.description}</p>
-                                ${postFiles}
+
+                                </button>
                             </div>
-    
-                            </button>
-    
-    
+
+
                             <div class="mt-4">
                                 <span class="like-inpost"><i class="fa-solid fa-thumbs-up"></i> ${post.number_of_likes}</span>
                                 <span class="dislike-inpost"><i class="fa-solid fa-thumbs-down"></i> ${post.number_of_dislikes}</span>
                                 
                                 ${postButtons}
-    
+
                                 <div style="float: right;margin-top: -16px;">
                                     <div class="row py-3">
                                         <form id="likePostForm-${post.id}">
                                             <input type="hidden" id="post_id" name="post_id" value="${post.iD}">
-    
+
                                             ${postLikeElement}
                                         
-    
+
                                             ${postDislikeElement}
                                         </form>
                                     </div>
                                 </div>
-    
+
                             </div> <!-- mt-4 -->
                         </div> <!-- post-card -->
                     </div> <!-- col-sm-12 col-md-12 mb-3 -->
                 </h2>
-    
+
                 <div id="flush-collapse-${post.id}" class="accordion-collapse collapse" aria-labelledby="flush-heading-${post.id}" data-bs-parent="#accordionFlushExample">
                     <div class="accordion-body post-card bg-border-box" id="post-comments-${post.id}">
                     </div>
@@ -1083,15 +1092,21 @@ function fillPostsInHtml(posts, actionSubject = '', fillType = 'reWrite') {
     });
 
     if(fillType == 'reWrite') {
-        postsContainer.innerHTML += '</div>'; //close the accordion
-
         // laod categories in select for new post
-        const selectCategoriesContainer = document.getElementById('categories');
+        const selectCategoriesContainer = document.getElementById('categoriesList');
         const categoryOptions = categories.map(category =>
-            `<option value="${category.id}">${category.name}</option>`
+            `<label><input type="checkbox" name="categories" value="${category.id}" /> ${category.name}</label>`
         ).join('');
         selectCategoriesContainer.innerHTML = categoryOptions;
-        $('#categories').select2();
+
+
+        // laod categories in select for new post
+        const updatePostCategoryOptions = categories.map(category =>
+            `<label><input type="checkbox" name="update_post_categories" value="${category.id}" /> ${category.name}</label>`
+        ).join('');
+        document.querySelectorAll('[id^="updatePostCategoriesList"]').forEach(container => {
+            container.innerHTML = updatePostCategoryOptions;
+        });
     }
 
     
