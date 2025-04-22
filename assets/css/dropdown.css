@@ -1,0 +1,29 @@
+.mydropdown {
+    position: relative;
+    display: inline-block;
+  }
+  
+  .mydropdown-menu {
+    display: none;
+    position: absolute;
+    background: white;
+    border: 1px solid #ccc;
+    min-width: 160px;
+    z-index: 1;
+    padding: 0.5rem;
+  }
+  
+  .mydropdown-menu a {
+    display: block;
+    padding: 0.5rem;
+    text-decoration: none;
+    color: black;
+  }
+  
+  .mydropdown-menu a:hover {
+    background-color: #f1f1f1;
+  }
+  
+  .mydropdown.show .mydropdown-menu {
+    display: block;
+  }

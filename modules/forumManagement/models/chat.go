@@ -29,14 +29,15 @@ type ChatMember struct {
 
 // Message represents the "messages" table
 type Message struct {
-	ID        int        `json:"id"`
-	ChatID    int        `json:"chat_id"`
-	Content   string     `json:"content"`
-	Status    string     `json:"status"`
-	CreatedAt time.Time  `json:"created_at"`
-	CreatedBy int        `json:"created_by"`
-	UpdatedAt *time.Time `json:"updated_at"`
-	UpdatedBy *int       `json:"updated_by"`
+	ID                int        `json:"id"`
+	ChatID            int        `json:"chat_id"`
+	Content           string     `json:"content"`
+	Status            string     `json:"status"`
+	CreatedAt         time.Time  `json:"created_at"`
+	CreatedBy         int        `json:"created_by"`
+	UpdatedAt         *time.Time `json:"updated_at"`
+	UpdatedBy         *int       `json:"updated_by"`
+	CreatedByUsername string     `json:"created_by_username"`
 }
 
 // MessageFile represents the "message_files" table
@@ -227,11 +228,14 @@ func ReadAllMsgs(chatID, userID int) ([]Message, error) {
 	var messages []Message
 
 	query := `
-        SELECT m.id, m.chat_id, m.content, m.status, m.created_at, m.created_by, m.updated_at, m.updated_by
-        FROM messages m
-        JOIN chat_members cm ON m.chat_id = cm.chat_id
-        WHERE m.chat_id = ? AND cm.user_id = ?;
-    `
+		SELECT 
+			m.id, m.chat_id, m.content, m.status, m.created_at, m.created_by, 
+			m.updated_at, m.updated_by, u.username AS created_by_username
+		FROM messages m
+		JOIN chat_members cm ON m.chat_id = cm.chat_id
+		JOIN users u ON m.created_by = u.id
+		WHERE m.chat_id = ? AND cm.user_id = ?;
+	`
 	rows, err := db.Query(query, chatID, userID)
 	if err != nil {
 		return nil, err
@@ -249,6 +253,7 @@ func ReadAllMsgs(chatID, userID int) ([]Message, error) {
 			&message.CreatedBy,
 			&message.UpdatedAt,
 			&message.UpdatedBy,
+			&message.CreatedByUsername,
 		); err != nil {
 			return nil, err
 		}
