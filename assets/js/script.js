@@ -686,8 +686,6 @@ async function updatePost(id, uuid) {
     selectBox.textContent = "Select options";
 
     const updatePostModal = document.getElementById('updatePostModal-' + id);
-    // const modalInstance = bootstrap.Modal.getInstance(updatePostModal);
-    // modalInstance.hide();
     updatePostModal.style.display = "none";
     fetchPost(id, uuid);   
 }
@@ -707,8 +705,6 @@ async function deletePost(id, uuid) {
 
     form.reset();
     const deletePostModal = document.getElementById('deletPostModal-' + id);
-    // const modalInstance = bootstrap.Modal.getInstance(deletePostModal);
-    // modalInstance.hide();
     deletePostModal.style.display = "none";
     removePostHtml(id);
 }
@@ -766,8 +762,6 @@ async function updateComment(comment_id, id, uuid) {
 
     form.reset();
     const updateCommentModal = document.getElementById('updateCommentModal-' + comment_id);
-    // const modalInstance = bootstrap.Modal.getInstance(updateCommentModal);
-    // modalInstance.hide();
     updateCommentModal.style.display = "none";
     fetchPost(id, uuid);   
 }
@@ -787,8 +781,6 @@ async function deleteComment(comment_id, id, uuid) {
 
     form.reset();
     const deleteCommentModal = document.getElementById('deletCommentModal-' + comment_id);
-    // const modalInstance = bootstrap.Modal.getInstance(deleteCommentModal);
-    // modalInstance.hide();
     deleteCommentModal.style.display = "none";
     fetchPost(id, uuid);   
 }
@@ -808,9 +800,6 @@ async function loginFunc() {
 
     if(res.success) {
         form.reset();
-        // const authModal = document.getElementById('authModal');
-        // const modalInstance = bootstrap.Modal.getInstance(authModal);
-        // modalInstance.hide();
         await checkSession();
     }
 }
@@ -830,9 +819,6 @@ async function registerFunc() {
 
     if(res.success) {
         form.reset();
-        // const authModal = document.getElementById('authModal');
-        // const modalInstance = bootstrap.Modal.getInstance(authModal);
-        // modalInstance.hide();
         await checkSession();
     }
 }
@@ -1468,8 +1454,6 @@ addEventListener("DOMContentLoaded", async function () {
       });
 
     const toastLiveExample = document.getElementById('liveToast')
-    // toast = new bootstrap.Toast(toastLiveExample)
-
 
     await checkSession();
 });

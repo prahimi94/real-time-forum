@@ -2,6 +2,7 @@ let ws;
 let onlineUsernames = [];
 let activeChat = [(ID = null), (recipient = null)];
 let loadedMessages = []; // Keep track of loaded messages for func showMessage
+let fetchedMsg;
 
 async function fetchData(apiEndpoint) {
   try {
@@ -159,7 +160,8 @@ function connect() {
           };
           showToast(res);
         }
-
+        fetchedMsg.push(message.message);
+        loadedMessages.push(message.message);
         // Move sender and recipient to top of the chat-user-list only for them
         reorderChatUserList(message.sender, message.recipient);
 
@@ -343,13 +345,9 @@ async function showMessages(chatID, recipientUsername) {
   const messageDisplay = document.getElementById("message-display");
   chatHeader.textContent = `Chat with ${recipientUsername}`;
   messageDisplay.innerHTML = ""; // Clear previous messages
-  // Remove any previous scroll listener
-  if (scrollHandler) {
-    messageDisplay.removeEventListener("scroll", scrollHandler);
-  }
-  let messages = await fetchData(`/api/chat-messages/${chatID}`);
 
-  if (!messages || messages.length === 0) {
+  fetchedMsg = await fetchData(`/api/chat-messages/${chatID}`);
+  if (!fetchedMsg || fetchedMsg.length === 0) {
     messageDisplay.innerHTML = "Chat started but no messages yet.";
     stopTyping(loggedInUser.username, recipientUsername);
     return;
@@ -385,7 +383,7 @@ async function showMessages(chatID, recipientUsername) {
     });
   }
   // Load initial batch (most recent messages)
-  const initialBatch = messages.slice(-batchSize);
+  const initialBatch = fetchedMsg.slice(-batchSize);
   loadedMessages = [...initialBatch];
   renderMessages(initialBatch, false);
 
@@ -397,11 +395,11 @@ async function showMessages(chatID, recipientUsername) {
     if (activeChat[0] !== chatID || activeChat[1] !== recipientUsername) return; // Check if the chat is still open
     if (
       messageDisplay.scrollTop === 0 &&
-      loadedMessages.length < messages.length
+      loadedMessages.length < fetchedMsg.length
     ) {
       const previousHeight = messageDisplay.scrollHeight; // Store the current height
-      const remainingMessages = messages.length - loadedMessages.length;
-      const olderBatch = messages
+      const remainingMessages = fetchedMsg.length - loadedMessages.length;
+      const olderBatch = fetchedMsg
         .slice(Math.max(0, remainingMessages - batchSize), remainingMessages)
         .reverse(); // Get the next batch of older messages, in reverse order
       loadedMessages = [...olderBatch, ...loadedMessages];
